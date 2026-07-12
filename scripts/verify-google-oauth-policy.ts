@@ -44,6 +44,17 @@ async function authorizationUrl(response: Response): Promise<URL | null> {
   }
 }
 
+async function authRowCounts(client: Client) {
+  const result = await client.query(`
+    select
+      (select count(*)::int from "user") as users,
+      (select count(*)::int from account) as accounts,
+      (select count(*)::int from session) as sessions
+  `);
+
+  return result.rows[0] as { users: number; accounts: number; sessions: number };
+}
+
 const client = new Client({ connectionString });
 await client.connect();
 
@@ -57,6 +68,7 @@ try {
       BETTER_AUTH_SECRET: "openmarket-google-policy-verification-secret-2026-07-12",
       BETTER_AUTH_URL: baseUrl,
     };
+    const countsBefore = await authRowCounts(client);
 
     const unavailableAuth = createAuth(database, baseEnvironment);
     const unavailableResponse = await unavailableAuth.handler(socialRequest());
@@ -102,15 +114,10 @@ try {
       "The Google client secret must never appear in the browser authorization URL.",
     );
 
-    const persistedAuthRows = await client.query(`
-      select
-        (select count(*)::int from "user") as users,
-        (select count(*)::int from account) as accounts,
-        (select count(*)::int from session) as sessions
-    `);
+    const countsAfter = await authRowCounts(client);
     assert.deepEqual(
-      persistedAuthRows.rows[0],
-      { users: 0, accounts: 0, sessions: 0 },
+      countsAfter,
+      countsBefore,
       "Starting Google OAuth must not create an identity or session before callback validation.",
     );
 
