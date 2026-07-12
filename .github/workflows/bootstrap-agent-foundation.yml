@@ -1,0 +1,50 @@
+name: Bootstrap agent foundation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bootstrap-agent-foundation.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout foundation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/phase-0-foundation
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Reconstruct and verify source specification
+        shell: bash
+        run: |
+          cat .bootstrap/spec.gz.b64.part-* | base64 --decode | gzip --decompress > spec.md
+          echo "c8f1b6f737d413f7857a47dfb9dbae936e6e424de6d76aee5ad077482c435a2c  spec.md" | sha256sum --check -
+          grep -F "**Status:** Source of truth" spec.md
+          grep -F "**Version:** 2.1" spec.md
+
+      - name: Generate dependency lock
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          node -e 'const lock=require("./package-lock.json"); if (lock.lockfileVersion !== 3) process.exit(1)'
+
+      - name: Commit final artifacts and remove bootstrap data
+        shell: bash
+        run: |
+          rm -rf .bootstrap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add spec.md package-lock.json .bootstrap
+          git diff --cached --quiet || git commit -m "chore: finalize source specification and dependency lock"
+          git push origin HEAD:agent/phase-0-foundation
