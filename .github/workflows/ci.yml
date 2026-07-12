@@ -90,3 +90,6 @@ jobs:
 
       - name: Verify transactional registration preferences
         run: npm run db:verify:registration
+
+      - name: Verify email verification and password recovery
+        run: npm run db:verify:recovery
