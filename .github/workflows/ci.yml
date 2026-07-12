@@ -98,9 +98,7 @@ jobs:
         run: npm run db:verify:google
 
   format-google-files:
-    if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/agent/google-oauth-policy') ||
-      (github.event_name == 'pull_request' && github.head_ref == 'agent/google-oauth-policy')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/google-oauth-policy'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
