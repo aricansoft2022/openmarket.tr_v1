@@ -12,7 +12,16 @@
 
 ## Identity and companies
 
-Better Auth tables provide users, sessions, accounts and verification records. OpenMarket extends them with:
+Better Auth owns four core authentication tables:
+
+- `user` — UUID identity, display name, login email, email-verification flag, optional avatar and timestamps
+- `session` — UUID session, unique token, expiry, request metadata and owning user
+- `account` — credential or external-provider account, password/token material and owning user
+- `verification` — expiring verification/reset values keyed by identifier
+
+Deleting a user cascades to sessions and accounts. Provider/account pairs and session tokens are unique. Login email remains authentication data and is not copied into public business-contact fields.
+
+OpenMarket extends authentication identity with separate domain tables:
 
 - `user_preferences`
 - `company_emails`
@@ -24,7 +33,7 @@ Better Auth tables provide users, sessions, accounts and verification records. O
 - `supplier_company_types`
 - `business_contacts`
 
-One user may have buyer and supplier workspaces. Supplier membership roles are fixed at launch.
+One user may have buyer and supplier workspaces. Workspace intent, company-domain verification, buyer activation, supplier activation, memberships, fixed operational roles and public contact data do not live in Better Auth core tables. Supplier membership roles are fixed at launch.
 
 ## Catalogue schema engine
 
