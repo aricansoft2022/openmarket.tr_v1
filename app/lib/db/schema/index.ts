@@ -3,4 +3,5 @@ export * from "./auth";
 export * from "./business-identity";
 export * from "./business-identity-evidence";
 export * from "./outbox";
+export * from "./platform-staff";
 export * from "./preferences";
