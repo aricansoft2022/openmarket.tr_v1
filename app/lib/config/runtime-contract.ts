@@ -52,9 +52,7 @@ export function isConfiguredRuntimeValue(value: unknown): boolean {
   return value !== undefined && value !== null;
 }
 
-export function inspectRuntimeReadiness(
-  env: Record<string, unknown>,
-): RuntimeReadinessReport {
+export function inspectRuntimeReadiness(env: Record<string, unknown>): RuntimeReadinessReport {
   const requirements = new Map<string, string[]>();
 
   for (const entry of contractEntries) {
@@ -67,9 +65,7 @@ export function inspectRuntimeReadiness(
   const missing = new Set<string>();
 
   for (const [capability, names] of requirements) {
-    const capabilityMissing = names.filter(
-      (name) => !isConfiguredRuntimeValue(env[name]),
-    );
+    const capabilityMissing = names.filter((name) => !isConfiguredRuntimeValue(env[name]));
 
     capabilities[capability] = {
       ready: capabilityMissing.length === 0,
@@ -91,10 +87,7 @@ export function inspectRuntimeReadiness(
 export function assertCoreRuntimeConfig(env: CoreRuntimeEnv): CoreRuntimeConfig {
   const missing: string[] = [];
 
-  if (
-    typeof env.APP_ENV !== "string" ||
-    !contract.environments.includes(env.APP_ENV)
-  ) {
+  if (typeof env.APP_ENV !== "string" || !contract.environments.includes(env.APP_ENV)) {
     missing.push("APP_ENV");
   }
 

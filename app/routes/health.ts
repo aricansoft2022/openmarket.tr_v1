@@ -6,12 +6,9 @@ import { createHealthPayload } from "~/lib/health/create-health-payload";
 export function loader() {
   const config = assertCoreRuntimeConfig(env);
 
-  return Response.json(
-    createHealthPayload(config.environment, config.commitSha),
-    {
-      headers: {
-        "Cache-Control": "no-store",
-      },
+  return Response.json(createHealthPayload(config.environment, config.commitSha), {
+    headers: {
+      "Cache-Control": "no-store",
     },
-  );
+  });
 }

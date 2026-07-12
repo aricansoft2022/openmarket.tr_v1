@@ -26,27 +26,18 @@ const [contractSource, wranglerSource, typeDeclarations, devVarsExample, gitigno
 
 const contract = JSON.parse(contractSource);
 const wrangler = parseJsonc(wranglerSource);
-const entries = [
-  ...contract.variables,
-  ...contract.secrets,
-  ...contract.bindings,
-];
+const entries = [...contract.variables, ...contract.secrets, ...contract.bindings];
 const names = entries.map((entry) => entry.name);
-const duplicateNames = names.filter(
-  (name, index) => names.indexOf(name) !== index,
-);
+const duplicateNames = names.filter((name, index) => names.indexOf(name) !== index);
 
 assert(contract.version === 1, "Runtime contract version must be 1.");
 assert(
-  JSON.stringify(contract.environments) ===
-    JSON.stringify(["local", "preview", "production"]),
+  JSON.stringify(contract.environments) === JSON.stringify(["local", "preview", "production"]),
   "Runtime environments must remain local, preview and production.",
 );
 assert(duplicateNames.length === 0, `Duplicate runtime names: ${duplicateNames}`);
 
-for (const entry of entries.filter(
-  (runtimeEntry) => runtimeEntry.source !== "wrangler-vars",
-)) {
+for (const entry of entries.filter((runtimeEntry) => runtimeEntry.source !== "wrangler-vars")) {
   assert(
     typeDeclarations.includes(`${entry.name}:`),
     `app/types/cloudflare.d.ts is missing ${entry.name}.`,
@@ -75,23 +66,17 @@ for (const secret of contract.secrets) {
   );
 }
 
-for (const binding of contract.bindings.filter(
-  (entry) => entry.status === "local-configured",
-)) {
+for (const binding of contract.bindings.filter((entry) => entry.status === "local-configured")) {
   if (binding.kind === "r2-bucket") {
     assert(
-      (wrangler.r2_buckets ?? []).some(
-        (entry) => entry.binding === binding.name,
-      ),
+      (wrangler.r2_buckets ?? []).some((entry) => entry.binding === binding.name),
       `wrangler.jsonc is missing R2 binding ${binding.name}.`,
     );
   }
 
   if (binding.kind === "queue") {
     assert(
-      (wrangler.queues?.producers ?? []).some(
-        (entry) => entry.binding === binding.name,
-      ),
+      (wrangler.queues?.producers ?? []).some((entry) => entry.binding === binding.name),
       `wrangler.jsonc is missing Queue binding ${binding.name}.`,
     );
   }

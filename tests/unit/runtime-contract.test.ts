@@ -50,16 +50,14 @@ describe("runtime configuration contract", () => {
   });
 
   it("validates the core liveness configuration", () => {
-    expect(
-      assertCoreRuntimeConfig({ APP_ENV: "production", COMMIT_SHA: "def456" }),
-    ).toEqual({
+    expect(assertCoreRuntimeConfig({ APP_ENV: "production", COMMIT_SHA: "def456" })).toEqual({
       environment: "production",
       commitSha: "def456",
     });
 
-    expect(() =>
-      assertCoreRuntimeConfig({ APP_ENV: "staging", COMMIT_SHA: "" }),
-    ).toThrow(RuntimeConfigurationError);
+    expect(() => assertCoreRuntimeConfig({ APP_ENV: "staging", COMMIT_SHA: "" })).toThrow(
+      RuntimeConfigurationError,
+    );
   });
 
   it("recognizes objects and rejects common placeholder strings", () => {
