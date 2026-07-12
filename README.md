@@ -23,7 +23,7 @@ OpenMarket.tr is a free, donation-supported B2B directory and RFQ platform for h
 
 ## Local setup
 
-Requirements: Node.js 24 and npm. No remote service account is required for installation, verification, the foundation UI or the health route.
+Requirements: Node.js 24 and npm. No remote service account is required for installation, verification, the current UI or the health route.
 
 ```bash
 npm ci
@@ -32,10 +32,16 @@ npm run verify
 npm run dev
 ```
 
-The foundation application exposes:
+The current application exposes:
 
-- `/` — Phase 0 foundation page
+- `/` — public foundation page and auth entry links
+- `/giris` — A01 email/password login
+- `/kayit` — A02 registration with country, preferred language and intended use
+- `/kayit/basarili` — A03 registration success state
+- `/api/auth/*` — Better Auth resource handler
 - `/health` — no-cache service health response with validated core metadata
+
+Email delivery, verification tokens, password reset, Google OAuth and Turnstile are not enabled yet. The registration route creates Better Auth identity data and `user_preferences` atomically; intended use does not activate a buyer or supplier workspace.
 
 Wrangler locally emulates the configured private R2 bucket and background Queue. Hyperdrive remains intentionally unconfigured until a real development binding exists; no fake resource ID is committed. Read `RUNTIME_CONFIGURATION.md` before adding bindings or secrets.
 
@@ -47,10 +53,14 @@ Docker is optional and is needed only when you want to run PostgreSQL migrations
 cp .env.example .env
 npm run db:local:up
 npm run db:verify
+npm run db:verify:auth
+npm run db:verify:registration
 npm run db:local:down
 ```
 
 `npm run db:verify` applies the committed Drizzle migrations, verifies the required audit indexes and proves that the database trigger rejects both UPDATE and DELETE operations on `audit_logs`.
+
+`npm run db:verify:auth` verifies Better Auth signup, hashed credential storage, signin and persisted sessions. `npm run db:verify:registration` verifies required preference persistence and proves that a failed preference write rolls back the user and credential account.
 
 Use `npm run db:local:reset` only when you intentionally want to delete the local PostgreSQL volume. Use `npm run db:local:logs` to inspect startup problems.
 
@@ -64,7 +74,7 @@ npm run config:check
 npm run db:check
 ```
 
-GitHub Actions also applies and verifies migrations against an isolated PostgreSQL service container on every pull request and `main` push.
+GitHub Actions also applies and verifies migrations, Better Auth persistence and transactional registration against an isolated PostgreSQL service container on every pull request and `main` push.
 
 ## Delivery discipline
 

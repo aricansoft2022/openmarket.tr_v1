@@ -26,28 +26,34 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0, the runtime-configuration contract and local PostgreSQL verification are merged to `main`. The repository can be installed, built and tested without Neon or a Cloudflare account. CI runs application verification and PostgreSQL migration/invariant verification as separate read-only jobs.
+Phase 0, the runtime-configuration contract, local PostgreSQL verification and Better Auth persistence are merged to `main`. The repository can be installed, built and tested without Neon or a Cloudflare account. CI runs application verification and PostgreSQL migration/invariant verification as separate read-only jobs.
 
-The current #3 change adds Better Auth's four core models, a request-scoped auth factory around the existing Hyperdrive/Drizzle lifecycle, the `/api/auth/*` resource handler and isolated PostgreSQL signup/signin persistence verification.
+The current #15 branch adds:
 
-Authentication identity remains separate from business identity, buyer/supplier activation, memberships, roles and public contact data.
+- `user_preferences`, separate from Better Auth core tables;
+- required country, Turkish/English UI language and Buyer/Supplier/Both intent;
+- one PostgreSQL transaction covering Better Auth signup and preference persistence;
+- A01 `/giris`, A02 `/kayit` and A03 `/kayit/basarili` route states;
+- server-side validation, loading/error states and responsive red-editorial form styling;
+- rollback evidence proving a failed preference write leaves no user or credential account.
+
+Authentication identity remains separate from business identity, buyer/supplier activation, memberships, roles and public contact data. Login email is never copied into public contact fields.
 
 ## Exact next tasks
 
-1. Merge the Better Auth persistence PR only after both CI jobs pass, including `npm run db:verify:auth`.
-2. Keep issue #2 open for real development Neon and deployed Hyperdrive evidence.
-3. Start #4 in a separate PR series:
-   - registration and login screens/routes;
-   - account email verification and resend;
+1. Merge #15 only after both CI jobs pass, including `npm run db:verify:registration`.
+2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
+3. Continue #4 in separate reviewable slices:
+   - account email verification, resend and result routes;
    - forgot/reset password with expiry and replay protection;
+   - Turkish/English transactional-email contracts;
    - Google OAuth linking rules;
-   - Turnstile and route-level rate limiting;
-   - localized transactional-email contracts.
-4. Do not add business identity or workspace activation to auth core tables. Those begin in #5.
+   - Turnstile and route-level rate limiting.
+4. Do not add business identity or workspace activation to Better Auth core tables. Those begin in #5.
 5. Before remote Worker readiness is claimed:
    - provision isolated development Neon and Hyperdrive resources;
-   - apply the committed migrations through a direct Neon URL;
-   - verify `/api/auth/*` through deployed Hyperdrive;
+   - apply committed migrations through a direct Neon URL;
+   - verify `/api/auth/*`, `/giris` and `/kayit` through deployed Hyperdrive;
    - record safe identifiers, secret names without values, verification output and rollback steps.
 6. Continue in dependency order through #5–#10.
 
@@ -72,16 +78,17 @@ npm run db:local:up
 npm run db:check
 npm run db:verify
 npm run db:verify:auth
+npm run db:verify:registration
 npm run db:local:down
 ```
 
-The auth persistence verifier runs inside a rolled-back transaction. It creates a user through Better Auth, checks the credential account and password hashing, signs in, and verifies persisted sessions without leaving fixture rows behind.
+`db:verify:registration` performs one valid signup and then deliberately violates the country constraint. The first case must persist one preference row; the second must roll back the Better Auth user and credential account together.
 
 ## Known blockers
 
 - No Neon development database or deployed Hyperdrive configuration has been provisioned.
 - Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
-- Email delivery, Google OAuth and Turnstile credentials are not configured; they are not required for this persistence slice.
+- Email delivery, Google OAuth and Turnstile credentials are not configured; they are not required for #15.
 - Cloudflare Images and Email Sending require account-level provisioning outside the repository.
 
-These blockers do not prevent Better Auth schema, local persistence, route compilation or isolated PostgreSQL integration tests.
+These blockers do not prevent Better Auth schema, transactional local registration, A01/A02 UI, local PostgreSQL checks, tests or production builds.

@@ -87,3 +87,6 @@ jobs:
 
       - name: Verify Better Auth persistence
         run: npm run db:verify:auth
+
+      - name: Verify transactional registration preferences
+        run: npm run db:verify:registration

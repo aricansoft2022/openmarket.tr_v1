@@ -40,7 +40,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             OpenMarket<span className="brand__dot">.</span>tr
           </span>
         </a>
-        <span className="status-chip">Phase 0 foundation</span>
+        <span className="status-chip">Phase 1 identity foundation</span>
       </header>
 
       <section className="hero">
@@ -53,11 +53,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           yapılandıran, ücretsiz ve bağış destekli B2B platform.
         </p>
         <div className="hero__actions">
-          <a className="button button--primary" href="/health">
-            Sistem durumunu aç
+          <a className="button button--primary" href="/kayit">
+            Ücretsiz hesap oluştur
           </a>
-          <a className="button" href="https://github.com/aricansoft2022/openmarket.tr_v1">
-            GitHub deposu
+          <a className="button" href="/giris">
+            Giriş yap
+          </a>
+          <a className="button" href="/health">
+            Sistem durumu
           </a>
         </div>
       </section>
@@ -70,8 +73,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </article>
         <article>
           <span className="eyebrow">02</span>
-          <h2>Cloudflare native</h2>
-          <p>React Router v8 SSR, Workers runtime ve platform binding’leri temel alınır.</p>
+          <h2>Identity foundation</h2>
+          <p>
+            Better Auth, PostgreSQL oturumları ve kayıt tercihleri ayrı veri sınırlarında tutulur.
+          </p>
         </article>
         <article>
           <span className="eyebrow">03</span>

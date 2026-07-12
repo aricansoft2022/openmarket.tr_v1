@@ -21,9 +21,17 @@ Better Auth owns four core authentication tables:
 
 Deleting a user cascades to sessions and accounts. Provider/account pairs and session tokens are unique. Login email remains authentication data and is not copied into public business-contact fields.
 
-OpenMarket extends authentication identity with separate domain tables:
+`user_preferences` is a one-to-one OpenMarket domain record keyed by `user.id`. It stores:
 
-- `user_preferences`
+- country as the registration-supplied country label;
+- preferred UI language constrained to `tr` or `en`;
+- intended use constrained to `buyer`, `supplier` or `both`;
+- created and updated timestamps.
+
+Signup and `user_preferences` creation run in one PostgreSQL transaction. A preference constraint failure rolls back the Better Auth user, credential account and session writes. Intended use is onboarding direction only; it does not create or activate a buyer or supplier workspace.
+
+OpenMarket extends authentication identity with additional separate domain tables:
+
 - `company_emails`
 - `business_identity_reviews`
 - `buyer_profiles`
