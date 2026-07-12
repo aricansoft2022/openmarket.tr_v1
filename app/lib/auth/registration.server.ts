@@ -35,7 +35,7 @@ export function authRequest(
     origin: new URL(request.url).origin,
   });
 
-  for (const name of ["user-agent", "cf-connecting-ip", "x-forwarded-for"]) {
+  for (const name of ["cookie", "user-agent", "cf-connecting-ip", "x-forwarded-for"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }

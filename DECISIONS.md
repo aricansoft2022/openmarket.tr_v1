@@ -111,3 +111,13 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Security boundary:** Client IP keys are derived from Cloudflare's connection header, public recovery responses remain enumeration-safe and secrets never enter rendered HTML, redirects, logs or committed files. Remote readiness requires evidence from real preview bindings; local bypass is not production evidence.
 
 **Rejected:** Silently allowing requests when security infrastructure is missing; trusting arbitrary forwarded hops over the Cloudflare client address; committing fake Turnstile credentials or a fake rate-limit namespace; treating local bypass tests as proof of remote enforcement.
+
+## 2026-07-12 — Social account linking requires explicit re-authenticated consent
+
+**Decision:** Offer Google link and unlink only from an authenticated account-security route. Require the current credential password again, preserve the same-email/no-profile-overwrite policy, rate-limit both actions, reject duplicate links and prevent unlinking the last login method. Record completed link and unlink changes in immutable audit logs using the internal auth-account ID.
+
+**Reason:** A session alone may be stale or left open on a shared device. Password re-verification makes the user's intent explicit before changing login methods. Preserving at least one method prevents lockout, while internal account IDs make audit records idempotent without exposing provider tokens or provider-issued identifiers.
+
+**Testing boundary:** CI may generate the link authorization request with dummy credentials and use a provider-linked database fixture for post-callback management checks. This proves local policy and persistence behavior but not a live Google callback.
+
+**Rejected:** Silent same-email linking; linking from an unauthenticated callback page; accepting a different provider email; unlinking the final method; exposing provider tokens in UI or audit records; claiming live OAuth readiness from a fixture-based test.

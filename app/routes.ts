@@ -11,6 +11,7 @@ export default [
   route("auth/verify-email/result", "routes/auth.verify-email-result.tsx"),
   route("auth/forgot-password", "routes/auth.forgot-password.tsx"),
   route("auth/reset-password", "routes/auth.reset-password.tsx"),
+  route("account/security", "routes/account.security.tsx"),
   route("giris", "routes/auth.login-alias.ts"),
   route("kayit", "routes/auth.register-alias.ts"),
   route("kayit/basarili", "routes/auth.registration-success-alias.ts"),

@@ -26,37 +26,33 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery and guarded Google OAuth/A03 states are merged to `main`. The repository can be installed, built and tested without Neon, Google or a Cloudflare account.
+Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery, guarded Google OAuth/A03 states and route-level auth abuse controls are merged to `main`. The repository can be installed, built and tested without Neon, Google or a Cloudflare account.
 
-PR #21 adds the next issue #4 slice:
+The current explicit-account-linking branch adds:
 
-- per-action rate-limit budgets for registration, login, forgot-password, verification resend, reset-password and Google OAuth start;
-- Cloudflare client-address keys and `Retry-After` responses;
-- server-side Turnstile Siteverify with expected-action validation;
-- Turnstile widgets on account creation and recovery-sensitive forms;
-- local-only bypass when `APP_ENV=local`;
-- preview/production fail-closed behaviour when rate-limit or Turnstile configuration is unavailable;
-- separate public `TURNSTILE_SITE_KEY` and Worker-only `TURNSTILE_SECRET_KEY`;
-- route integration that preserves generic unknown-email recovery responses.
+- authenticated `/account/security` settings;
+- provider listing without access/refresh/id-token exposure;
+- current-password re-verification before Google link or unlink;
+- explicit Better Auth `link-social` initiation using the existing session;
+- same-email-only, no-profile-overwrite policy inherited from the auth configuration;
+- separate link/unlink rate-limit budgets;
+- last-login-method preservation before unlink;
+- immutable link/unlink audit records keyed to the internal auth account ID;
+- PostgreSQL verification for password/session gates, Google authorization redirect, pre-callback zero write, listing, unlink persistence and audit evidence.
 
-No fake rate-limit namespace, site key or secret is committed. Remote enforcement is not considered verified until real Cloudflare resources are provisioned and exercised in an isolated preview environment.
+The integration test does not claim a live Google callback. It uses dummy credentials to generate the authorization request, then inserts a provider-linked fixture to verify the post-callback account-management and audit path.
 
 ## Exact next tasks
 
-1. Merge PR #21 only after both permanent read-only CI jobs pass.
+1. Merge the explicit Google account-linking PR only after both permanent read-only CI jobs pass.
 2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
-3. Continue issue #4 in separate reviewable slices:
-   - explicit authenticated Google account linking and unlink safeguards;
-   - Cloudflare email dispatcher after sender authorization exists.
-4. Provision preview auth security resources before claiming remote readiness:
-   - create a Turnstile widget and configure its exact hostnames;
-   - add `TURNSTILE_SITE_KEY` as a non-secret runtime value;
-   - add `TURNSTILE_SECRET_KEY` as a Worker secret;
-   - create and bind `AUTH_RATE_LIMITER` with budgets matching the committed policy;
-   - test `429`, missing-token, invalid-token, action-mismatch and unavailable-service states;
-   - record only safe identifiers, secret names without values, evidence and rollback steps.
-5. Do not enable Google-only signup until required registration preferences can be persisted atomically for that path.
-6. Do not add business identity or workspace activation to Better Auth core tables. Those begin in #5.
+3. Keep issue #4 open for external delivery and remote evidence:
+   - Cloudflare email dispatcher after sender authorization exists;
+   - live Google linking callback using development credentials and the exact authorized redirect URI;
+   - real Turnstile and Rate Limiting verification in preview.
+4. Do not enable Google-only signup until required registration preferences can be persisted atomically for that path.
+5. Do not add business identity or workspace activation to Better Auth core tables. Those begin in #5.
+6. After repository-side #4 work is handed off, begin #5 as a separate business-identity domain slice.
 7. Continue in dependency order through #5–#10.
 
 ## Verification commands
@@ -83,21 +79,21 @@ npm run db:verify:auth
 npm run db:verify:registration
 npm run db:verify:recovery
 npm run db:verify:google
+npm run db:verify:google-linking
 npm run db:local:down
 ```
 
-`db:verify:google` uses CI-only dummy credentials to generate—but not complete—the Google authorization request. It checks provider gating, Google host, state, callback URI, minimal scopes, prompt, secret exclusion and zero identity/session writes before callback validation.
+`db:verify:google` verifies provider gating and authorization-request safety without contacting Google. `db:verify:google-linking` verifies authenticated explicit linking initiation, current-password confirmation, zero provider writes before callback, linked-method visibility, credential-preserving unlink and immutable audit evidence.
 
-The auth abuse-control unit suite checks local bypass, remote fail-closed decisions, stable client keys, exhausted limits, `Retry-After`, Turnstile secret isolation and expected-action matching. Local bypass is a development convenience, not evidence of remote enforcement.
+The auth abuse-control unit suite checks local bypass, remote fail-closed decisions, stable client keys, exhausted limits, `Retry-After`, Turnstile secret isolation and expected-action matching. Link/unlink actions have their own authenticated budgets.
 
 ## Known blockers
 
 - No Neon development database or deployed Hyperdrive configuration has been provisioned.
 - Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
 - Outbox records are produced, but Cloudflare Email Sending authorization and the dispatcher are not configured.
-- Real Google development credentials and authorized redirect URIs are not configured.
-- Explicit Google account linking remains open.
+- Real Google development credentials and authorized redirect URIs are not configured; live callback completion remains unverified.
 - Real Turnstile and Cloudflare Rate Limiting resources are not provisioned.
 - Cloudflare Images remains an account-level dependency for later media work.
 
-These blockers do not prevent local policy work, CI, local PostgreSQL tests or production builds. They do prevent claiming that remote auth protection or live OAuth is ready.
+These blockers do not prevent local policy work, CI, local PostgreSQL tests or production builds. They do prevent claiming that remote auth protection, live OAuth linking or external email delivery is ready.

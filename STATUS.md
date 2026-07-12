@@ -21,51 +21,53 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged transactional `user_preferences`, canonical A01/A02 entry forms and rollback verification through PR #17.
 - Merged A04–A07 email verification and password recovery, transactional auth email outbox intent and token lifecycle checks through PR #19.
 - Merged guarded Google OAuth policy, POST-only initiation and A03 callback states through PR #20.
+- Merged route-level rate limiting, Turnstile policy, local-only bypass and remote fail-closed auth controls through PR #21.
 - Kept fake Cloudflare resource IDs and credentials out of source control.
 
 ## In progress
 
-PR #21 advances issue #4 with:
+The explicit Google account-linking slice advances issue #4 with:
 
-- per-action budgets for registration, login, password recovery, verification resend, password reset and Google OAuth initiation;
-- Cloudflare client-address rate-limit keys;
-- server-side Turnstile Siteverify with expected-action validation;
-- route-level integration for A01, A02, A04, A06, A07 and Google OAuth start;
-- explicit local-only bypass and preview/production fail-closed behaviour;
-- public `429`/`503` error mapping without account enumeration;
-- separate public Turnstile site key and Worker-only secret;
-- unit coverage for exhausted limits, missing infrastructure, action mismatch and secret isolation.
+- authenticated `/account/security` settings;
+- current-password re-verification before link and unlink;
+- separate rate-limit budgets for link and unlink actions;
+- explicit `/api/auth/link-social` initiation with session cookies;
+- same-email-only policy inherited from the guarded Better Auth configuration;
+- linked-provider listing without exposing provider tokens;
+- unlink protection that preserves at least one login method;
+- immutable audit records for completed Google link and unlink changes;
+- PostgreSQL verification for session/password gates, provider redirect, pre-callback zero write, listing, unlink and audit evidence.
 
-No owner action is required for local development or CI. Remote protected auth forms remain unavailable until a real `AUTH_RATE_LIMITER`, `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` are configured.
+No owner action is required for local development or CI. A real Google callback still requires development credentials and an authorized redirect URI.
 
 ## Verification
 
 Current branch target:
 
 ```text
-npm run format:check           PASS
-npm run docs:check             PASS
-npm run config:check           PASS
-npm run typecheck              PASS
-npm run test:run               PASS
-npm run build                  PASS
-npm run db:check               PASS
-npm run db:verify              PASS
-npm run db:verify:auth         PASS
-npm run db:verify:registration PASS
-npm run db:verify:recovery     PASS
-npm run db:verify:google       PASS
+npm run format:check              PASS
+npm run docs:check                PASS
+npm run config:check              PASS
+npm run typecheck                 PASS
+npm run test:run                  PASS
+npm run build                     PASS
+npm run db:check                  PASS
+npm run db:verify                 PASS
+npm run db:verify:auth            PASS
+npm run db:verify:registration    PASS
+npm run db:verify:recovery        PASS
+npm run db:verify:google          PASS
+npm run db:verify:google-linking  PASS
 ```
 
-The abuse-control unit suite verifies local-only bypass, preview/production fail-closed behaviour, `Retry-After`, Turnstile action matching, server-side secret handling and that an exhausted rate limit prevents a Siteverify request.
+The Google-linking integration test uses dummy CI credentials only to produce the authorization request. It does not contact Google or claim a live callback. A provider-linked fixture is then used to verify account listing, credential preservation, unlink persistence and audit outcomes.
 
 ## Known issues and blockers
 
 - A Neon development database and deployed Hyperdrive configuration are not yet provisioned.
 - Hyperdrive pooling, caching and remote Worker connectivity cannot be verified until that remote configuration exists.
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
-- Real Google OAuth credentials and authorized redirect URIs are not configured.
-- Explicit authenticated Google account-linking UI remains to be built; implicit linking is intentionally blocked.
+- Real Google OAuth credentials and authorized redirect URIs are not configured, so live link callbacks remain unverified.
 - Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
 - Buyer/supplier workspace creation and commercial activation remain separate domain work in #5–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
@@ -75,9 +77,8 @@ These are remote integration or later feature blockers, not blockers for local p
 
 ## Next tasks
 
-1. Merge PR #21 only after permanent read-only application and PostgreSQL CI jobs pass.
-2. Add explicit authenticated Google account linking without silent same-email linking.
-3. Add the email outbox dispatcher only when Cloudflare Email Sending authorization exists; never log token-bearing action URLs.
-4. Provision Neon, deployed Hyperdrive, Google development credentials, Turnstile and the auth rate-limit binding before claiming remote auth readiness.
-5. Begin #5 business-identity verification as a separate domain slice after #4 repository work is closed or explicitly handed off.
-6. Continue Phase 1 in dependency order through #5–#9 and close it through integration gate #10.
+1. Merge the explicit Google account-linking PR only after permanent read-only application and PostgreSQL CI jobs pass.
+2. Add the email outbox dispatcher only when Cloudflare Email Sending authorization exists; never log token-bearing action URLs.
+3. Provision Neon, deployed Hyperdrive, Google development credentials, Turnstile and the auth rate-limit binding before claiming remote auth readiness.
+4. Hand off the remaining external auth integrations and begin #5 business-identity verification as a separate domain slice.
+5. Continue Phase 1 in dependency order through #5–#9 and close it through integration gate #10.

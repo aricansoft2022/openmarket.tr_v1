@@ -43,15 +43,18 @@ The current application exposes:
 - `/auth/verify-email/result` — A05 verification success/error state
 - `/auth/forgot-password` — A06 enumeration-safe reset request
 - `/auth/reset-password` — A07 reset form and token-error state
+- `/account/security` — authenticated provider list plus explicit Google link/unlink controls
 - `/giris`, `/kayit` and `/kayit/basarili` — legacy redirects to canonical auth routes
 - `/api/auth/*` — Better Auth resource handler, including `/api/auth/callback/google`
 - `/health` — no-cache service health response with validated core metadata
 
 Email verification and password-reset tokens are enabled. Their Turkish/English delivery contracts are written atomically to `outbox_events`; no external email sender is configured yet. Registration creates Better Auth identity data, `user_preferences` and the verification outbox event in one transaction; intended use does not activate a buyer or supplier workspace.
 
-Google OAuth is enabled only when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` contain non-placeholder values. The provider requests OpenID, email and profile scopes. Google-only signup is disabled so required registration preferences cannot be bypassed. Same-email accounts are not silently linked, cross-email linking is forbidden and Google profile data does not overwrite OpenMarket profile data. Explicit authenticated account linking remains a later flow.
+Google OAuth is enabled only when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` contain non-placeholder values. The provider requests OpenID, email and profile scopes. Google-only signup is disabled so required registration preferences cannot be bypassed. Same-email accounts are not silently linked, cross-email linking is forbidden and Google profile data does not overwrite OpenMarket profile data.
 
-Registration, login, password recovery, verification resend, reset-password and Google initiation pass through a shared abuse-control policy. Local development bypasses external security services only when `APP_ENV=local`. Preview and production require the real `AUTH_RATE_LIMITER`; registration and recovery-sensitive forms also require `TURNSTILE_SITE_KEY` and the Worker-only `TURNSTILE_SECRET_KEY`. Missing remote security infrastructure fails closed rather than silently accepting requests.
+Authenticated users may manage Google through `/account/security`. Link and unlink actions require the current password again, have separate rate-limit budgets and never expose provider tokens. Unlink is rejected when it would remove the last login method. Completed link and unlink changes create immutable audit records. A real provider callback still requires development Google credentials and an authorized redirect URI.
+
+Registration, login, password recovery, verification resend, reset-password, Google initiation and account-linking actions pass through a shared abuse-control policy. Local development bypasses external security services only when `APP_ENV=local`. Preview and production require the real `AUTH_RATE_LIMITER`; registration and recovery-sensitive forms also require `TURNSTILE_SITE_KEY` and the Worker-only `TURNSTILE_SECRET_KEY`. Missing remote security infrastructure fails closed rather than silently accepting requests.
 
 Wrangler locally emulates the configured private R2 bucket and background Queue. Hyperdrive remains intentionally unconfigured until a real development binding exists; no fake resource ID is committed. Read `RUNTIME_CONFIGURATION.md` before adding bindings or secrets.
 
@@ -67,12 +70,13 @@ npm run db:verify:auth
 npm run db:verify:registration
 npm run db:verify:recovery
 npm run db:verify:google
+npm run db:verify:google-linking
 npm run db:local:down
 ```
 
 `npm run db:verify` applies the committed Drizzle migrations, verifies the required audit indexes and proves that the database trigger rejects both UPDATE and DELETE operations on `audit_logs`.
 
-`npm run db:verify:auth` verifies Better Auth signup, hashed credential storage, verification outbox creation, verified signin and persisted sessions. `npm run db:verify:registration` verifies required preference/outbox atomicity and duplicate-signup non-destruction. `npm run db:verify:recovery` verifies the email-verification gate, generic unknown-email reset response, password reset, session revocation, token replay rejection and expiry handling. `npm run db:verify:google` verifies credential gating, the Google authorization URL, state, callback URI, minimal scopes, client-secret protection and that OAuth initiation creates no identity or session.
+`npm run db:verify:auth` verifies Better Auth signup, hashed credential storage, verification outbox creation, verified signin and persisted sessions. `npm run db:verify:registration` verifies required preference/outbox atomicity and duplicate-signup non-destruction. `npm run db:verify:recovery` verifies the email-verification gate, generic unknown-email reset response, password reset, session revocation, token replay rejection and expiry handling. `npm run db:verify:google` verifies credential gating, the Google authorization URL, state, callback URI, minimal scopes, client-secret protection and that OAuth initiation creates no identity or session. `npm run db:verify:google-linking` verifies explicit authenticated linking initiation, password confirmation, pre-callback zero write, provider listing, credential-preserving unlink and audit evidence.
 
 Use `npm run db:local:reset` only when you intentionally want to delete the local PostgreSQL volume. Use `npm run db:local:logs` to inspect startup problems.
 
@@ -86,7 +90,7 @@ npm run config:check
 npm run db:check
 ```
 
-GitHub Actions applies and verifies migrations, audit invariants, Better Auth persistence, transactional registration, auth recovery and Google OAuth policy against an isolated PostgreSQL service container on every pull request and `main` push. Unit tests also verify auth rate-limit decisions, Turnstile action matching, local-only bypass and remote fail-closed behaviour.
+GitHub Actions applies and verifies migrations, audit invariants, Better Auth persistence, transactional registration, auth recovery, Google OAuth policy and explicit Google account linking against an isolated PostgreSQL service container on every pull request and `main` push. Unit tests also verify auth rate-limit decisions, Turnstile action matching, local-only bypass and remote fail-closed behaviour.
 
 ## Delivery discipline
 
