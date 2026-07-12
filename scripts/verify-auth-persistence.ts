@@ -4,10 +4,7 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
 
-import {
-  createAuth,
-  type AuthEnvironment,
-} from "../app/lib/auth/create-auth.server";
+import { createAuth, type AuthEnvironment } from "../app/lib/auth/create-auth.server";
 import * as schema from "../app/lib/db/schema";
 
 const connectionString = process.env.DATABASE_URL;
@@ -26,8 +23,7 @@ try {
     const database = drizzle(client, { schema });
     const auth = createAuth(database, {
       HYPERDRIVE: { connectionString } as AuthEnvironment["HYPERDRIVE"],
-      BETTER_AUTH_SECRET:
-        "openmarket-local-auth-verification-secret-2026-07-12",
+      BETTER_AUTH_SECRET: "openmarket-local-auth-verification-secret-2026-07-12",
       BETTER_AUTH_URL: "http://localhost:3000",
     });
     const email = "auth.persistence@example.test";
@@ -62,11 +58,7 @@ try {
       `,
       [userId],
     );
-    assert.equal(
-      accountResult.rowCount,
-      1,
-      "Signup must persist one credential account.",
-    );
+    assert.equal(accountResult.rowCount, 1, "Signup must persist one credential account.");
     assert.equal(accountResult.rows[0]?.provider_id, "credential");
     assert.equal(accountResult.rows[0]?.account_id, userId);
     assert.notEqual(
@@ -91,16 +83,11 @@ try {
       `,
       [userId],
     );
-    assert(
-      (sessionResult.rowCount ?? 0) >= 1,
-      "Signup/signin must persist at least one session.",
-    );
+    assert((sessionResult.rowCount ?? 0) >= 1, "Signup/signin must persist at least one session.");
     assert(
       sessionResult.rows.every(
         (row) =>
-          typeof row.token === "string" &&
-          row.token.length > 0 &&
-          row.expires_at instanceof Date,
+          typeof row.token === "string" && row.token.length > 0 && row.expires_at instanceof Date,
       ),
       "Persisted sessions must have tokens and expiration timestamps.",
     );

@@ -5,10 +5,7 @@ import type { Database } from "~/lib/db/client.server";
 import { withDatabase } from "~/lib/db/client.server";
 import * as authSchema from "~/lib/db/schema/auth";
 
-export type AuthEnvironment = Pick<
-  Env,
-  "HYPERDRIVE" | "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL"
->;
+export type AuthEnvironment = Pick<Env, "HYPERDRIVE" | "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL">;
 
 export function createAuth(database: Database, env: AuthEnvironment) {
   return betterAuth({
