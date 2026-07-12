@@ -72,14 +72,14 @@ AssertionError [ERR_ASSERTION]: A preference constraint failure must reject the 
   generatedMessage: false,
   code: 'ERR_ASSERTION',
   actual: DrizzleQueryError: Failed query: insert into "user_preferences" ("user_id", "country", "preferred_language", "intended_use", "created_at", "updated_at") values ($1, $2, $3, $4, default, default)
-  params: 8e240e94-a6e6-44f5-93c0-d287ef1196ce,X,en,buyer
+  params: 335d011d-bff0-495a-a7f3-c8bff5c77573,X,en,buyer
       at NodePgPreparedQuery.queryWithCache (/home/runner/work/openmarket.tr_v1/openmarket.tr_v1/node_modules/src/pg-core/session.ts:73:11)
       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
       at async <anonymous> (/home/runner/work/openmarket.tr_v1/openmarket.tr_v1/app/lib/auth/registration.server.ts:83:7)
       ... 4 lines matching cause stack trace ...
       at async <anonymous> (/home/runner/work/openmarket.tr_v1/openmarket.tr_v1/scripts/verify-registration-flow.ts:68:3) {
     query: 'insert into "user_preferences" ("user_id", "country", "preferred_language", "intended_use", "created_at", "updated_at") values ($1, $2, $3, $4, default, default)',
-    params: [ '8e240e94-a6e6-44f5-93c0-d287ef1196ce', 'X', 'en', 'buyer' ],
+    params: [ '335d011d-bff0-495a-a7f3-c8bff5c77573', 'X', 'en', 'buyer' ],
     cause: error: new row for relation "user_preferences" violates check constraint "user_preferences_country_length_check"
         at /home/runner/work/openmarket.tr_v1/openmarket.tr_v1/node_modules/pg/lib/client.js:652:17
         at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
@@ -94,7 +94,7 @@ AssertionError [ERR_ASSERTION]: A preference constraint failure must reject the 
       length: 371,
       severity: 'ERROR',
       code: '23514',
-      detail: 'Failing row contains (8e240e94-a6e6-44f5-93c0-d287ef1196ce, X, en, buyer, 2026-07-12 18:06:25.831694+00, 2026-07-12 18:06:25.831694+00).',
+      detail: 'Failing row contains (335d011d-bff0-495a-a7f3-c8bff5c77573, X, en, buyer, 2026-07-12 18:07:26.842845+00, 2026-07-12 18:07:26.842845+00).',
       hint: undefined,
       position: undefined,
       internalPosition: undefined,
