@@ -1,6 +1,6 @@
 import { index, route, type RouteConfig } from "@react-router/dev/routes";
 
-export default [
+const routes = [
   index("routes/home.tsx"),
   route("health", "routes/health.ts"),
   route("auth/login", "routes/auth.login.tsx"),
@@ -15,8 +15,18 @@ export default [
   route("onboarding/workspaces", "routes/onboarding.workspaces.tsx"),
   route("onboarding/business-identity", "routes/onboarding.business-identity.tsx"),
   route("onboarding/business-identity/status", "routes/onboarding.business-identity-status.tsx"),
+  route(
+    "onboarding/business-identity/evidence",
+    "routes/onboarding.business-identity-evidence.tsx",
+  ),
+  route(
+    "onboarding/business-identity/evidence/:evidenceId/download",
+    "routes/onboarding.business-identity-evidence-download.ts",
+  ),
   route("giris", "routes/auth.login-alias.ts"),
   route("kayit", "routes/auth.register-alias.ts"),
   route("kayit/basarili", "routes/auth.registration-success-alias.ts"),
   route("api/auth/*", "routes/api.auth.$.ts"),
 ] satisfies RouteConfig;
+
+export default routes;

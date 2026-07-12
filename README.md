@@ -46,6 +46,8 @@ The current application exposes:
 - `/onboarding/workspaces` — A08 authenticated Buyer/Supplier/Both selection
 - `/onboarding/business-identity` — A09 business-identity submission and resubmission
 - `/onboarding/business-identity/status` — A10 pending/verified/rejected status timeline
+- `/onboarding/business-identity/evidence` — owner-authorized private manual-exception evidence management
+- `/onboarding/business-identity/evidence/:evidenceId/download` — owner-authorized private evidence download
 - `/account/security` — authenticated provider list plus explicit Google link/unlink controls
 - `/giris`, `/kayit` and `/kayit/basarili` — legacy redirects to canonical auth routes
 - `/api/auth/*` — Better Auth resource handler
@@ -55,7 +57,7 @@ Email verification and password-reset tokens are enabled. Their Turkish/English 
 
 Business identity is separate from authentication. A verified matching company-domain email may verify automatically; public-email domains require manual review, blocked domains are rejected and a separate company email remains pending. Buyer becomes active only after a verified business-identity review. A08 workspace selection may widen Buyer plus Supplier to Both but never silently removes a workspace.
 
-A09 currently records the application and explains manual review, but private document upload remains disabled until R2 authorization is implemented. A10 reads current database state, shows rejection reasons and permits resubmission only after rejection. Supplier activation remains separate.
+A09 records the application and explains manual review. A10 reads current database state, shows rejection reasons, permits resubmission only after rejection and links eligible manual-exception applications to private evidence management. Evidence bytes are stored in the private R2 binding with internal object keys and owner-only session checks; uploading evidence does not approve the review or activate Buyer/Supplier. Supplier activation remains separate.
 
 Google OAuth is enabled only when both credentials contain non-placeholder values. Google-only signup, implicit linking, cross-email linking and provider profile overwrite are disabled. Explicit link and unlink require an authenticated session plus current-password re-verification and preserve at least one login method.
 
@@ -78,10 +80,11 @@ npm run db:verify:google
 npm run db:verify:google-linking
 npm run db:verify:business-identity
 npm run db:verify:business-identity-onboarding
+npm run db:verify:business-identity-evidence
 npm run db:local:down
 ```
 
-The verification chain covers immutable audit behavior, Better Auth persistence, transactional registration, recovery tokens, Google policy/linking, business-identity transitions and the authenticated A08–A10 workflow with a real session cookie.
+The verification chain covers immutable audit behavior, Better Auth persistence, transactional registration, recovery tokens, Google policy/linking, business-identity transitions, the authenticated A08–A10 workflow and the private evidence lifecycle with a real session cookie and fake private R2 bucket.
 
 Use `npm run db:local:reset` only when you intentionally want to delete the local PostgreSQL volume. A future Neon development database will replace the local `DATABASE_URL` only for direct migrations and administrative scripts; Worker runtime traffic will use `HYPERDRIVE`.
 
