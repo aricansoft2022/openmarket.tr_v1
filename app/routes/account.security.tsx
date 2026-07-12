@@ -7,10 +7,7 @@ import {
   loadAccountSecurity,
   unlinkGoogleAccount,
 } from "~/lib/auth/account-linking.server";
-import {
-  enforceAuthRequest,
-  publicAbuseControlError,
-} from "~/lib/security/auth-abuse.server";
+import { enforceAuthRequest, publicAbuseControlError } from "~/lib/security/auth-abuse.server";
 
 import type { Route } from "./+types/account.security";
 
@@ -59,10 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
     return data<SecurityActionData>({ error: "Geçersiz hesap güvenliği işlemi." }, { status: 400 });
   }
   if (password.length < 8 || password.length > 128) {
-    return data<SecurityActionData>(
-      { passwordError: "Mevcut şifrenizi girin." },
-      { status: 400 },
-    );
+    return data<SecurityActionData>({ passwordError: "Mevcut şifrenizi girin." }, { status: 400 });
   }
 
   const abuseResult = await enforceAuthRequest({
@@ -87,7 +81,10 @@ export async function action({ request }: Route.ActionArgs) {
   if (response.status >= 300 && response.status < 400) {
     const location = response.headers.get("location");
     if (!location) {
-      return data<SecurityActionData>({ error: "Google yönlendirmesi doğrulanamadı." }, { status: 502 });
+      return data<SecurityActionData>(
+        { error: "Google yönlendirmesi doğrulanamadı." },
+        { status: 502 },
+      );
     }
     return redirect(location, { headers: response.headers });
   }
@@ -149,8 +146,14 @@ export default function AccountSecurity({ loaderData, actionData }: Route.Compon
           <ul className="account-method-list">
             {loaderData.methods.map((method) => (
               <li key={method.id}>
-                <strong>{method.providerId === "credential" ? "E-posta ve şifre" : "Google"}</strong>
-                <span>{method.providerId === "credential" ? "Birincil giriş yöntemi" : "Açıkça bağlandı"}</span>
+                <strong>
+                  {method.providerId === "credential" ? "E-posta ve şifre" : "Google"}
+                </strong>
+                <span>
+                  {method.providerId === "credential"
+                    ? "Birincil giriş yöntemi"
+                    : "Açıkça bağlandı"}
+                </span>
               </li>
             ))}
           </ul>
@@ -217,7 +220,8 @@ export default function AccountSecurity({ loaderData, actionData }: Route.Compon
                 : "Google bağlantısını kaldır"}
             </button>
             <p className="form-note">
-              Son giriş yöntemi kaldırılamaz. <Link to="/auth/forgot-password">Şifre erişimini yenileyin</Link>.
+              Son giriş yöntemi kaldırılamaz.{" "}
+              <Link to="/auth/forgot-password">Şifre erişimini yenileyin</Link>.
             </p>
           </Form>
         )}

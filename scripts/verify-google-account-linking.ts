@@ -86,7 +86,11 @@ try {
   assert.equal(initial.methods.length, 1);
   assert.equal(initial.methods[0]?.providerId, "credential");
 
-  const wrongPassword = await beginGoogleAccountLink(environment, authenticatedRequest, "wrong-password");
+  const wrongPassword = await beginGoogleAccountLink(
+    environment,
+    authenticatedRequest,
+    "wrong-password",
+  );
   assert.equal(wrongPassword.status, 403, "Linking must require the current password.");
 
   const linkResponse = await beginGoogleAccountLink(environment, authenticatedRequest, password);
