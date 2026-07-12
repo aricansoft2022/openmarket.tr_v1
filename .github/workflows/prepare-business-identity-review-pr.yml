@@ -35,7 +35,6 @@ jobs:
 
           transition = Path("app/lib/business-identity/transitions.server.ts")
           text = transition.read_text()
-
           replacements = [
               (
                   """    reason: string;
@@ -101,8 +100,15 @@ jobs:
                   path.write_text(source)
           PY
 
-      - name: Generate migration
-        run: npm run db:generate
+      - name: Generate migration and capture output
+        shell: bash
+        run: |
+          mkdir -p .debug
+          set +e
+          npm run db:generate 2>&1 | tee .debug/db-generate.log
+          status=${PIPESTATUS[0]}
+          echo "$status" > .debug/db-generate.status
+          exit 0
 
       - name: Format repository
         run: npm run format
@@ -114,3 +120,6 @@ jobs:
           git add -A
           git diff --cached --quiet || git commit -m "feat(identity): prepare reviewer authorization migration"
           git push origin HEAD:agent/business-identity-review-authorization
+
+      - name: Require migration generation success
+        run: test "$(cat .debug/db-generate.status)" = "0"
