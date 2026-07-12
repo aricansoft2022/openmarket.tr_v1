@@ -26,35 +26,34 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0 was merged to `main` through PR #1. The repository contains a working SSR foundation, health route, Cloudflare Worker entry, queue contract, Drizzle/Hyperdrive connection helper, immutable audit schema and delivery documentation. No user-facing marketplace domain has been implemented yet.
+Phase 0 and the runtime-configuration contract are merged to `main`. The repository contains a working SSR foundation, health route, Cloudflare Worker entry, queue contract, Drizzle/Hyperdrive connection helper, immutable audit schema and delivery documentation. No user-facing marketplace domain has been implemented yet.
 
-The repository can be installed, verified, built and run at foundation level without Neon or a Cloudflare account. Default local development emulates the configured private R2 bucket and background Queue. `config/runtime-contract.json` records which integrations remain external.
+The repository can be installed, verified, built and run at foundation level without Neon or a Cloudflare account. Default local development emulates the configured private R2 bucket and background Queue. An optional Docker Compose PostgreSQL service now provides repeatable migration and database-invariant checks without remote infrastructure.
 
-Dependencies are pinned and reproducibly locked. CI uses read-only repository permissions and exposes formatting, documentation, runtime contract, types, tests and build as separate gates.
+Dependencies are pinned and reproducibly locked. CI uses read-only repository permissions and exposes application verification and PostgreSQL migration verification as separate jobs.
 
 `DESIGN_REFERENCE.md` is reference-only. Do not copy the prototype hash router, mock authentication or mock data into production.
 
 ## Exact next tasks
 
-1. Merge the runtime-contract PR after green CI.
-2. Keep issue #2 open; its repository-side contract is prepared, but completion still requires a real development Neon database and Hyperdrive binding.
-3. When database-backed work is approved:
+1. Merge the local PostgreSQL verification PR after both CI jobs pass.
+2. Keep issue #2 open for the remaining real Neon and deployed Hyperdrive evidence.
+3. Start #3 as a narrow Better Auth schema and local persistence change:
+   - generate and review only the required identity/session migrations;
+   - keep the database lifecycle request-scoped;
+   - test persistence against isolated PostgreSQL;
+   - do not add registration screens or business activation logic.
+4. Before remote Worker readiness is claimed:
    - provision isolated development Neon and Hyperdrive resources;
    - verify runtime PostgreSQL access through Hyperdrive and migrations through a direct Neon URL;
-   - apply `drizzle/0000_fat_leo.sql` and prove update/delete attempts on `audit_logs` fail;
+   - repeat the audit immutability verification against development Neon;
    - record non-secret identifiers, secret names without values, verification output and rollback steps.
-4. Continue in dependency order:
-   - #3 Better Auth persistence and request-scoped auth factory
-   - #4 registration, verification and Google OAuth
-   - #5 business identity, workspace selection and buyer activation
-   - #6 supplier company profile, types and memberships
-   - #7 private company-document upload and review
-   - #8 supplier activation state machine
-   - #9 fixed roles, permissions and route guards
-   - #10 Phase 1 integration gate
-5. Do not mix external infrastructure provisioning, auth persistence and onboarding UI in one PR.
+5. Continue in dependency order through #4–#10.
+6. Do not mix external infrastructure provisioning, auth persistence and onboarding UI in one PR.
 
 ## Verification commands
+
+Foundation and application checks:
 
 ```bash
 npm run format:check
@@ -65,19 +64,23 @@ npm run test:run
 npm run build
 ```
 
-Database work additionally requires:
+Optional local PostgreSQL verification:
 
 ```bash
+cp .env.example .env
+npm run db:local:up
 npm run db:check
-npm run db:generate
+npm run db:verify
+npm run db:local:down
 ```
 
-Run `npm run db:migrate` only after checking the isolated development target.
+`npm run db:verify` applies committed migrations and runs its audit mutation checks inside a rolled-back transaction. `npm run db:local:reset` is destructive and should only be used to intentionally delete the local database volume.
 
 ## Known blockers
 
-- No Neon development database or Hyperdrive configuration has been provisioned.
-- Better Auth is installed but deliberately not configured until the request-scoped database lifecycle is tested.
+- No Neon development database or deployed Hyperdrive configuration has been provisioned.
+- Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
+- Better Auth is installed but not configured; schema and local persistence work may begin only after the local database gate merges.
 - Cloudflare Images and Email Sending require account-level provisioning outside the repository.
 
-These blockers do not prevent foundation development, local R2/Queue emulation, tests or production builds.
+These blockers do not prevent foundation development, local R2/Queue emulation, local PostgreSQL migration checks, tests or production builds.

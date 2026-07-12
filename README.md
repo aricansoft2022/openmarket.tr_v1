@@ -39,15 +39,22 @@ The foundation application exposes:
 
 Wrangler locally emulates the configured private R2 bucket and background Queue. Hyperdrive remains intentionally unconfigured until a real development binding exists; no fake resource ID is committed. Read `RUNTIME_CONFIGURATION.md` before adding bindings or secrets.
 
-Database migrations require a direct Neon connection in `.env`; runtime application traffic uses the `HYPERDRIVE` Worker binding.
+## Local database verification
+
+Docker is optional and is needed only when you want to run PostgreSQL migrations and database integration checks locally. The default compose database is isolated development data and does not require Neon.
 
 ```bash
 cp .env.example .env
-npm run db:generate
-npm run db:migrate
+npm run db:local:up
+npm run db:verify
+npm run db:local:down
 ```
 
-Do not run the migration command until an isolated development database has been provisioned and the target URL has been checked.
+`npm run db:verify` applies the committed Drizzle migrations, verifies the required audit indexes and proves that the database trigger rejects both UPDATE and DELETE operations on `audit_logs`.
+
+Use `npm run db:local:reset` only when you intentionally want to delete the local PostgreSQL volume. Use `npm run db:local:logs` to inspect startup problems.
+
+A future Neon development database will replace the local `DATABASE_URL` only for direct migrations and administrative scripts. Runtime Worker traffic will continue to use the `HYPERDRIVE` binding.
 
 ## Verification
 
@@ -56,6 +63,8 @@ npm run verify
 npm run config:check
 npm run db:check
 ```
+
+GitHub Actions also applies and verifies migrations against an isolated PostgreSQL service container on every pull request and `main` push.
 
 ## Delivery discipline
 
