@@ -44,10 +44,12 @@ assert(
 );
 assert(duplicateNames.length === 0, `Duplicate runtime names: ${duplicateNames}`);
 
-for (const name of names) {
+for (const entry of entries.filter(
+  (runtimeEntry) => runtimeEntry.source !== "wrangler-vars",
+)) {
   assert(
-    typeDeclarations.includes(`${name}:`),
-    `app/types/cloudflare.d.ts is missing ${name}.`,
+    typeDeclarations.includes(`${entry.name}:`),
+    `app/types/cloudflare.d.ts is missing ${entry.name}.`,
   );
 }
 
