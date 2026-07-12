@@ -24,7 +24,7 @@ describe("auth abuse controls", () => {
     expect(authRateLimitKey(request, "register")).toBe("auth:register:203.0.113.7");
   });
 
-  it("keeps strict budgets for account creation and recovery", () => {
+  it("keeps strict budgets for account creation, recovery and account linking", () => {
     expect(authRateLimitPolicies.register).toEqual({
       limit: 5,
       periodSeconds: 3600,
@@ -32,6 +32,16 @@ describe("auth abuse controls", () => {
     });
     expect(authRateLimitPolicies["forgot-password"].requiresTurnstile).toBe(true);
     expect(authRateLimitPolicies.login.requiresTurnstile).toBe(false);
+    expect(authRateLimitPolicies["account-link"]).toEqual({
+      limit: 5,
+      periodSeconds: 3600,
+      requiresTurnstile: false,
+    });
+    expect(authRateLimitPolicies["account-unlink"]).toEqual({
+      limit: 5,
+      periodSeconds: 3600,
+      requiresTurnstile: false,
+    });
   });
 
   it("fails closed when Turnstile is not configured", async () => {
