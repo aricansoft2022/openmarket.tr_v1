@@ -26,34 +26,37 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0, the runtime-configuration contract, local PostgreSQL verification and Better Auth persistence are merged to `main`. The repository can be installed, built and tested without Neon or a Cloudflare account. CI runs application verification and PostgreSQL migration/invariant verification as separate read-only jobs.
+Phase 0, the runtime-configuration contract, local PostgreSQL verification, Better Auth persistence and transactional registration are merged to `main`. The repository can be installed, built and tested without Neon or a Cloudflare account.
 
-The current #15 branch adds:
+PR #19 adds the next issue #4 slice:
 
-- `user_preferences`, separate from Better Auth core tables;
-- required country, Turkish/English UI language and Buyer/Supplier/Both intent;
-- one PostgreSQL transaction covering Better Auth signup and preference persistence;
-- A01 `/giris`, A02 `/kayit` and A03 `/kayit/basarili` route states;
-- server-side validation, loading/error states and responsive red-editorial form styling;
-- rollback evidence proving a failed preference write leaves no user or credential account.
+- A04 `/auth/verify-email` pending/resend state;
+- A05 `/auth/verify-email/result` success/token-error state;
+- A06 `/auth/forgot-password` enumeration-safe request state;
+- A07 `/auth/reset-password` password form and invalid-token state;
+- canonical `/auth/login` and `/auth/register`, with legacy Turkish redirects;
+- required email verification before credential signin;
+- transactional verification/reset delivery records in `outbox_events`;
+- Turkish and English email-rendering contracts;
+- one-hour, single-use token policy and session revocation after reset;
+- PostgreSQL evidence for verification, reset, replay and expiry behaviour.
 
-Authentication identity remains separate from business identity, buyer/supplier activation, memberships, roles and public contact data. Login email is never copied into public contact fields.
+Authentication identity remains separate from business identity, buyer/supplier activation, memberships, roles and public contact data. The outbox contains token-bearing action URLs and is private operational data; it must not be logged, returned by public routes or retained after its delivery/expiry policy allows deletion.
 
 ## Exact next tasks
 
-1. Merge #15 only after both CI jobs pass, including `npm run db:verify:registration`.
+1. Merge PR #19 only after both permanent read-only CI jobs pass.
 2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
-3. Continue #4 in separate reviewable slices:
-   - account email verification, resend and result routes;
-   - forgot/reset password with expiry and replay protection;
-   - Turkish/English transactional-email contracts;
-   - Google OAuth linking rules;
-   - Turnstile and route-level rate limiting.
+3. Continue issue #4 in separate reviewable slices:
+   - Google OAuth provider and account-linking rules;
+   - A03 `/auth/callback` loading/error/retry states;
+   - Turnstile and route-level rate limiting;
+   - Cloudflare email dispatcher after sender authorization exists.
 4. Do not add business identity or workspace activation to Better Auth core tables. Those begin in #5.
 5. Before remote Worker readiness is claimed:
    - provision isolated development Neon and Hyperdrive resources;
    - apply committed migrations through a direct Neon URL;
-   - verify `/api/auth/*`, `/giris` and `/kayit` through deployed Hyperdrive;
+   - verify `/api/auth/*` and A01–A07 through deployed Hyperdrive;
    - record safe identifiers, secret names without values, verification output and rollback steps.
 6. Continue in dependency order through #5–#10.
 
@@ -79,16 +82,18 @@ npm run db:check
 npm run db:verify
 npm run db:verify:auth
 npm run db:verify:registration
+npm run db:verify:recovery
 npm run db:local:down
 ```
 
-`db:verify:registration` performs one valid signup and then deliberately violates the country constraint. The first case must persist one preference row; the second must roll back the Better Auth user and credential account together.
+`db:verify:recovery` proves that unverified signin is blocked, verification completes once, unknown reset requests do not reveal account existence, reset revokes sessions, the old password stops working, the new password works, token replay fails and expired tokens produce only an error state.
 
 ## Known blockers
 
 - No Neon development database or deployed Hyperdrive configuration has been provisioned.
 - Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
-- Email delivery, Google OAuth and Turnstile credentials are not configured; they are not required for #15.
-- Cloudflare Images and Email Sending require account-level provisioning outside the repository.
+- Outbox records are produced, but Cloudflare Email Sending authorization and the dispatcher are not configured.
+- Google OAuth and Turnstile credentials are not configured.
+- Cloudflare Images remains an account-level dependency for later media work.
 
-These blockers do not prevent Better Auth schema, transactional local registration, A01/A02 UI, local PostgreSQL checks, tests or production builds.
+These blockers do not prevent auth schema work, transactional registration, verification/reset token lifecycle checks, local PostgreSQL tests or production builds.

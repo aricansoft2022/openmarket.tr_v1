@@ -28,7 +28,7 @@ Deleting a user cascades to sessions and accounts. Provider/account pairs and se
 - intended use constrained to `buyer`, `supplier` or `both`;
 - created and updated timestamps.
 
-Signup and `user_preferences` creation run in one PostgreSQL transaction. A preference constraint failure rolls back the Better Auth user, credential account and session writes. Intended use is onboarding direction only; it does not create or activate a buyer or supplier workspace.
+Signup, `user_preferences` creation and verification-email outbox intent run in one PostgreSQL transaction. A preference constraint failure rolls back the Better Auth user, credential account and outbox writes. Intended use is onboarding direction only; it does not create or activate a buyer or supplier workspace.
 
 OpenMarket extends authentication identity with additional separate domain tables:
 
@@ -125,6 +125,10 @@ A response line references the RFQ line it covers. Matching stores RFQ-specific 
 - `audit_logs`
 - `outbox_events`
 - `schema_migration_previews`
+
+`outbox_events` records transactional side-effect intent. Each row has an aggregate, event type, JSON payload, pending/processing/sent/failed state, attempts, availability, expiry and processing metadata. Dispatch queries use the status/availability index; aggregate and expiry indexes support traceability and cleanup.
+
+Authentication outbox payloads contain recipient, `tr`/`en` locale, a fixed template identifier and a token-bearing action URL. They are private operational data, not audit history. Public routes never read them, logs must never include their payload, and a dispatcher must delete or redact expired token-bearing payloads according to the retention policy after delivery evidence no longer requires them. An outbox row proves delivery intent, not successful email delivery.
 
 Support-link events contain only permitted placement, locale, timestamp, consent-eligible context and anonymous/authenticated state. They do not contain donation amounts or inferred donor status.
 

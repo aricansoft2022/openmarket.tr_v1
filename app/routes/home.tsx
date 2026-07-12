@@ -53,10 +53,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           yapılandıran, ücretsiz ve bağış destekli B2B platform.
         </p>
         <div className="hero__actions">
-          <a className="button button--primary" href="/kayit">
+          <a className="button button--primary" href="/auth/register">
             Ücretsiz hesap oluştur
           </a>
-          <a className="button" href="/giris">
+          <a className="button" href="/auth/login">
             Giriş yap
           </a>
           <a className="button" href="/health">

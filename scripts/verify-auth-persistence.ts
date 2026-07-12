@@ -34,6 +34,7 @@ try {
         email,
         password,
         name: "Auth Persistence Test",
+        callbackURL: "http://localhost:3000/auth/verify-email/result?verified=1",
       },
     });
 
@@ -67,6 +68,20 @@ try {
       "The stored password must not be plaintext.",
     );
 
+    const outboxResult = await client.query(
+      `
+        select event_type, payload
+        from outbox_events
+        where aggregate_id = $1
+      `,
+      [userId],
+    );
+    assert.equal(outboxResult.rowCount, 1, "Signup must enqueue one verification email.");
+    assert.equal(outboxResult.rows[0]?.event_type, "auth.email-verification.requested");
+    assert.equal(outboxResult.rows[0]?.payload?.recipient, email);
+
+    await client.query('update "user" set email_verified = true where id = $1', [userId]);
+
     const signIn = await auth.api.signInEmail({
       body: {
         email,
@@ -83,7 +98,7 @@ try {
       `,
       [userId],
     );
-    assert((sessionResult.rowCount ?? 0) >= 1, "Signup/signin must persist at least one session.");
+    assert((sessionResult.rowCount ?? 0) >= 1, "Verified signin must persist a session.");
     assert(
       sessionResult.rows.every(
         (row) =>
@@ -93,7 +108,7 @@ try {
     );
 
     console.log(
-      "Better Auth persistence verified: signup, credential account, signin and session storage passed.",
+      "Better Auth persistence verified: signup, credential account, verification outbox and verified signin storage passed.",
     );
   } finally {
     await client.query("ROLLBACK");

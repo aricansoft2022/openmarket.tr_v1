@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { data, Form, redirect, useNavigation } from "react-router";
+import { data, Form, Link, redirect, useNavigation } from "react-router";
 
 import { AuthShell, FieldError } from "~/components/auth-shell";
 import {
@@ -13,6 +13,11 @@ import type { Route } from "./+types/auth.login";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Giriş yap — OpenMarket.tr" }];
+}
+
+export function loader({ request }: Route.LoaderArgs) {
+  const resetComplete = new URL(request.url).searchParams.get("reset") === "success";
+  return { resetComplete };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -29,6 +34,10 @@ export async function action({ request }: Route.ActionArgs) {
       password,
     });
 
+    if (response.status === 403) {
+      return redirect("/auth/verify-email");
+    }
+
     if (!response.ok) {
       const responseErrors: LoginErrors = { form: await readAuthError(response) };
       return data({ errors: responseErrors, values }, { status: response.status });
@@ -43,7 +52,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function Login({ actionData }: Route.ComponentProps) {
+export default function Login({ actionData, loaderData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const submitting = navigation.state === "submitting";
   const errors = actionData?.errors;
@@ -53,9 +62,18 @@ export default function Login({ actionData }: Route.ComponentProps) {
       eyebrow="A01 · Hesap erişimi"
       title="Tekrar hoş geldiniz."
       description="Kayıt e-postanızla giriş yapın. Giriş e-postası, açık işletme iletişim bilgisi olarak yayımlanmaz."
-      alternate={{ label: "Henüz hesabınız yok mu?", linkLabel: "Kayıt olun", href: "/kayit" }}
+      alternate={{
+        label: "Henüz hesabınız yok mu?",
+        linkLabel: "Kayıt olun",
+        href: "/auth/register",
+      }}
     >
       <Form method="post" className="auth-form" noValidate>
+        {loaderData.resetComplete ? (
+          <div className="form-alert" role="status">
+            Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.
+          </div>
+        ) : null}
         {errors?.form ? (
           <div className="form-alert" role="alert">
             {errors.form}
@@ -95,7 +113,7 @@ export default function Login({ actionData }: Route.ComponentProps) {
           {submitting ? "Giriş yapılıyor…" : "Giriş yap"}
         </button>
         <p className="form-note">
-          Şifre sıfırlama ve Google ile giriş, sonraki güvenlik diliminde etkinleştirilecek.
+          <Link to="/auth/forgot-password">Şifrenizi mi unuttunuz?</Link>
         </p>
       </Form>
     </AuthShell>

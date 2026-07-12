@@ -81,3 +81,13 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Reason:** These fields are required at registration but are OpenMarket onboarding data, not authentication identity. Atomic persistence prevents a valid credential account from surviving when required onboarding data fails database validation.
 
 **Rejected:** Adding the fields to Better Auth's `user` table; writing preferences after signup in an unrelated transaction; treating intended use as immediate buyer or supplier activation.
+
+## 2026-07-12 — Authentication email intent is transactional and delivery-independent
+
+**Decision:** Better Auth verification and password-reset callbacks write a typed `outbox_events` record in the same PostgreSQL transaction as the triggering auth operation. The outbox stores recipient, locale, template identifier, token-bearing action URL and expiry; a later dispatcher performs external delivery.
+
+**Reason:** Registration or recovery must not report success while silently losing the required email side effect. Separating intent from delivery also allows local and CI verification without fake SMTP credentials or an unauthorized sender domain.
+
+**Security boundary:** Token-bearing action URLs are private operational data. They are never returned by public routes, included in logs or retained beyond the applicable delivery/expiry policy. Password reset revokes active sessions; unknown-email requests use a generic public response and produce no delivery event.
+
+**Rejected:** Calling an email provider directly inside the auth transaction; committing fake sender credentials; logging verification/reset URLs; treating an outbox record as proof that an email was delivered.

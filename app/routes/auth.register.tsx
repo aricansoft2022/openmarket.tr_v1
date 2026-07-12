@@ -2,11 +2,7 @@ import { env } from "cloudflare:workers";
 import { data, Form, redirect, useNavigation } from "react-router";
 
 import { AuthShell, FieldError } from "~/components/auth-shell";
-import {
-  readAuthError,
-  registerWithPreferences,
-  responseSessionHeaders,
-} from "~/lib/auth/registration.server";
+import { readAuthError, registerWithPreferences } from "~/lib/auth/registration.server";
 import { hasErrors, type RegistrationErrors, validateRegistration } from "~/lib/auth/registration";
 import type { IntendedUse, PreferredLanguage } from "~/lib/db/schema";
 
@@ -41,7 +37,7 @@ export async function action({ request }: Route.ActionArgs) {
       return data({ errors: responseErrors, values }, { status: response.status });
     }
 
-    return redirect("/kayit/basarili", { headers: responseSessionHeaders(response) });
+    return redirect("/auth/verify-email");
   } catch {
     const responseErrors: RegistrationErrors = {
       form: "Hesap ve tercihler kaydedilemedi. Hiçbir kısmi hesap bırakılmadı; yeniden deneyebilirsiniz.",
@@ -61,7 +57,11 @@ export default function Register({ actionData }: Route.ComponentProps) {
       eyebrow="A02 · Yeni hesap"
       title="Tekstili doğru verilerle buluşturalım."
       description="Hesabınız ücretsizdir. Alıcı veya tedarikçi seçimi yalnızca başlangıç çalışma alanınızı belirler; ticari yetki vermez."
-      alternate={{ label: "Zaten hesabınız var mı?", linkLabel: "Giriş yapın", href: "/giris" }}
+      alternate={{
+        label: "Zaten hesabınız var mı?",
+        linkLabel: "Giriş yapın",
+        href: "/auth/login",
+      }}
     >
       <Form method="post" className="auth-form" noValidate>
         {errors?.form ? (
@@ -201,7 +201,8 @@ export default function Register({ actionData }: Route.ComponentProps) {
           {submitting ? "Hesap oluşturuluyor…" : "Ücretsiz hesap oluştur"}
         </button>
         <p className="form-note">
-          Kayıt, işletme doğrulaması veya alıcı/tedarikçi aktivasyonu anlamına gelmez.
+          Kayıt tamamlandıktan sonra e-posta doğrulaması gerekir. Bu işlem işletme doğrulaması veya
+          alıcı/tedarikçi aktivasyonu anlamına gelmez.
         </p>
       </Form>
     </AuthShell>

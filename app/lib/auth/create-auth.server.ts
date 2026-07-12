@@ -4,6 +4,11 @@ import { betterAuth } from "better-auth";
 import type { Database } from "../db/client.server";
 import { withDatabase } from "../db/client.server";
 import * as authSchema from "../db/schema/auth";
+import {
+  EMAIL_VERIFICATION_TOKEN_TTL_SECONDS,
+  enqueueAuthEmail,
+  PASSWORD_RESET_TOKEN_TTL_SECONDS,
+} from "./auth-email-outbox.server";
 
 export type AuthEnvironment = Pick<Env, "HYPERDRIVE" | "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL">;
 
@@ -16,8 +21,37 @@ export function createAuth(database: Database, env: AuthEnvironment) {
       provider: "pg",
       schema: authSchema,
     }),
+    emailVerification: {
+      expiresIn: EMAIL_VERIFICATION_TOKEN_TTL_SECONDS,
+      sendOnSignUp: true,
+      sendOnSignIn: true,
+      autoSignInAfterVerification: false,
+      sendVerificationEmail: async ({ user, url }, request) => {
+        await enqueueAuthEmail(database, {
+          userId: user.id,
+          email: user.email,
+          actionUrl: url,
+          template: "auth.verify-email",
+          baseUrl: env.BETTER_AUTH_URL,
+          request,
+        });
+      },
+    },
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: true,
+      resetPasswordTokenExpiresIn: PASSWORD_RESET_TOKEN_TTL_SECONDS,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: async ({ user, url }, request) => {
+        await enqueueAuthEmail(database, {
+          userId: user.id,
+          email: user.email,
+          actionUrl: url,
+          template: "auth.reset-password",
+          baseUrl: env.BETTER_AUTH_URL,
+          request,
+        });
+      },
     },
     advanced: {
       database: {
