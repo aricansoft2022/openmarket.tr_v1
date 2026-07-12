@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -90,88 +90,3 @@ jobs:
 
       - name: Verify transactional registration preferences
         run: npm run db:verify:registration
-
-  diagnostics:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: openmarket
-          POSTGRES_USER: openmarket
-          POSTGRES_PASSWORD: openmarket
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U openmarket -d openmarket"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Capture diagnostics
-        shell: bash
-        run: |
-          set +e
-          echo "== TYPECHECK ==" > AUTH_DIAGNOSTICS.txt
-          npm run typecheck >> AUTH_DIAGNOSTICS.txt 2>&1
-          echo >> AUTH_DIAGNOSTICS.txt
-          echo "== MIGRATE ==" >> AUTH_DIAGNOSTICS.txt
-          npm run db:migrate >> AUTH_DIAGNOSTICS.txt 2>&1
-          echo >> AUTH_DIAGNOSTICS.txt
-          echo "== REGISTRATION ==" >> AUTH_DIAGNOSTICS.txt
-          npm run db:verify:registration >> AUTH_DIAGNOSTICS.txt 2>&1
-          exit 0
-
-      - name: Upload diagnostics
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-diagnostics
-          path: AUTH_DIAGNOSTICS.txt
-          if-no-files-found: error
-
-  format-fix:
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/auth-entry-screens'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          ref: agent/auth-entry-screens
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Format repository
-        run: npm run format
-
-      - name: Commit formatter output
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "style(auth): format registration slice"
-          git push origin HEAD:agent/auth-entry-screens
