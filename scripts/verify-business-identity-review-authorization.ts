@@ -285,7 +285,7 @@ try {
       select r.status, r.reviewed_by, b.status as buyer_status, a.effective_role
       from business_identity_reviews r
       join buyer_profiles b on b.user_id = r.user_id
-      join audit_logs a on a.resource_id = r.id
+      join audit_logs a on a.resource_id = r.id::text
         and a.action = 'business_identity.verified'
         and a.request_id = 'staff-review-decision'
       where r.id = $1
