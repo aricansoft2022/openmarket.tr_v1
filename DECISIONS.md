@@ -91,3 +91,13 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Security boundary:** Token-bearing action URLs are private operational data. They are never returned by public routes, included in logs or retained beyond the applicable delivery/expiry policy. Password reset revokes active sessions; unknown-email requests use a generic public response and produce no delivery event.
 
 **Rejected:** Calling an email provider directly inside the auth transaction; committing fake sender credentials; logging verification/reset URLs; treating an outbox record as proof that an email was delivered.
+
+## 2026-07-12 — Google OAuth never bypasses registration or silently links accounts
+
+**Decision:** Configure Google only when both credentials are present and non-placeholder. Request only OpenID, email and profile scopes. Disable Google-only signup, implicit same-email linking, cross-email linking and provider-driven profile overwrite. Start OAuth through a POST-only application route and surface provider results through A03.
+
+**Reason:** OpenMarket registration requires country, preferred language and Buyer/Supplier/Both intent in the same transaction as identity creation. A provider-created user would bypass those required fields. Silent same-email linking also creates account-takeover ambiguity and violates the explicit-linking acceptance criterion.
+
+**Follow-up:** A future authenticated account-settings flow may link Google only after re-authentication and explicit user confirmation. It must test duplicate-provider, unlink, last-login-method and audit behaviour before enabling Google-only signin for that account.
+
+**Rejected:** Enabling Google signup before preferences can be persisted atomically; treating matching email as consent to link; allowing different-email linking; sending the Google client secret to the browser; initiating OAuth from a GET route that can be prefetched.
