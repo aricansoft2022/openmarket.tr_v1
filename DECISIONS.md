@@ -121,3 +121,13 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Testing boundary:** CI may generate the link authorization request with dummy credentials and use a provider-linked database fixture for post-callback management checks. This proves local policy and persistence behavior but not a live Google callback.
 
 **Rejected:** Silent same-email linking; linking from an unauthenticated callback page; accepting a different provider email; unlinking the final method; exposing provider tokens in UI or audit records; claiming live OAuth readiness from a fixture-based test.
+
+## 2026-07-12 — Business identity and buyer activation are separate deterministic states
+
+**Decision:** Store domain policy, company-email verification, business-identity review and buyer activation in separate relational records. A public-email domain never grants automatic business identity; a blocked domain is rejected; an unlisted or approved-exception domain can verify automatically only when the submitted company email exactly matches the already verified account email. Activate Buyer only from a verified business-identity review.
+
+**Reason:** Account ownership does not prove commercial identity. Separating records preserves review evidence, resubmission and suspension history while preventing public-email accounts or supplier-only intent from becoming commercially active buyers. It also lets one account retain Buyer and Supplier workspace intent without coupling either workspace to Better Auth.
+
+**Transition boundary:** Workspace selection may widen Buyer plus Supplier to Both but must not silently remove an existing workspace. Separate company emails remain pending until their own verification path completes. Manual decisions accept only pending reviews, rejections require reasons and all submission/decision/intent changes are audited.
+
+**Rejected:** Treating account email verification as business identity for public providers; putting buyer state on the auth user; activating Buyer directly from intended use; overwriting a decided review; allowing application code to create active buyers without verified-review evidence.
