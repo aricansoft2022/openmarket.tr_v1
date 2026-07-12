@@ -14,10 +14,7 @@ import {
 } from "../db/schema";
 
 export type BusinessDomainClassification =
-  | "company_candidate"
-  | "company_exception"
-  | "public_email"
-  | "blocked";
+  "company_candidate" | "company_exception" | "public_email" | "blocked";
 
 export type BusinessIdentitySubmissionResult = {
   reviewId: string;
@@ -58,7 +55,8 @@ export function emailDomain(value: string): string {
 }
 
 export function mergeIntendedUse(current: IntendedUse, requested: IntendedUse): IntendedUse {
-  if (current === requested || current === "both" || requested === "both") return current === "both" ? current : requested;
+  if (current === requested || current === "both" || requested === "both")
+    return current === "both" ? current : requested;
   return "both";
 }
 
@@ -356,7 +354,10 @@ export async function decideBusinessIdentityReview(
     requestId?: string;
     now?: Date;
   },
-): Promise<{ reviewStatus: "verified" | "rejected"; buyerStatus: "not_requested" | "browser" | "active" }> {
+): Promise<{
+  reviewStatus: "verified" | "rejected";
+  buyerStatus: "not_requested" | "browser" | "active";
+}> {
   const now = input.now ?? new Date();
   const [review] = await database
     .select({
@@ -369,7 +370,10 @@ export async function decideBusinessIdentityReview(
     .where(eq(businessIdentityReviews.id, input.reviewId))
     .limit(1);
   if (!review) {
-    throw new BusinessIdentityTransitionError("REVIEW_NOT_FOUND", "Business identity review not found.");
+    throw new BusinessIdentityTransitionError(
+      "REVIEW_NOT_FOUND",
+      "Business identity review not found.",
+    );
   }
   if (review.status !== "pending") {
     throw new BusinessIdentityTransitionError(
@@ -408,7 +412,9 @@ export async function decideBusinessIdentityReview(
       reviewedAt: now,
       updatedAt: now,
     })
-    .where(and(eq(businessIdentityReviews.id, review.id), eq(businessIdentityReviews.status, "pending")));
+    .where(
+      and(eq(businessIdentityReviews.id, review.id), eq(businessIdentityReviews.status, "pending")),
+    );
 
   if (review.companyEmailId) {
     await database
@@ -433,9 +439,7 @@ export async function decideBusinessIdentityReview(
   await writeAudit(database, {
     actorId: input.reviewerId,
     action:
-      input.decision === "verified"
-        ? "business_identity.verified"
-        : "business_identity.rejected",
+      input.decision === "verified" ? "business_identity.verified" : "business_identity.rejected",
     resourceType: "business_identity_review",
     resourceId: review.id,
     oldValue: { status: "pending" },

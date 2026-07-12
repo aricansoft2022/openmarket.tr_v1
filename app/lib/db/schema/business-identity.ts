@@ -1,21 +1,9 @@
 import { sql } from "drizzle-orm";
-import {
-  check,
-  index,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { check, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
 
-export const emailDomainPolicyKinds = [
-  "public_email",
-  "blocked",
-  "company_exception",
-] as const;
+export const emailDomainPolicyKinds = ["public_email", "blocked", "company_exception"] as const;
 export type EmailDomainPolicyKind = (typeof emailDomainPolicyKinds)[number];
 
 export const companyEmailStatuses = ["pending", "verified", "rejected"] as const;
@@ -46,7 +34,10 @@ export const emailDomainPolicies = pgTable(
   },
   (table) => [
     index("email_domain_policies_kind_idx").on(table.kind, table.domain),
-    check("email_domain_policies_domain_lower_check", sql`${table.domain} = lower(${table.domain})`),
+    check(
+      "email_domain_policies_domain_lower_check",
+      sql`${table.domain} = lower(${table.domain})`,
+    ),
     check(
       "email_domain_policies_domain_length_check",
       sql`char_length(${table.domain}) between 3 and 253`,
