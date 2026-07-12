@@ -42,9 +42,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   try {
     const result = await submitOnboardingIdentity(env, request, values);
-    return redirect(
-      `/onboarding/business-identity/status?${onboardingResultQuery(result)}`,
-    );
+    return redirect(`/onboarding/business-identity/status?${onboardingResultQuery(result)}`);
   } catch (error) {
     if (error instanceof OnboardingActionError) {
       if (error.code === "UNAUTHENTICATED") throw redirect("/auth/login");
@@ -52,10 +50,7 @@ export async function action({ request }: Route.ActionArgs) {
         throw redirect("/onboarding/business-identity/status");
       }
     }
-    if (
-      error instanceof BusinessIdentityTransitionError &&
-      error.code === "ACCOUNT_NOT_VERIFIED"
-    ) {
+    if (error instanceof BusinessIdentityTransitionError && error.code === "ACCOUNT_NOT_VERIFIED") {
       throw redirect("/auth/verify-email");
     }
 
@@ -145,8 +140,8 @@ export default function BusinessIdentitySetup({ loaderData, actionData }: Route.
 
           <div className="continue-bar">
             <p>
-              Gönderim sonrası sonuç otomatik doğrulanabilir, manuel incelemeye alınabilir veya
-              alan adı politikasına göre reddedilebilir.
+              Gönderim sonrası sonuç otomatik doğrulanabilir, manuel incelemeye alınabilir veya alan
+              adı politikasına göre reddedilebilir.
             </p>
             <button className="button button--primary" type="submit" disabled={submitting}>
               {submitting ? "Başvuru gönderiliyor…" : "İş kimliği başvurusunu gönder"}
@@ -159,9 +154,17 @@ export default function BusinessIdentitySetup({ loaderData, actionData }: Route.
             <p className="eyebrow">Alan adı politikası</p>
             <h2>Sonuç nasıl belirlenir?</h2>
             <ul>
-              <li>Doğrulanmış hesap e-postanız aynı şirket alan adındaysa otomatik doğrulama mümkün olabilir.</li>
-              <li>Gmail gibi public e-posta sağlayıcıları yalnız hesabı doğrular; başvuru manuel incelemeye gider.</li>
-              <li>Farklı bir şirket e-postası kendi doğrulama akışı tamamlanana kadar beklemede kalır.</li>
+              <li>
+                Doğrulanmış hesap e-postanız aynı şirket alan adındaysa otomatik doğrulama mümkün
+                olabilir.
+              </li>
+              <li>
+                Gmail gibi public e-posta sağlayıcıları yalnız hesabı doğrular; başvuru manuel
+                incelemeye gider.
+              </li>
+              <li>
+                Farklı bir şirket e-postası kendi doğrulama akışı tamamlanana kadar beklemede kalır.
+              </li>
               <li>Engellenmiş alan adları ticari kimlik için kabul edilmez.</li>
             </ul>
           </section>

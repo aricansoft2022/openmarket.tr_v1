@@ -14,10 +14,7 @@ export default [
   route("account/security", "routes/account.security.tsx"),
   route("onboarding/workspaces", "routes/onboarding.workspaces.tsx"),
   route("onboarding/business-identity", "routes/onboarding.business-identity.tsx"),
-  route(
-    "onboarding/business-identity/status",
-    "routes/onboarding.business-identity-status.tsx",
-  ),
+  route("onboarding/business-identity/status", "routes/onboarding.business-identity-status.tsx"),
   route("giris", "routes/auth.login-alias.ts"),
   route("kayit", "routes/auth.register-alias.ts"),
   route("kayit/basarili", "routes/auth.registration-success-alias.ts"),

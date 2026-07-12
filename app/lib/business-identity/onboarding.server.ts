@@ -55,10 +55,7 @@ export type OnboardingState = {
 
 export class OnboardingActionError extends Error {
   constructor(
-    public readonly code:
-      | "UNAUTHENTICATED"
-      | "PENDING_REVIEW_EXISTS"
-      | "IDENTITY_ALREADY_VERIFIED",
+    public readonly code: "UNAUTHENTICATED" | "PENDING_REVIEW_EXISTS" | "IDENTITY_ALREADY_VERIFIED",
     message: string,
   ) {
     super(message);
@@ -208,7 +205,9 @@ export async function submitOnboardingIdentity(
         throw new OnboardingActionError("UNAUTHENTICATED", "Authentication is required.");
       }
 
-      await scoped.execute(sql`select ${user.id} from ${user} where ${user.id} = ${session.user.id} for update`);
+      await scoped.execute(
+        sql`select ${user.id} from ${user} where ${user.id} = ${session.user.id} for update`,
+      );
 
       const [openReview] = await scoped
         .select({ id: businessIdentityReviews.id })
