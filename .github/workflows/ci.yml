@@ -93,3 +93,6 @@ jobs:
 
       - name: Verify email verification and password recovery
         run: npm run db:verify:recovery
+
+      - name: Verify Google OAuth policy and authorization contract
+        run: npm run db:verify:google
