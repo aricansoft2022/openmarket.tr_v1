@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, agent/local-postgres-verification]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -84,3 +84,35 @@ jobs:
 
       - name: Apply and verify migrations
         run: npm run db:verify
+
+  format-local-postgres:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/local-postgres-verification'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout database branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/local-postgres-verification
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Format repository
+        run: npm run format
+
+      - name: Commit formatter output
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "style: format database verification"
+          git push origin HEAD:agent/local-postgres-verification
