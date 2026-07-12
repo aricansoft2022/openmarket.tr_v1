@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   prepare:
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/platform-staff-assignment-management'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout branch
         uses: actions/checkout@v4
         with:
-          ref: agent/platform-staff-assignment-management
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Use Node.js
@@ -101,7 +101,7 @@ The PostgreSQL, route and unit gates must prove:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet || git commit -m "docs(authz): prepare staff management verification"
-          git push origin HEAD:agent/platform-staff-assignment-management
+          git push origin HEAD:${{ github.head_ref }}
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   verify:
