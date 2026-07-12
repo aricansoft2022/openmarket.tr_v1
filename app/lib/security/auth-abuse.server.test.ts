@@ -31,6 +31,14 @@ describe("auth abuse controls", () => {
     expect(authRateLimitPolicies.login.requiresTurnstile).toBe(false);
   });
 
+  it("fails closed when the rate-limit binding is unavailable", async () => {
+    const request = new Request("https://openmarket.test/auth/login");
+
+    await expect(
+      enforceAuthAbuseControls({ request, action: "login" }),
+    ).resolves.toEqual({ ok: false, reason: "abuse-control-unavailable" });
+  });
+
   it("fails closed when Turnstile is not configured", async () => {
     await expect(
       verifyTurnstile({ secret: "replace-me", token: "response-token" }),
