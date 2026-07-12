@@ -1,9 +1,0 @@
-
-> openmarket-tr@0.0.0 format:check
-> prettier --check .
-
-Checking formatting...
-[[33mwarn[39m] app/lib/auth/create-auth.server.ts
-[[33mwarn[39m] app/lib/auth/google-oauth.ts
-[[33mwarn[39m] app/routes/auth.callback.tsx
-[[33mwarn[39m] Code style issues found in 3 files. Run Prettier with --write to fix.
