@@ -7,9 +7,7 @@ describe("route configuration", () => {
     const configuredRoutes = JSON.stringify(routes);
 
     expect(configuredRoutes).toContain('"path":"onboarding/business-identity/evidence"');
-    expect(configuredRoutes).toContain(
-      '"file":"routes/onboarding.business-identity-evidence.tsx"',
-    );
+    expect(configuredRoutes).toContain('"file":"routes/onboarding.business-identity-evidence.tsx"');
     expect(configuredRoutes).toContain(
       '"path":"onboarding/business-identity/evidence/:evidenceId/download"',
     );

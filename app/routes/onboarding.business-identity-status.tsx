@@ -116,9 +116,9 @@ export default function BusinessIdentityStatus({ loaderData }: Route.ComponentPr
             <p className="eyebrow">Manuel istisna belgeleri</p>
             <h2 id="evidence-heading">İnceleme kanıtlarını yönetin</h2>
             <p>
-              PDF, JPEG veya PNG belgelerinizi private depoya ekleyebilir, mevcut belgeleri indirebilir
-              ya da inceleme tamamlanmadan kaldırabilirsiniz. Belge yüklemek başvuruyu otomatik olarak
-              onaylamaz.
+              PDF, JPEG veya PNG belgelerinizi private depoya ekleyebilir, mevcut belgeleri
+              indirebilir ya da inceleme tamamlanmadan kaldırabilirsiniz. Belge yüklemek başvuruyu
+              otomatik olarak onaylamaz.
             </p>
             <Link className="button button--primary" to="/onboarding/business-identity/evidence">
               Belgeleri yönet
