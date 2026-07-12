@@ -51,6 +51,7 @@ The current application exposes:
 - `/admin/business-identity/reviews` — permissioned pending business-identity review queue
 - `/admin/business-identity/reviews/:reviewId` — permissioned review detail and reasoned verify/reject action
 - `/admin/business-identity/reviews/:reviewId/evidence/:evidenceId/download` — private Reviewer/Admin evidence download
+- `/admin/staff` — administrator-only fixed staff role grant, revoke and reactivation management
 - `/account/security` — authenticated provider list plus explicit Google link/unlink controls
 - `/giris`, `/kayit` and `/kayit/basarili` — legacy redirects to canonical auth routes
 - `/api/auth/*` — Better Auth resource handler
@@ -62,7 +63,9 @@ Business identity is separate from authentication. A verified matching company-d
 
 A09 records the application and explains manual review. A10 reads current database state, shows rejection reasons, permits resubmission only after rejection and links eligible manual-exception applications to private evidence management. Evidence bytes are stored in the private R2 binding with internal object keys and owner-only session checks; uploading evidence does not approve the review or activate Buyer/Supplier.
 
-Pending business-identity reviews use fixed platform staff assignments. Only active Compliance Reviewer, Platform Admin or Super Admin assignments can list, inspect or decide reviews and download private evidence. Buyer, Supplier, Product/RFQ Moderator and other unrelated states do not grant review authority. Staff cannot review their own application, revocation takes effect on the next request and privileged decisions record the effective role in immutable audit evidence. Staff grant/revoke management remains a separate Admin-only follow-up; Supplier activation remains separate.
+Pending business-identity reviews use fixed platform staff assignments. Only active Compliance Reviewer, Platform Admin or Super Admin assignments can list, inspect or decide reviews and download private evidence. Buyer, Supplier, Product/RFQ Moderator and other unrelated states do not grant review authority. Staff cannot review their own application, revocation takes effect on the next request and privileged decisions record the effective role in immutable audit evidence.
+
+Platform staff assignments are managed separately through `/admin/staff`. Platform Admin may grant or revoke only operational roles; Super Admin may also change administrator roles. The target must already have an account, every mutation requires a reason, nobody may manage their own assignment and revoked user/role rows are reactivated instead of duplicated. Grant and revoke actions create immutable audit evidence and affect authorization on the next request. Arbitrary custom roles and permission JSON are not supported.
 
 Google OAuth is enabled only when both credentials contain non-placeholder values. Google-only signup, implicit linking, cross-email linking and provider profile overwrite are disabled. Explicit link and unlink require an authenticated session plus current-password re-verification and preserve at least one login method.
 
@@ -87,10 +90,11 @@ npm run db:verify:business-identity
 npm run db:verify:business-identity-onboarding
 npm run db:verify:business-identity-evidence
 npm run db:verify:business-identity-review
+npm run db:verify:platform-staff-management
 npm run db:local:down
 ```
 
-The verification chain covers immutable audit behavior, Better Auth persistence, transactional registration, recovery tokens, Google policy/linking, business-identity transitions, the authenticated A08–A10 workflow, the private evidence lifecycle and fixed-role reviewer authorization with real session cookies and a fake private R2 bucket.
+The verification chain covers immutable audit behavior, Better Auth persistence, transactional registration, recovery tokens, Google policy/linking, business-identity transitions, the authenticated A08–A10 workflow, the private evidence lifecycle, fixed-role reviewer authorization and audited administrator-only staff assignment management with real session cookies and PostgreSQL.
 
 Use `npm run db:local:reset` only when you intentionally want to delete the local PostgreSQL volume. A future Neon development database will replace the local `DATABASE_URL` only for direct migrations and administrative scripts; Worker runtime traffic will use `HYPERDRIVE`.
 
