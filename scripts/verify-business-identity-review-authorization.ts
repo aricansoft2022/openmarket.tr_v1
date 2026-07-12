@@ -58,7 +58,11 @@ class FakePrivateBucket {
   }
 }
 
-function request(path: string, cookie?: string, requestId = `staff-review-${randomUUID()}`): Request {
+function request(
+  path: string,
+  cookie?: string,
+  requestId = `staff-review-${randomUUID()}`,
+): Request {
   const headers = new Headers({
     origin: baseUrl,
     "user-agent": "openmarket-staff-review-verification",

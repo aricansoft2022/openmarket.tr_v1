@@ -34,10 +34,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       if (error.code === "UNAUTHENTICATED") throw loginRedirect(reviewId);
       return data({ access: "denied" as const }, { status: 403 });
     }
-    if (
-      error instanceof BusinessIdentityTransitionError &&
-      error.code === "REVIEW_NOT_FOUND"
-    ) {
+    if (error instanceof BusinessIdentityTransitionError && error.code === "REVIEW_NOT_FOUND") {
       throw new Response("Pending review not found", { status: 404 });
     }
     throw error;
@@ -57,7 +54,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     return data<ActionData>({ error: "Geçerli bir karar seçin." }, { status: 400 });
   }
   if (typeof reviewNote !== "string" || reviewNote.trim().length < 3) {
-    return data<ActionData>({ error: "İnceleme notu en az 3 karakter olmalıdır." }, { status: 400 });
+    return data<ActionData>(
+      { error: "İnceleme notu en az 3 karakter olmalıdır." },
+      { status: 400 },
+    );
   }
   if (
     decision === "rejected" &&
@@ -141,7 +141,8 @@ export default function BusinessIdentityReviewDetail({
           <p className="eyebrow">İş kimliği · Bekleyen inceleme</p>
           <h1>{review.companyName}</h1>
           <p>
-            Etkin rol: <strong>{loaderData.effectiveRole}</strong> · Gönderim: {formatDate(review.submittedAt)}
+            Etkin rol: <strong>{loaderData.effectiveRole}</strong> · Gönderim:{" "}
+            {formatDate(review.submittedAt)}
           </p>
         </div>
         <Link className="button" to="/admin/business-identity/reviews">
@@ -196,7 +197,8 @@ export default function BusinessIdentityReviewDetail({
                   <div>
                     <strong>{file.originalFilename}</strong>
                     <span>
-                      {formatBytes(file.sizeBytes)} · {file.mimeType} · SHA-256 {file.sha256?.slice(0, 12)}…
+                      {formatBytes(file.sizeBytes)} · {file.mimeType} · SHA-256{" "}
+                      {file.sha256?.slice(0, 12)}…
                     </span>
                   </div>
                   <Link
@@ -217,8 +219,8 @@ export default function BusinessIdentityReviewDetail({
         <p className="eyebrow">Gerekçeli karar</p>
         <h2>İncelemeyi sonuçlandırın</h2>
         <p>
-          Onay Buyer aktivasyonunu yalnızca Buyer niyeti varsa açar. Supplier aktivasyonu bu karardan
-          bağımsızdır.
+          Onay Buyer aktivasyonunu yalnızca Buyer niyeti varsa açar. Supplier aktivasyonu bu
+          karardan bağımsızdır.
         </p>
         <Form method="post" className="auth-form">
           <div className="field-group">

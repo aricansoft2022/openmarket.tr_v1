@@ -22,7 +22,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   } catch (error) {
     if (error instanceof StaffAuthorizationError) {
       if (error.code === "UNAUTHENTICATED") {
-        throw redirect(`/auth/login?returnTo=${encodeURIComponent("/admin/business-identity/reviews")}`);
+        throw redirect(
+          `/auth/login?returnTo=${encodeURIComponent("/admin/business-identity/reviews")}`,
+        );
       }
       return data({ access: "denied" as const }, { status: 403 });
     }
@@ -82,7 +84,9 @@ export default function BusinessIdentityReviewQueue({ loaderData }: Route.Compon
         <section className="staff-review__empty">
           <p className="eyebrow">Kuyruk boş</p>
           <h2>Bekleyen başvuru yok.</h2>
-          <p>Yeni bir manuel istisna veya ayrı şirket e-postası başvurusu geldiğinde burada görünür.</p>
+          <p>
+            Yeni bir manuel istisna veya ayrı şirket e-postası başvurusu geldiğinde burada görünür.
+          </p>
         </section>
       ) : (
         <div className="staff-review__table-wrap">

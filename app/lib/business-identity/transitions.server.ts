@@ -88,11 +88,12 @@ async function writeAudit(
     newValue?: unknown;
     reason: string;
     requestId?: string;
+    effectiveRole?: string;
   },
 ) {
   await database.insert(auditLogs).values({
     actorId: input.actorId,
-    effectiveRole: "authenticated",
+    effectiveRole: input.effectiveRole ?? "authenticated",
     action: input.action,
     resourceType: input.resourceType,
     resourceId: input.resourceId,
@@ -348,6 +349,7 @@ export async function decideBusinessIdentityReview(
   input: {
     reviewId: string;
     reviewerId: string;
+    effectiveRole: string;
     decision: "verified" | "rejected";
     reviewNote: string;
     rejectionReason?: string;
@@ -438,6 +440,7 @@ export async function decideBusinessIdentityReview(
 
   await writeAudit(database, {
     actorId: input.reviewerId,
+    effectiveRole: input.effectiveRole,
     action:
       input.decision === "verified" ? "business_identity.verified" : "business_identity.rejected",
     resourceType: "business_identity_review",

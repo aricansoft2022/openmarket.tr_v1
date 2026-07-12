@@ -144,6 +144,7 @@ try {
   const manualDecision = await decideBusinessIdentityReview(database, {
     reviewId: publicResult.reviewId,
     reviewerId,
+    effectiveRole: "compliance_reviewer",
     decision: "verified",
     reviewNote: "Manual business identity evidence approved.",
     requestId: "identity-public-approved",
@@ -155,6 +156,7 @@ try {
     decideBusinessIdentityReview(database, {
       reviewId: publicResult.reviewId,
       reviewerId,
+      effectiveRole: "compliance_reviewer",
       decision: "rejected",
       reviewNote: "Second decision must fail.",
       rejectionReason: "Already decided",

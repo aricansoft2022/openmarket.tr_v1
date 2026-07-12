@@ -43,10 +43,7 @@ export const platformStaffAssignments = pgTable(
       "platform_staff_assignments_role_check",
       sql`${table.role} in ('super_admin', 'platform_admin', 'catalogue_content_editor', 'compliance_reviewer', 'product_rfq_moderator', 'privacy_support_manager')`,
     ),
-    check(
-      "platform_staff_assignments_status_check",
-      sql`${table.status} in ('active', 'revoked')`,
-    ),
+    check("platform_staff_assignments_status_check", sql`${table.status} in ('active', 'revoked')`),
     check(
       "platform_staff_assignments_assignment_reason_check",
       sql`char_length(trim(${table.assignmentReason})) >= 3`,
