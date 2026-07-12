@@ -19,55 +19,63 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged optional local PostgreSQL and CI migration/audit-invariant verification through PR #13.
 - Merged Better Auth core schema, request-scoped Drizzle adapter, `/api/auth/*` handler and signup/signin persistence verification through PR #14.
 - Merged transactional `user_preferences`, canonical A01/A02 entry forms and rollback verification through PR #17.
+- Merged A04–A07 email verification and password recovery, transactional auth email outbox intent and token lifecycle checks through PR #19.
 - Kept fake Cloudflare resource IDs and credentials out of source control.
 
 ## In progress
 
-PR #19 advances issue #4 with:
+PR #20 advances issue #4 with:
 
-- canonical A04–A07 verification and password-recovery routes;
-- required email verification before email/password signin;
-- transactional `outbox_events` for Turkish/English verification and reset delivery contracts;
-- one-hour, single-use verification/reset tokens;
-- password-reset session revocation;
-- enumeration-safe unknown-email reset behaviour;
-- migration `drizzle/0003_thankful_scrambler.sql` and PostgreSQL lifecycle verification.
+- Google provider readiness that requires both real credentials;
+- POST-only `/auth/google` initiation and A03 `/auth/callback` states;
+- OpenID, email and profile scopes only;
+- disabled Google-only signup so required registration preferences cannot be bypassed;
+- disabled implicit and cross-email account linking;
+- no Google profile overwrite of OpenMarket profile data;
+- PostgreSQL-backed verification of authorization URL, state, callback URI, scopes, secret protection and zero pre-callback identity/session writes.
 
-No owner action is required for the current local or CI work.
+No owner action is required for the current local or CI work. A live Google login cannot be completed until real development credentials and authorized redirect URIs exist.
 
 ## Verification
 
-Current branch evidence:
+Current branch target:
 
 ```text
-npm run format:check          PASS
-npm run docs:check            PASS
-npm run config:check          PASS
-npm run db:check              PASS
-npm run db:verify             PASS
-npm run db:verify:auth        PASS
+npm run format:check           PASS
+npm run docs:check             PASS
+npm run config:check           PASS
+npm run typecheck              PASS
+npm run test:run               PASS
+npm run build                  PASS
+npm run db:check               PASS
+npm run db:verify              PASS
+npm run db:verify:auth         PASS
 npm run db:verify:registration PASS
-npm run db:verify:recovery    PASS
+npm run db:verify:recovery     PASS
+npm run db:verify:google       PASS
 ```
 
-The latest PostgreSQL CI job passed migration application, immutable audit checks, Better Auth persistence, registration atomicity and the full verification/reset lifecycle. Application type/build verification must pass again after the final TypeScript fixes and read-only CI restoration.
+The Google policy integration check uses dummy CI-only values to generate the Better Auth authorization URL without contacting Google. It verifies that the browser URL targets Google, contains state and the expected callback/scopes, excludes the client secret and creates no user, account or session before callback validation.
 
 ## Known issues and blockers
 
 - A Neon development database and deployed Hyperdrive configuration are not yet provisioned.
 - Hyperdrive pooling, caching and remote Worker connectivity cannot be verified until that remote configuration exists.
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
-- Google OAuth, A03 callback handling, Turnstile and route-level rate limiting remain intentionally deferred within #4.
+- Real Google OAuth credentials and authorized redirect URIs are not configured.
+- Explicit authenticated Google account-linking UI remains to be built; implicit linking is intentionally blocked.
+- Turnstile and route-level rate limiting remain open within #4.
 - Buyer/supplier workspace creation and commercial activation remain separate domain work in #5–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
 - The static prototype remains a reference and does not replace production accessibility or responsive validation.
 
-These are later integration or deployment blockers, not blockers for local verification, token lifecycle tests or A01–A07 UI development.
+These are later integration or deployment blockers, not blockers for local policy validation, A03 UI states or CI authorization-contract tests.
 
 ## Next tasks
 
-1. Merge PR #19 only after clean read-only application and PostgreSQL CI jobs pass.
-2. Add the email outbox dispatcher only when Cloudflare Email Sending authorization is available; never log token-bearing action URLs.
-3. Continue #4 with Google OAuth account-linking, A03 callback states, Turnstile and route-level rate limiting.
-4. Provision Neon and deployed Hyperdrive before claiming remote Worker database readiness.
-5. Continue Phase 1 in dependency order through #5–#9 and close it through integration gate #10.
+1. Merge PR #20 only after permanent read-only application and PostgreSQL CI jobs pass.
+2. Add explicit authenticated Google account linking without silent same-email linking.
+3. Add Turnstile and route-level rate limiting for abuse-sensitive auth actions.
+4. Add the email outbox dispatcher only when Cloudflare Email Sending authorization exists; never log token-bearing action URLs.
+5. Provision Neon, deployed Hyperdrive and real Google development credentials before claiming remote auth readiness.
+6. Continue Phase 1 in dependency order through #5–#9 and close it through integration gate #10.
