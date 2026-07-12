@@ -49,7 +49,7 @@ No arbitrary custom roles, permission JSON or delegation model is introduced.
 
 ## Verification
 
-Current PR #28 branch target:
+GitHub Actions run `29211331029` passed the complete PostgreSQL chain, including `db:verify:platform-staff-management`. The application job reached only the expected formatting failure before the branch preparation pass; final clean application and database CI remain required.
 
 ```text
 npm run format:check                              pending final CI
@@ -58,21 +58,21 @@ npm run config:check                              pending final CI
 npm run typecheck                                 pending final CI
 npm run test:run                                  pending final CI
 npm run build                                     pending final CI
-npm run db:check                                  pending final CI
-npm run db:verify                                 pending final CI
-npm run db:verify:auth                            pending final CI
-npm run db:verify:registration                    pending final CI
-npm run db:verify:recovery                        pending final CI
-npm run db:verify:google                          pending final CI
-npm run db:verify:google-linking                  pending final CI
-npm run db:verify:business-identity               pending final CI
-npm run db:verify:business-identity-onboarding    pending final CI
-npm run db:verify:business-identity-evidence      pending final CI
-npm run db:verify:business-identity-review        pending final CI
-npm run db:verify:platform-staff-management       pending final CI
+npm run db:check                                  preliminary PASS
+npm run db:verify                                 preliminary PASS
+npm run db:verify:auth                            preliminary PASS
+npm run db:verify:registration                    preliminary PASS
+npm run db:verify:recovery                        preliminary PASS
+npm run db:verify:google                          preliminary PASS
+npm run db:verify:google-linking                  preliminary PASS
+npm run db:verify:business-identity               preliminary PASS
+npm run db:verify:business-identity-onboarding    preliminary PASS
+npm run db:verify:business-identity-evidence      preliminary PASS
+npm run db:verify:business-identity-review        preliminary PASS
+npm run db:verify:platform-staff-management       preliminary PASS
 ```
 
-The new staff-management gate must prove administrator-only access, hierarchy enforcement, self-management denial, exact-account grant, duplicate protection, revoke/reactivate lifecycle, immediate permission changes and effective-role audit evidence.
+The new staff-management gate proves administrator-only access, hierarchy enforcement, self-management denial, exact-account grant, duplicate protection, revoke/reactivate lifecycle, immediate permission changes and effective-role audit evidence.
 
 ## Known issues and blockers
 
