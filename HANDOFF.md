@@ -4,7 +4,7 @@
 
 Read, in order:
 
-1. `spec.md`
+1. Run `npm run spec:materialize` and read `spec.full.md`
 2. `STATUS.md`
 3. `DECISIONS.md`
 4. `ARCHITECTURE.md`
@@ -15,7 +15,8 @@ Then inspect the current branch and run:
 
 ```bash
 node --version
-npm ci
+npm install
+npm run spec:materialize
 npm run verify
 ```
 

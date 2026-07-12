@@ -4,7 +4,7 @@ OpenMarket.tr is a free, donation-supported B2B directory and RFQ platform for h
 
 ## Source order
 
-1. `spec.md` — product source of truth, version 2.1
+1. `spec.md` — version 2.1 source manifest; run `npm run spec:materialize` for the exact readable source
 2. `DECISIONS.md` — accepted product and architecture decisions
 3. `ARCHITECTURE.md` and `DATA_MODEL.md` — implementation boundaries
 4. `STATUS.md` and `HANDOFF.md` — current execution state
@@ -25,7 +25,8 @@ OpenMarket.tr is a free, donation-supported B2B directory and RFQ platform for h
 Requirements: Node.js 24 and npm.
 
 ```bash
-npm ci
+npm install
+npm run spec:materialize
 npm run dev
 ```
 

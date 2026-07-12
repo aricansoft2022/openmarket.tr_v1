@@ -10,7 +10,7 @@ Phase 0 — Foundation.
 
 ## Completed
 
-- Confirmed the repository was empty and established the version 2.1 specification as source of truth.
+- Confirmed the repository was empty and preserved the exact version 2.1 specification as a SHA-verified source artifact referenced by `spec.md`.
 - Extracted the uploaded static prototype into `DESIGN_REFERENCE.md` as a non-production visual reference.
 - Added the React Router v8 + Cloudflare Workers TypeScript scaffold.
 - Added design tokens matching the red editorial reference direction without importing prototype runtime code.

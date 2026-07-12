@@ -8,3 +8,6 @@ spec.md
 reference/frontend-prototype
 
 drizzle/meta
+
+.bootstrap/spec.gz.b64.part-*
+spec.full.md

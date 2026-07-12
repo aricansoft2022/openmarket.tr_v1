@@ -13,3 +13,5 @@ coverage/
 *.tsbuildinfo
 worker-configuration.d.ts
 npm-debug.log*
+
+spec.full.md
