@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+    outputs:
+      prepared_sha: ${{ steps.prepared.outputs.sha }}
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
@@ -93,19 +95,24 @@ The PostgreSQL, route and unit gates must prove:
         run: npm run format
 
       - name: Commit prepared files
+        id: prepared
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet || git commit -m "docs(authz): prepare staff management verification"
           git push origin HEAD:agent/platform-staff-assignment-management
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   verify:
+    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout
+      - name: Checkout prepared commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.prepared_sha }}
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -135,6 +142,7 @@ The PostgreSQL, route and unit gates must prove:
         run: npm run build
 
   database:
+    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -154,8 +162,10 @@ The PostgreSQL, route and unit gates must prove:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - name: Checkout
+      - name: Checkout prepared commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.prepared_sha }}
 
       - name: Use Node.js
         uses: actions/setup-node@v4
