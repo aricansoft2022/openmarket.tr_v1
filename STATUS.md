@@ -47,29 +47,29 @@ No staff self-service grant/revoke surface is introduced. Buyer, Supplier and Mo
 
 ## Verification
 
-Current clean branch target:
+GitHub Actions run `29210967065` passed both permanent jobs on the clean branch head:
 
 ```text
-npm run format:check                              pending final CI
-npm run docs:check                                pending final CI
-npm run config:check                              pending final CI
-npm run typecheck                                 pending final CI
-npm run test:run                                  pending final CI
-npm run build                                     pending final CI
-npm run db:check                                  pending final CI
-npm run db:verify                                 pending final CI
-npm run db:verify:auth                            pending final CI
-npm run db:verify:registration                    pending final CI
-npm run db:verify:recovery                        pending final CI
-npm run db:verify:google                          pending final CI
-npm run db:verify:google-linking                  pending final CI
-npm run db:verify:business-identity               pending final CI
-npm run db:verify:business-identity-onboarding    pending final CI
-npm run db:verify:business-identity-evidence      pending final CI
-npm run db:verify:business-identity-review        pending final CI
+npm run format:check                              PASS
+npm run docs:check                                PASS
+npm run config:check                              PASS
+npm run typecheck                                 PASS
+npm run test:run                                  PASS
+npm run build                                     PASS
+npm run db:check                                  PASS
+npm run db:verify                                 PASS
+npm run db:verify:auth                            PASS
+npm run db:verify:registration                    PASS
+npm run db:verify:recovery                        PASS
+npm run db:verify:google                          PASS
+npm run db:verify:google-linking                  PASS
+npm run db:verify:business-identity               PASS
+npm run db:verify:business-identity-onboarding    PASS
+npm run db:verify:business-identity-evidence      PASS
+npm run db:verify:business-identity-review        PASS
 ```
 
-The new authorization gate must prove fixed-role resolution, Moderator and revoked-assignment denial, self-review denial, safe private evidence access, reasoned decisions, Buyer activation, effective-role audit evidence and revocation on the next request.
+The authorization gate proves fixed-role resolution, Moderator and revoked-assignment denial, self-review denial, safe private evidence access, reasoned decisions, Buyer activation, effective-role audit evidence and revocation on the next request.
 
 ## Known issues and blockers
 
@@ -87,7 +87,7 @@ These are remote integration or later feature blockers, not blockers for local p
 
 ## Next tasks
 
-1. Merge PR #27 only after both permanent read-only CI jobs pass on the clean branch head.
+1. Merge PR #27; both permanent read-only CI jobs pass on the clean branch head.
 2. Add audited Admin-only staff assignment grant/revoke management without self-service escalation.
 3. Add company-email verification delivery after the email dispatcher is authorized.
 4. Define evidence scanning, quarantine and retention cleanup before claiming production-ready review.
