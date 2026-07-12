@@ -7,7 +7,11 @@ import {
   registerWithPreferences,
   responseSessionHeaders,
 } from "~/lib/auth/registration.server";
-import { hasErrors, validateRegistration } from "~/lib/auth/registration";
+import {
+  hasErrors,
+  type RegistrationErrors,
+  validateRegistration,
+} from "~/lib/auth/registration";
 import type { IntendedUse, PreferredLanguage } from "~/lib/db/schema";
 
 import type { Route } from "./+types/auth.register";
@@ -35,23 +39,18 @@ export async function action({ request }: Route.ActionArgs) {
     });
 
     if (!response.ok) {
-      return data(
-        { errors: { form: await readAuthError(response) }, values },
-        { status: response.status },
-      );
+      const responseErrors: RegistrationErrors = {
+        form: await readAuthError(response),
+      };
+      return data({ errors: responseErrors, values }, { status: response.status });
     }
 
     return redirect("/kayit/basarili", { headers: responseSessionHeaders(response) });
   } catch {
-    return data(
-      {
-        errors: {
-          form: "Hesap ve tercihler kaydedilemedi. Hiçbir kısmi hesap bırakılmadı; yeniden deneyebilirsiniz.",
-        },
-        values,
-      },
-      { status: 503 },
-    );
+    const responseErrors: RegistrationErrors = {
+      form: "Hesap ve tercihler kaydedilemedi. Hiçbir kısmi hesap bırakılmadı; yeniden deneyebilirsiniz.",
+    };
+    return data({ errors: responseErrors, values }, { status: 503 });
   }
 }
 
