@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, agent/better-auth-persistence]
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -87,59 +87,3 @@ jobs:
 
       - name: Verify Better Auth persistence
         run: npm run db:verify:auth
-
-  capture-auth-failure:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/better-auth-persistence'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: openmarket
-          POSTGRES_USER: openmarket
-          POSTGRES_PASSWORD: openmarket
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U openmarket -d openmarket"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    steps:
-      - name: Checkout auth branch
-        uses: actions/checkout@v4
-        with:
-          ref: agent/better-auth-persistence
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Apply migrations
-        run: npm run db:migrate
-
-      - name: Capture auth verification output
-        shell: bash
-        run: |
-          set +e
-          npm run db:verify:auth > AUTH_DEBUG.txt 2>&1
-          status=$?
-          if [ "$status" -eq 0 ]; then
-            rm -f AUTH_DEBUG.txt
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add AUTH_DEBUG.txt
-          git commit -m "chore(auth): capture persistence failure" || true
-          git push origin HEAD:agent/better-auth-persistence
-          exit "$status"
