@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { Form, redirect, useNavigation } from "react-router";
+import { data, Form, redirect, useNavigation } from "react-router";
 
 import { AuthShell, FieldError } from "~/components/auth-shell";
 import {
@@ -21,7 +21,7 @@ export async function action({ request }: Route.ActionArgs) {
   const { values, password, errors } = validateRegistration(formData);
 
   if (hasErrors(errors)) {
-    return Response.json({ errors, values }, { status: 400 });
+    return data({ errors, values }, { status: 400 });
   }
 
   try {
@@ -35,7 +35,7 @@ export async function action({ request }: Route.ActionArgs) {
     });
 
     if (!response.ok) {
-      return Response.json(
+      return data(
         { errors: { form: await readAuthError(response) }, values },
         { status: response.status },
       );
@@ -43,7 +43,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     return redirect("/kayit/basarili", { headers: responseSessionHeaders(response) });
   } catch {
-    return Response.json(
+    return data(
       {
         errors: {
           form: "Hesap ve tercihler kaydedilemedi. Hiçbir kısmi hesap bırakılmadı; yeniden deneyebilirsiniz.",
