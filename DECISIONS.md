@@ -141,3 +141,13 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Security boundary:** Client visibility is never authorization. Anonymous users, unrelated roles, revoked assignments and self-review are denied server-side. Private evidence projections omit R2 object keys, decisions require reasons where applicable and privileged audit records store the effective role.
 
 **Rejected:** Inferring review authority from Buyer/Supplier/Moderator state; embedding role claims permanently in session cookies; allowing reviewers to decide their own applications; introducing custom roles, delegation or self-service escalation in this slice.
+
+## 2026-07-13 — Staff assignment management uses a two-level hierarchy and forbids self-management
+
+**Decision:** Manage fixed platform staff assignments through a separate administrator-only workflow. Platform Admin may grant, revoke or reactivate operational roles. Only Super Admin may change Platform Admin or Super Admin assignments. No manager may change their own assignments.
+
+**Reason:** A single unrestricted administrator role would allow privilege escalation and accidental removal of the actor's own access. A narrow hierarchy preserves operational delegation while reserving administrator-role changes for the highest fixed role. Resolving assignments on every request makes grants and revocations effective without waiting for session expiry.
+
+**Security boundary:** The target must already have an account identified by normalized exact email. Every mutation requires a reason, writes immutable audit evidence with the effective manager role and preserves one unique user/role row by reactivating revoked assignments. Reviewer, Moderator, Buyer and Supplier state never grants assignment-management authority.
+
+**Rejected:** Self-service escalation; Platform Admin management of administrator roles; free-form custom roles; arbitrary permission JSON; silent duplicate rows; unaudited database-only role changes as the normal operational workflow.

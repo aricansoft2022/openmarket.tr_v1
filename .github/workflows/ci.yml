@@ -111,3 +111,6 @@ jobs:
 
       - name: Verify permissioned business identity review lifecycle
         run: npm run db:verify:business-identity-review
+
+      - name: Verify audited platform staff assignment management
+        run: npm run db:verify:platform-staff-management

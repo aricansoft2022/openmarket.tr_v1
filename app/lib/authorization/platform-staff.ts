@@ -15,10 +15,38 @@ export const businessIdentityReviewerRoles = [
 ] as const satisfies readonly PlatformStaffRole[];
 export type BusinessIdentityReviewerRole = (typeof businessIdentityReviewerRoles)[number];
 
-const permissionMatrix: Record<PlatformStaffRole, readonly BusinessIdentityPermission[]> = {
+export const staffManagementPermissions = [
+  "platform_staff.assignment.list",
+  "platform_staff.assignment.grant",
+  "platform_staff.assignment.revoke",
+] as const;
+export type StaffManagementPermission = (typeof staffManagementPermissions)[number];
+
+export const staffManagerRoles = [
+  "super_admin",
+  "platform_admin",
+] as const satisfies readonly PlatformStaffRole[];
+export type StaffManagerRole = (typeof staffManagerRoles)[number];
+
+const businessIdentityPermissionMatrix: Record<
+  PlatformStaffRole,
+  readonly BusinessIdentityPermission[]
+> = {
   super_admin: businessIdentityPermissions,
   platform_admin: businessIdentityPermissions,
   compliance_reviewer: businessIdentityPermissions,
+  catalogue_content_editor: [],
+  product_rfq_moderator: [],
+  privacy_support_manager: [],
+};
+
+const staffManagementPermissionMatrix: Record<
+  PlatformStaffRole,
+  readonly StaffManagementPermission[]
+> = {
+  super_admin: staffManagementPermissions,
+  platform_admin: staffManagementPermissions,
+  compliance_reviewer: [],
   catalogue_content_editor: [],
   product_rfq_moderator: [],
   privacy_support_manager: [],
@@ -37,7 +65,14 @@ export function roleAllows(
   role: PlatformStaffRole,
   permission: BusinessIdentityPermission,
 ): boolean {
-  return permissionMatrix[role].includes(permission);
+  return businessIdentityPermissionMatrix[role].includes(permission);
+}
+
+export function staffRoleAllows(
+  role: PlatformStaffRole,
+  permission: StaffManagementPermission,
+): boolean {
+  return staffManagementPermissionMatrix[role].includes(permission);
 }
 
 export function strongestAllowedRole(
@@ -50,4 +85,24 @@ export function strongestAllowedRole(
     }
   }
   return null;
+}
+
+export function strongestStaffManagerRole(
+  roles: readonly PlatformStaffRole[],
+  permission: StaffManagementPermission,
+): StaffManagerRole | null {
+  for (const role of rolePriority) {
+    if (roles.includes(role) && staffRoleAllows(role, permission)) {
+      return role as StaffManagerRole;
+    }
+  }
+  return null;
+}
+
+export function managerMayChangeRole(
+  managerRole: StaffManagerRole,
+  targetRole: PlatformStaffRole,
+): boolean {
+  if (managerRole === "super_admin") return true;
+  return targetRole !== "super_admin" && targetRole !== "platform_admin";
 }

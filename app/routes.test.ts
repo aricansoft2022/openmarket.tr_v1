@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import routes from "./routes";
 
 describe("route configuration", () => {
-  it("registers private applicant and permissioned staff evidence routes", () => {
+  it("registers private applicant and permissioned staff routes", () => {
     const configuredRoutes = JSON.stringify(routes);
 
     expect(configuredRoutes).toContain('"path":"onboarding/business-identity/evidence"');
@@ -20,5 +20,7 @@ describe("route configuration", () => {
     expect(configuredRoutes).toContain(
       '"path":"admin/business-identity/reviews/:reviewId/evidence/:evidenceId/download"',
     );
+    expect(configuredRoutes).toContain('"path":"admin/staff"');
+    expect(configuredRoutes).toContain('"file":"routes/admin.staff.tsx"');
   });
 });

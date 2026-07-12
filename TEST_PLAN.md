@@ -4,11 +4,11 @@
 
 ### Unit
 
-Pure validators, runtime configuration readiness, Google OAuth readiness/callback mapping, registration/login/recovery form validation, bilingual auth-email rendering, auth abuse-control budgets including account link/unlink, client-key construction, local bypass, remote fail-closed decisions, Turnstile action matching, email-domain normalization, workspace-intent widening, buyer-intent predicates, fixed platform role/action permissions, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
+Pure validators, runtime configuration readiness, Google OAuth readiness/callback mapping, registration/login/recovery form validation, bilingual auth-email rendering, auth abuse-control budgets including account link/unlink, client-key construction, local bypass, remote fail-closed decisions, Turnstile action matching, email-domain normalization, workspace-intent widening, buyer-intent predicates, fixed platform role/action permissions, staff-management hierarchy and self-management denial, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
 
 ### Database integration
 
-Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, verification/reset outbox atomicity, token expiry/replay, Google authorization-contract generation, explicit account-linking safeguards, business-identity and buyer-activation transitions, fixed staff assignments and effective-role authorization, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
+Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, verification/reset outbox atomicity, token expiry/replay, Google authorization-contract generation, explicit account-linking safeguards, business-identity and buyer-activation transitions, fixed staff assignments, effective-role authorization, audited assignment management, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
 
 Auth integration fixtures must verify core writes through Better Auth APIs rather than inserting fixture rows directly, except when a provider-linked fixture is explicitly needed to test post-callback management without claiming a live provider callback. Required evidence includes:
 
@@ -60,6 +60,20 @@ Business-identity staff authorization evidence must include:
 - privileged audit evidence stores the effective staff role and mandatory reason;
 - permission-denied, empty, read-only, validation and success states render for the staff routes.
 
+Platform staff assignment management evidence must include:
+
+- anonymous users and non-manager roles cannot list or mutate staff assignments;
+- Platform Admin can manage operational roles but cannot grant or revoke Platform Admin or Super Admin;
+- Super Admin can manage administrator and operational roles;
+- no manager can grant or revoke their own assignments;
+- grants require an existing account identified by normalized exact email and a mandatory reason;
+- duplicate active user/role grants are rejected;
+- regranting a revoked user/role reuses the existing unique row and clears revocation fields;
+- revocation requires an active assignment and a mandatory reason;
+- grants and revocations affect permission resolution on the next request without session renewal;
+- immutable audit evidence records actor, effective manager role, old/new values, reason and request identifier;
+- `/admin/staff` covers permission denied, list, validation, successful grant, active, revoked and successful reactivation states.
+
 ### Worker integration
 
 Cloudflare Vitest pool for bindings, request context, auth handler routing, session-cookie behaviour, OAuth state/callback handling, explicit link-social and unlink-account forwarding, R2 authorization, Queue retry behaviour, Turnstile Siteverify wrappers, expected-action rejection, Rate Limiting binding decisions and Worker error handling.
@@ -82,6 +96,8 @@ A08–A10 route tests must cover Buyer/Supplier/Both selection, account-not-veri
 
 Staff review routes must cover unauthenticated redirect, permission-denied X04 state, unrelated-role denial, revoked assignment, self-review denial, empty queue, pending detail, safe evidence metadata, private evidence download, missing/rejected decision reason, successful verify/reject and immutable effective-role audit outcomes.
 
+Staff management routes must cover unauthenticated redirect, non-manager denial, hierarchy enforcement, self-management denial, unknown-account and duplicate-active errors, successful grant, reason validation, successful revoke, revoked-row reactivation and audit outcomes.
+
 ### End to end
 
 Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use stable seed fixtures and inspect observable audit/notification outcomes. Live Google, link-callback and remote Turnstile/rate-limit E2E remain disabled until development credentials, authorized redirect URIs and Cloudflare bindings exist. Fixture-based post-callback tests must be labeled as such and never reported as live OAuth evidence. Company-email delivery and deployed private-R2 E2E remain disabled until email and remote storage resources exist.
@@ -90,7 +106,7 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 
 - WCAG 2.2 AA automated and manual checks
 - performance budgets and Core Web Vitals for public pages
-- security tests for IDOR, upload validation, CSRF, OAuth state, silent linking, callback open redirects, stale sessions, password re-verification, last-method lockout, session fixation, account enumeration, token leakage/replay, Turnstile action reuse, rate-limit bypass, public-domain bypass, review double-decision, self-review, revoked-role access and claim bypass
+- security tests for IDOR, upload validation, CSRF, OAuth state, silent linking, callback open redirects, stale sessions, password re-verification, last-method lockout, session fixation, account enumeration, token leakage/replay, Turnstile action reuse, rate-limit bypass, public-domain bypass, review double-decision, self-review, revoked-role access, self-role escalation, manager hierarchy bypass and claim bypass
 - load tests for search, product pages, RFQ publication and queue consumers
 - backup restore and migration rollback drills
 
@@ -144,6 +160,7 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 - private manual-exception evidence and reviewer authorization
 - fixed-role staff assignment and request-time effective-role resolution
 - self-review, unrelated-role and revoked-assignment denial
+- administrator-only audited staff assignment lifecycle and hierarchy enforcement
 - supplier document private access
 - role/action matrix tests from `spec.md` section 29
 - activation gating and audit records

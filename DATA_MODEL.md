@@ -76,7 +76,15 @@ Launch roles are `super_admin`, `platform_admin`, `catalogue_content_editor`, `c
 
 Business-identity review list/read/decide and private evidence read permissions are granted only to active Compliance Reviewer, Platform Admin and Super Admin assignments. Effective role is resolved on every request, so revocation takes effect immediately for the next request. Buyer, Supplier, Moderator and other unrelated states never imply this authority, and self-review is prohibited.
 
-Privileged decision audit rows retain the effective role used for authorization. Staff assignment grant/revoke management is a separate Admin-only workflow and must create its own immutable audit evidence before production administration is enabled.
+Privileged decision audit rows retain the effective role used for authorization.
+
+### Staff assignment lifecycle
+
+The administrator workflow preserves the unique `(user_id, role)` row in `platform_staff_assignments`. A new grant inserts an active row; a grant of a previously revoked role reactivates that row and clears revocation fields; a duplicate active grant is rejected. Revocation records the actor, time and mandatory reason instead of deleting history.
+
+Platform Admin may manage only operational roles. Super Admin may manage administrator and operational roles. No actor may grant or revoke their own assignment. Grant and revoke actions create immutable `audit_logs` rows containing the effective manager role, old/new values, reason and request evidence. Authorization reads active assignments on every request, so state changes apply immediately to the next request.
+
+Initial Super Admin bootstrap remains a controlled provisioning action. It is not exposed as a public or self-service route.
 
 ## Catalogue schema engine
 
