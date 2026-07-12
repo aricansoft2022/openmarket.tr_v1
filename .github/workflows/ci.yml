@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, agent/auth-verification-recovery]
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -93,42 +93,3 @@ jobs:
 
       - name: Verify email verification and password recovery
         run: npm run db:verify:recovery
-
-  capture-type-errors:
-    if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/agent/auth-verification-recovery') ||
-      (github.event_name == 'pull_request' && github.head_ref == 'agent/auth-verification-recovery')
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          ref: agent/auth-verification-recovery
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Capture diagnostics
-        shell: bash
-        run: |
-          set +e
-          npm run typecheck > TYPE_ERRORS.txt 2>&1
-          status=$?
-          if [ "$status" -eq 0 ]; then
-            rm -f TYPE_ERRORS.txt
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add TYPE_ERRORS.txt
-          git commit -m "chore(auth): capture type diagnostics" || true
-          git push origin HEAD:agent/auth-verification-recovery
-          exit "$status"
