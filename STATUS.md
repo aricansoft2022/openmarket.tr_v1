@@ -23,48 +23,52 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged guarded Google OAuth policy, POST-only initiation and A03 callback states through PR #20.
 - Merged route-level rate limiting, Turnstile policy, local-only bypass and remote fail-closed auth controls through PR #21.
 - Merged explicit authenticated Google link/unlink safeguards, password re-verification and audit evidence through PR #22.
+- Merged business-identity domain policy, company-email, review and Buyer activation state machine through PR #23.
 - Kept fake Cloudflare resource IDs and credentials out of source control.
 
 ## In progress
 
-The first issue #5 slice establishes business identity and buyer activation foundations:
+The current issue #5 route slice adds A08–A10:
 
-- administrator-managed `public_email`, `blocked` and `company_exception` domain policies;
-- normalized private company-email records with pending/verified/rejected state;
-- deterministic business-identity review methods and statuses;
-- separate browser/active/suspended buyer profiles;
-- workspace intent expansion that preserves Buyer plus Supplier as Both;
-- company-domain auto-verification only for an exactly matching, already verified account email;
-- mandatory manual review for public-email domains;
-- immediate rejection for blocked domains;
-- `ACTIVE_BUYER` gating only after a verified review;
-- immutable submission, decision and workspace-intent audit records;
-- migration `drizzle/0004_empty_phil_sheldon.sql` and PostgreSQL state-machine verification.
+- authenticated `/onboarding/workspaces` Buyer/Supplier/Both selection;
+- workspace widening through the committed state machine without silent narrowing;
+- authenticated `/onboarding/business-identity` submission;
+- verified-account enforcement before business identity;
+- pending/verified submissions redirected away from duplicate forms;
+- rejected submissions prefilled for resubmission;
+- public-domain/manual-review, separate-email pending and blocked-domain explanations;
+- disabled manual-document upload until private R2 authorization exists;
+- `/onboarding/business-identity/status` pending/verified/rejected timeline;
+- rejection reason and resubmission path;
+- Buyer active/browser status separated from Supplier activation;
+- transaction-level duplicate-pending protection using a locked user row;
+- PostgreSQL verification with a real Better Auth session cookie.
 
-A08–A10 routes, manual-exception document upload and admin review UI are intentionally separate follow-up slices. No owner action is required for this local/CI foundation.
+No owner action is required for this local/CI route slice.
 
 ## Verification
 
 Current branch target:
 
 ```text
-npm run format:check                 PASS
-npm run docs:check                   PASS
-npm run config:check                 PASS
-npm run typecheck                    PASS
-npm run test:run                     PASS
-npm run build                        PASS
-npm run db:check                     PASS
-npm run db:verify                    PASS
-npm run db:verify:auth               PASS
-npm run db:verify:registration       PASS
-npm run db:verify:recovery           PASS
-npm run db:verify:google             PASS
-npm run db:verify:google-linking     PASS
-npm run db:verify:business-identity  PASS
+npm run format:check                            PASS
+npm run docs:check                              PASS
+npm run config:check                            PASS
+npm run typecheck                               PASS
+npm run test:run                                PASS
+npm run build                                   PASS
+npm run db:check                                PASS
+npm run db:verify                               PASS
+npm run db:verify:auth                          PASS
+npm run db:verify:registration                  PASS
+npm run db:verify:recovery                      PASS
+npm run db:verify:google                        PASS
+npm run db:verify:google-linking                PASS
+npm run db:verify:business-identity             PASS
+npm run db:verify:business-identity-onboarding  PASS
 ```
 
-The business-identity verification covers company-domain auto verification, public-domain manual review, blocked-domain rejection, separate-company-email pending state, workspace expansion, supplier-only non-activation, manual approval, duplicate-decision rejection, active-buyer commercial guard, audit outcomes and database constraints.
+The A08–A10 database gate verifies authenticated state loading, Buyer-to-Both workspace widening, public-domain pending review, duplicate-pending rejection, status loading, manual approval, active Buyer state, duplicate-verified rejection and immutable audit evidence.
 
 ## Known issues and blockers
 
@@ -73,18 +77,18 @@ The business-identity verification covers company-domain auto verification, publ
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
 - Real Google OAuth credentials and authorized redirect URIs are not configured, so live link callbacks remain unverified.
 - Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
-- Company-email verification delivery, manual evidence upload and reviewer/admin authorization remain open in issue #5.
+- Company-email verification delivery, private manual-exception evidence upload and reviewer/admin authorization remain open in issue #5.
 - Supplier workspace and document activation remain separate domain work in #6–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
 - The static prototype remains a reference and does not replace production accessibility or responsive validation.
 
-These are remote integration or later feature blockers, not blockers for local state-machine validation, CI or production builds.
+These are remote integration or later feature blockers, not blockers for local onboarding validation, CI or production builds.
 
 ## Next tasks
 
-1. Merge the business-identity foundation only after permanent read-only application and PostgreSQL CI jobs pass.
-2. Add A08 workspace selection and A09/A10 applicant status/resubmission routes against the committed transition service.
-3. Add manual exception evidence metadata and private R2 upload authorization without mixing supplier activation.
-4. Add reviewer/admin decision routes with explicit permission checks, reasons and audit evidence.
+1. Merge the A08–A10 route slice only after permanent read-only application and PostgreSQL CI jobs pass.
+2. Add private manual-exception evidence metadata and R2 authorization without mixing supplier activation.
+3. Add reviewer/admin decision routes with explicit permission checks, reasons and audit evidence.
+4. Add company-email verification delivery after the email dispatcher is authorized.
 5. Provision remote auth/database resources before claiming remote readiness.
 6. Continue Phase 1 in dependency order through #6–#9 and close it through integration gate #10.
