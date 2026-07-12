@@ -22,6 +22,7 @@
     "db:verify:auth": "tsx scripts/verify-auth-persistence.ts",
     "db:verify:registration": "tsx scripts/verify-registration-flow.ts",
     "db:verify:recovery": "tsx scripts/verify-auth-recovery.ts",
+    "db:verify:google": "tsx scripts/verify-google-oauth-policy.ts",
     "db:local:up": "docker compose up -d postgres",
     "db:local:down": "docker compose down",
     "db:local:reset": "docker compose down -v",

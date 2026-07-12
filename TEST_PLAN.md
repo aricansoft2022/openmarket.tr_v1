@@ -4,11 +4,11 @@
 
 ### Unit
 
-Pure validators, runtime configuration readiness, registration/login/recovery form validation, bilingual auth-email rendering, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
+Pure validators, runtime configuration readiness, Google OAuth readiness/callback mapping, registration/login/recovery form validation, bilingual auth-email rendering, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
 
 ### Database integration
 
-Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, verification/reset outbox atomicity, token expiry/replay, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
+Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, verification/reset outbox atomicity, token expiry/replay, Google authorization-contract generation, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
 
 Auth integration fixtures must verify core writes through Better Auth APIs rather than inserting fixture rows directly. Required evidence includes:
 
@@ -19,25 +19,28 @@ Auth integration fixtures must verify core writes through Better Auth APIs rathe
 - unverified credential signin is blocked;
 - verification succeeds once and changes the user flag;
 - unknown-email reset requests return generic success without delivery intent;
-- reset changes the password, revokes sessions and rejects replay/expired tokens.
+- reset changes the password, revokes sessions and rejects replay/expired tokens;
+- incomplete or placeholder Google credentials do not enable the provider;
+- configured Google initiation generates an authorization URL with state, the Better Auth callback, OpenID/email/profile scopes and no client secret;
+- OAuth initiation creates no user, account or session before callback validation.
 
 ### Worker integration
 
-Cloudflare Vitest pool for bindings, request context, auth handler routing, session-cookie behaviour, R2 authorization, Queue retry behaviour, Turnstile verification wrappers, rate-limit decisions and Worker error handling.
+Cloudflare Vitest pool for bindings, request context, auth handler routing, session-cookie behaviour, OAuth state/callback handling, R2 authorization, Queue retry behaviour, Turnstile verification wrappers, rate-limit decisions and Worker error handling.
 
 ### Route integration
 
-React Router loaders/actions with authenticated and unauthenticated contexts. Cover redirects, permissions, validation errors, status codes and localized metadata. A01–A07 tests include loading, invalid email, weak/mismatched password, missing preferences, duplicate-account response, verification resend, generic reset success, token error, recoverable database failure and successful reset return-to-login.
+React Router loaders/actions with authenticated and unauthenticated contexts. Cover redirects, permissions, validation errors, status codes and localized metadata. A01–A07 tests include loading, invalid email, weak/mismatched password, missing preferences, duplicate-account response, Google unavailable/account-not-linked/provider-error/success states, verification resend, generic reset success, token error, recoverable database failure and successful reset return-to-login.
 
 ### End to end
 
-Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use stable seed fixtures and inspect observable audit/notification outcomes.
+Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use stable seed fixtures and inspect observable audit/notification outcomes. Live Google E2E remains disabled until development credentials and authorized redirect URIs exist.
 
 ### Non-functional
 
 - WCAG 2.2 AA automated and manual checks
 - performance budgets and Core Web Vitals for public pages
-- security tests for IDOR, upload validation, CSRF, session fixation, account enumeration, token leakage/replay and claim bypass
+- security tests for IDOR, upload validation, CSRF, OAuth state, silent linking, callback open redirects, session fixation, account enumeration, token leakage/replay and claim bypass
 - load tests for search, product pages, RFQ publication and queue consumers
 - backup restore and migration rollback drills
 
@@ -68,8 +71,13 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 - enumeration-safe forgot-password behaviour
 - password-reset session revocation
 - request-scoped `/api/auth/*` handler compilation
+- conditional Google provider readiness and POST-only initiation
+- A03 Google callback states
+- minimal Google scopes, state and callback URI verification
+- disabled Google signup and implicit/cross-email linking
+- zero identity/session writes before Google callback validation
 - real Hyperdrive runtime and direct Neon migration-path verification before remote readiness
-- Google OAuth callback and account linking
+- explicit authenticated Google account linking and unlink safeguards
 - Turnstile and route-level rate limiting
 - external email dispatcher verification after sender authorization
 - business identity state transitions

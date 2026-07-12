@@ -84,6 +84,30 @@
   width: min(100%, 46rem);
 }
 
+.auth-oauth {
+  margin-bottom: 1.25rem;
+}
+
+.auth-divider {
+  display: flex;
+  width: min(100%, 46rem);
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--color-line);
+  content: "";
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -173,6 +197,10 @@
 .auth-submit:disabled {
   cursor: progress;
   opacity: 0.65;
+}
+
+.auth-oauth .auth-submit:disabled {
+  cursor: not-allowed;
 }
 
 .form-note,

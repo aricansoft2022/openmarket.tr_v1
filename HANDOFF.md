@@ -26,39 +26,40 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0, the runtime-configuration contract, local PostgreSQL verification, Better Auth persistence and transactional registration are merged to `main`. The repository can be installed, built and tested without Neon or a Cloudflare account.
+Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration and A04–A07 verification/password recovery are merged to `main`. The repository can be installed, built and tested without Neon, Google or a Cloudflare account.
 
-PR #19 adds the next issue #4 slice:
+PR #20 adds the next issue #4 slice:
 
-- A04 `/auth/verify-email` pending/resend state;
-- A05 `/auth/verify-email/result` success/token-error state;
-- A06 `/auth/forgot-password` enumeration-safe request state;
-- A07 `/auth/reset-password` password form and invalid-token state;
-- canonical `/auth/login` and `/auth/register`, with legacy Turkish redirects;
-- required email verification before credential signin;
-- transactional verification/reset delivery records in `outbox_events`;
-- Turkish and English email-rendering contracts;
-- one-hour, single-use token policy and session revocation after reset;
-- PostgreSQL evidence for verification, reset, replay and expiry behaviour.
+- conditional Google provider configuration requiring both non-placeholder credentials;
+- POST-only `/auth/google` initiation;
+- A03 `/auth/callback` success, processing, unavailable, provider-error and account-not-linked states;
+- OpenID, email and profile scopes only;
+- Google-only signup disabled so country, preferred language and intended-use requirements cannot be bypassed;
+- implicit same-email and cross-email linking disabled;
+- Google profile overwrite disabled;
+- authorization-contract verification for Google host, state, callback URI, scopes, prompt and client-secret protection;
+- proof that OAuth initiation creates no user, account or session before callback validation.
 
-Authentication identity remains separate from business identity, buyer/supplier activation, memberships, roles and public contact data. The outbox contains token-bearing action URLs and is private operational data; it must not be logged, returned by public routes or retained after its delivery/expiry policy allows deletion.
+The actual provider callback remains Better Auth's `/api/auth/callback/google`; A03 is the application result surface. No live credential is committed. Existing users are not silently linked to Google. Explicit account linking must require an authenticated user and a separate confirmation flow.
 
 ## Exact next tasks
 
-1. Merge PR #19 only after both permanent read-only CI jobs pass.
+1. Merge PR #20 only after both permanent read-only CI jobs pass.
 2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
 3. Continue issue #4 in separate reviewable slices:
-   - Google OAuth provider and account-linking rules;
-   - A03 `/auth/callback` loading/error/retry states;
-   - Turnstile and route-level rate limiting;
+   - explicit authenticated Google account linking and unlink safeguards;
+   - Turnstile verification for registration, recovery and other abuse-sensitive actions;
+   - route-level rate-limit policy and tests;
    - Cloudflare email dispatcher after sender authorization exists.
-4. Do not add business identity or workspace activation to Better Auth core tables. Those begin in #5.
-5. Before remote Worker readiness is claimed:
+4. Do not enable Google-only signup until required registration preferences can be persisted atomically for that path.
+5. Do not add business identity or workspace activation to Better Auth core tables. Those begin in #5.
+6. Before remote Worker readiness is claimed:
    - provision isolated development Neon and Hyperdrive resources;
+   - configure development Google credentials and exact authorized redirect URI;
    - apply committed migrations through a direct Neon URL;
    - verify `/api/auth/*` and A01–A07 through deployed Hyperdrive;
    - record safe identifiers, secret names without values, verification output and rollback steps.
-6. Continue in dependency order through #5–#10.
+7. Continue in dependency order through #5–#10.
 
 ## Verification commands
 
@@ -83,17 +84,19 @@ npm run db:verify
 npm run db:verify:auth
 npm run db:verify:registration
 npm run db:verify:recovery
+npm run db:verify:google
 npm run db:local:down
 ```
 
-`db:verify:recovery` proves that unverified signin is blocked, verification completes once, unknown reset requests do not reveal account existence, reset revokes sessions, the old password stops working, the new password works, token replay fails and expired tokens produce only an error state.
+`db:verify:google` uses CI-only dummy credentials to generate—but not complete—the Google authorization request. It checks provider gating, Google host, state, callback URI, minimal scopes, prompt, secret exclusion and zero identity/session writes before callback validation.
 
 ## Known blockers
 
 - No Neon development database or deployed Hyperdrive configuration has been provisioned.
 - Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
 - Outbox records are produced, but Cloudflare Email Sending authorization and the dispatcher are not configured.
-- Google OAuth and Turnstile credentials are not configured.
+- Real Google development credentials and authorized redirect URIs are not configured.
+- Explicit Google account linking, Turnstile and route-level rate limiting remain open.
 - Cloudflare Images remains an account-level dependency for later media work.
 
-These blockers do not prevent auth schema work, transactional registration, verification/reset token lifecycle checks, local PostgreSQL tests or production builds.
+These blockers do not prevent auth policy work, A03 UI states, local PostgreSQL tests or production builds.

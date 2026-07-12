@@ -5,6 +5,8 @@ export default [
   route("health", "routes/health.ts"),
   route("auth/login", "routes/auth.login.tsx"),
   route("auth/register", "routes/auth.register.tsx"),
+  route("auth/google", "routes/auth.google.ts"),
+  route("auth/callback", "routes/auth.callback.tsx"),
   route("auth/verify-email", "routes/auth.verify-email.tsx"),
   route("auth/verify-email/result", "routes/auth.verify-email-result.tsx"),
   route("auth/forgot-password", "routes/auth.forgot-password.tsx"),
