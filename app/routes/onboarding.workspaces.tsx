@@ -35,12 +35,8 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   try {
-    const selected = await chooseWorkspace(env, request, intendedUse);
-    return redirect(
-      selected === "supplier"
-        ? "/onboarding/business-identity"
-        : "/onboarding/business-identity",
-    );
+    await chooseWorkspace(env, request, intendedUse);
+    return redirect("/onboarding/business-identity");
   } catch (error) {
     if (error instanceof OnboardingActionError && error.code === "UNAUTHENTICATED") {
       throw redirect("/auth/login");
