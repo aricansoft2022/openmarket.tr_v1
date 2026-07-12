@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { roleAllows, strongestAllowedRole } from "./platform-staff";
+import {
+  managerMayChangeRole,
+  roleAllows,
+  staffRoleAllows,
+  strongestAllowedRole,
+  strongestStaffManagerRole,
+} from "./platform-staff";
 
 describe("platform staff authorization", () => {
   it("allows only reviewer and administrator roles to decide business identity", () => {
@@ -22,5 +28,25 @@ describe("platform staff authorization", () => {
     expect(
       strongestAllowedRole(["product_rfq_moderator"], "business_identity.review.read"),
     ).toBeNull();
+  });
+
+  it("limits staff assignment management to administrators", () => {
+    expect(staffRoleAllows("super_admin", "platform_staff.assignment.grant")).toBe(true);
+    expect(staffRoleAllows("platform_admin", "platform_staff.assignment.revoke")).toBe(true);
+    expect(staffRoleAllows("compliance_reviewer", "platform_staff.assignment.list")).toBe(false);
+    expect(
+      strongestStaffManagerRole(
+        ["compliance_reviewer", "platform_admin"],
+        "platform_staff.assignment.grant",
+      ),
+    ).toBe("platform_admin");
+  });
+
+  it("reserves administrator-role changes for super administrators", () => {
+    expect(managerMayChangeRole("platform_admin", "compliance_reviewer")).toBe(true);
+    expect(managerMayChangeRole("platform_admin", "platform_admin")).toBe(false);
+    expect(managerMayChangeRole("platform_admin", "super_admin")).toBe(false);
+    expect(managerMayChangeRole("super_admin", "platform_admin")).toBe(true);
+    expect(managerMayChangeRole("super_admin", "super_admin")).toBe(true);
   });
 });
