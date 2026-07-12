@@ -4,6 +4,7 @@ import {
   googleAccountLinkingPolicy,
   googleOAuthProvider,
   inspectGoogleOAuthReadiness,
+  resolveGoogleCallbackState,
 } from "./google-oauth";
 
 describe("Google OAuth policy", () => {
@@ -48,5 +49,27 @@ describe("Google OAuth policy", () => {
       allowDifferentEmails: false,
       updateUserInfoOnLink: false,
     });
+  });
+
+  it("maps callback parameters without exposing provider details", () => {
+    expect(
+      resolveGoogleCallbackState(new URL("https://openmarket.test/auth/callback?status=success")),
+    ).toBe("success");
+    expect(
+      resolveGoogleCallbackState(
+        new URL("https://openmarket.test/auth/callback?error=account_not_linked"),
+      ),
+    ).toBe("account-not-linked");
+    expect(
+      resolveGoogleCallbackState(
+        new URL("https://openmarket.test/auth/callback?error=google_unavailable"),
+      ),
+    ).toBe("unavailable");
+    expect(
+      resolveGoogleCallbackState(new URL("https://openmarket.test/auth/callback?error=denied")),
+    ).toBe("provider-error");
+    expect(resolveGoogleCallbackState(new URL("https://openmarket.test/auth/callback"))).toBe(
+      "processing",
+    );
   });
 });
