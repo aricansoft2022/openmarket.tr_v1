@@ -26,37 +26,32 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery, guarded Google OAuth/A03 states, route-level auth abuse controls, explicit Google link/unlink safeguards and the business-identity/Buyer state-machine foundation are merged to `main`.
+Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery, guarded Google OAuth/A03 states, route-level auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding and private owner-only manual-exception evidence storage are merged to `main` through PR #25.
 
-The current issue #5 route branch adds:
+The current repair branch addresses two integration gaps left by PR #25:
 
-- A08 `/onboarding/workspaces` with authenticated Buyer/Supplier/Both selection;
-- A09 `/onboarding/business-identity` with company name/email and applicant note;
-- A10 `/onboarding/business-identity/status` with pending, verified and rejected states;
-- redirect gates for unauthenticated and unverified accounts;
-- pending/verified duplicate-form prevention;
-- rejected-state prefill and resubmission;
-- public-email/manual-review and separate-company-email explanations;
-- a disabled document-upload state until private R2 authorization exists;
-- transaction-level duplicate-pending protection;
-- session-bound PostgreSQL verification using a real Better Auth cookie.
+- the evidence screen and download handler existed as route modules but were absent from the explicit React Router route config;
+- `scripts/verify-business-identity-evidence.ts` existed but was absent from `package.json` and permanent PostgreSQL CI.
 
-The routes call the committed transition service. They do not duplicate domain policy or activate Buyer directly from form input.
+The branch now registers both routes, links eligible manual-exception applicants from A10, adds a route-registration regression test and executes the private evidence lifecycle gate in CI.
 
 ## Exact next tasks
 
-1. Merge the A08–A10 route PR only after both permanent read-only CI jobs pass.
+1. Merge the evidence-route/CI repair only after the application and PostgreSQL CI jobs pass.
 2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
 3. Keep issue #4 open for external delivery and remote auth evidence.
-4. Continue issue #5 in separate slices:
-   - private manual-exception evidence metadata and R2 upload authorization;
+4. Continue issue #5 in separate reviewed slices:
+   - Reviewer/Admin-only pending review queue and detail routes;
+   - private reviewer evidence downloads without exposing object keys;
+   - reasoned verify/reject decisions through `decideBusinessIdentityReview`;
+   - audited Admin-only staff assignment grant/revoke management;
    - company-email verification delivery and token lifecycle;
-   - reviewer/admin decision routes using `decideBusinessIdentityReview` with explicit role checks;
-   - commercial route guards using `assertActiveBuyer`.
+   - evidence scanning/quarantine and retention cleanup.
 5. Do not infer business identity from account verification alone.
 6. Public email domains never grant automatic business identity.
-7. Do not add supplier activation or supplier documents to issue #5.
-8. Continue in dependency order through #6–#10.
+7. Buyer/Supplier workspace state must never imply platform staff authority.
+8. Do not add supplier activation or supplier documents to issue #5.
+9. Continue in dependency order through #6–#10.
 
 ## Verification commands
 
@@ -85,12 +80,11 @@ npm run db:verify:google
 npm run db:verify:google-linking
 npm run db:verify:business-identity
 npm run db:verify:business-identity-onboarding
+npm run db:verify:business-identity-evidence
 npm run db:local:down
 ```
 
-`db:verify:business-identity` proves domain classification, review decisions and Buyer activation. `db:verify:business-identity-onboarding` proves authenticated A08–A10 state loading, workspace widening, pending review, duplicate-pending guard, manual approval, active Buyer status and audit evidence.
-
-The onboarding test uses a real Better Auth session cookie and fresh PostgreSQL service container. It does not claim private document upload, reviewer permissions, company-email delivery or remote infrastructure readiness.
+`db:verify:business-identity` proves domain classification, review decisions and Buyer activation. `db:verify:business-identity-onboarding` proves authenticated A08–A10 state loading and resubmission behavior. `db:verify:business-identity-evidence` must prove the owner-only private metadata/R2 lifecycle, file limits, failure compensation, audit evidence and non-owner denial.
 
 ## Known blockers
 
@@ -99,8 +93,8 @@ The onboarding test uses a real Better Auth session cookie and fresh PostgreSQL 
 - Outbox records are produced, but Cloudflare Email Sending authorization and the dispatcher are not configured.
 - Real Google development credentials and authorized redirect URIs are not configured; live callback completion remains unverified.
 - Real Turnstile and Cloudflare Rate Limiting resources are not provisioned.
-- Company-email verification delivery and private manual-exception evidence upload remain open.
-- Reviewer/admin permissioned decision UI remains open.
+- Reviewer/Admin authorization and staff assignment management are not implemented on the verified main branch.
+- Evidence malware/content inspection, quarantine and retention cleanup are not implemented.
 - Cloudflare Images remains an account-level dependency for later media work.
 
-These blockers do not prevent local onboarding work, CI, local PostgreSQL tests or production builds. They do prevent claiming remote auth, live company-email verification or document-backed manual review readiness.
+These blockers do not prevent local onboarding work, CI, local PostgreSQL tests or production builds. They do prevent claiming remote auth, live company-email verification or reviewer-ready document processing.
