@@ -39,7 +39,8 @@ export async function action({ request }: Route.ActionArgs) {
 
     if (!response.ok) throw new Error("Verification request failed.");
 
-    return data({ sent: true, values: { ...values, email: "" }, errors: {} });
+    const responseErrors: EmailRequestErrors = {};
+    return data({ sent: true, values: { ...values, email: "" }, errors: responseErrors });
   } catch {
     const responseErrors: EmailRequestErrors = {
       form: "Doğrulama isteği şu anda alınamıyor. Lütfen yeniden deneyin.",
