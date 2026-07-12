@@ -57,3 +57,11 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Reason:** React Router 8.2.0 declares support for TypeScript 5.1 or 6.x. TypeScript 7.0.2 produced a peer-dependency conflict during a clean install.
 
 **Rejected:** Installing with `--force` or `--legacy-peer-deps`. A foundation should not hide an unsupported compiler combination.
+
+## 2026-07-12 — Use a committed npm lockfile and read-only CI
+
+**Decision:** Commit npm lockfile version 3, install with `npm ci --ignore-scripts` in GitHub Actions and keep CI repository permissions read-only.
+
+**Reason:** Pinned direct versions alone do not make transitive dependency resolution reproducible. The lockfile must be updated intentionally with dependency changes.
+
+**Rejected:** Permanent `npm install` in CI, manually authored lockfile content or leaving write permission enabled after one-time lock generation.
