@@ -201,7 +201,10 @@ export async function uploadBusinessIdentityEvidence(
             createdAt: businessIdentityEvidence.createdAt,
           });
         if (!stored) {
-          throw new EvidenceActionError("STORAGE_FAILED", "Evidence reservation was not finalized.");
+          throw new EvidenceActionError(
+            "STORAGE_FAILED",
+            "Evidence reservation was not finalized.",
+          );
         }
 
         await scoped.insert(auditLogs).values({

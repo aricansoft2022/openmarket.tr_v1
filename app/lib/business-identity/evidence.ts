@@ -13,11 +13,7 @@ export type EvidenceFileInput = {
 export class EvidenceValidationError extends Error {
   constructor(
     public readonly code:
-      | "FILE_REQUIRED"
-      | "FILENAME_INVALID"
-      | "MIME_NOT_ALLOWED"
-      | "FILE_EMPTY"
-      | "FILE_TOO_LARGE",
+      "FILE_REQUIRED" | "FILENAME_INVALID" | "MIME_NOT_ALLOWED" | "FILE_EMPTY" | "FILE_TOO_LARGE",
     message: string,
   ) {
     super(message);

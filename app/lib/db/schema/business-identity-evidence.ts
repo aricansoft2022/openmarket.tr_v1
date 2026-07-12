@@ -19,8 +19,7 @@ export const businessIdentityEvidenceStatuses = [
   "failed",
   "removed",
 ] as const;
-export type BusinessIdentityEvidenceStatus =
-  (typeof businessIdentityEvidenceStatuses)[number];
+export type BusinessIdentityEvidenceStatus = (typeof businessIdentityEvidenceStatuses)[number];
 
 export const businessIdentityEvidence = pgTable(
   "business_identity_evidence",
@@ -37,10 +36,7 @@ export const businessIdentityEvidence = pgTable(
     mimeType: text("mime_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
     sha256: text("sha256"),
-    status: text("status")
-      .$type<BusinessIdentityEvidenceStatus>()
-      .default("uploading")
-      .notNull(),
+    status: text("status").$type<BusinessIdentityEvidenceStatus>().default("uploading").notNull(),
     failureReason: text("failure_reason"),
     storedAt: timestamp("stored_at", { withTimezone: true }),
     removedAt: timestamp("removed_at", { withTimezone: true }),
@@ -66,10 +62,7 @@ export const businessIdentityEvidence = pgTable(
       "business_identity_evidence_mime_check",
       sql`${table.mimeType} in ('application/pdf', 'image/jpeg', 'image/png')`,
     ),
-    check(
-      "business_identity_evidence_size_check",
-      sql`${table.sizeBytes} between 1 and 10485760`,
-    ),
+    check("business_identity_evidence_size_check", sql`${table.sizeBytes} between 1 and 10485760`),
     check(
       "business_identity_evidence_status_check",
       sql`${table.status} in ('uploading', 'stored_private', 'failed', 'removed')`,

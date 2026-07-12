@@ -47,7 +47,10 @@ function publicEvidenceError(error: unknown): { message: string; status: number 
       return { message: "Oturumunuz sona erdi. Yeniden giriş yapın.", status: 401 };
     }
     if (error.code === "FILE_LIMIT_REACHED") {
-      return { message: `Bir başvuruya en fazla ${maximumEvidenceFilesPerReview} belge eklenebilir.`, status: 409 };
+      return {
+        message: `Bir başvuruya en fazla ${maximumEvidenceFilesPerReview} belge eklenebilir.`,
+        status: 409,
+      };
     }
     if (error.code === "REVIEW_NOT_ELIGIBLE") {
       return { message: "Bu başvuru artık belge değişikliğine açık değil.", status: 409 };
@@ -141,8 +144,8 @@ export default function BusinessIdentityEvidence({ loaderData, actionData }: Rou
                 required
               />
               <p className="form-note">
-                PDF, JPEG veya PNG · En fazla {(maximumEvidenceBytes / (1024 * 1024)).toFixed(0)} MiB ·
-                Başvuru başına {maximumEvidenceFilesPerReview} dosya
+                PDF, JPEG veya PNG · En fazla {(maximumEvidenceBytes / (1024 * 1024)).toFixed(0)}{" "}
+                MiB · Başvuru başına {maximumEvidenceFilesPerReview} dosya
               </p>
             </div>
             <button
@@ -150,7 +153,11 @@ export default function BusinessIdentityEvidence({ loaderData, actionData }: Rou
               type="submit"
               disabled={full || submitting}
             >
-              {submitting ? "Belge kaydediliyor…" : full ? "Dosya sınırına ulaşıldı" : "Private belge yükle"}
+              {submitting
+                ? "Belge kaydediliyor…"
+                : full
+                  ? "Dosya sınırına ulaşıldı"
+                  : "Private belge yükle"}
             </button>
           </Form>
 

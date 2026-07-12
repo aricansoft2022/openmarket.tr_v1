@@ -44,7 +44,9 @@ class FakePrivateBucket {
     } else if (value instanceof ArrayBuffer) {
       bytes = new Uint8Array(value.slice(0));
     } else if (ArrayBuffer.isView(value)) {
-      bytes = new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength));
+      bytes = new Uint8Array(
+        value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength),
+      );
     } else if (value instanceof Blob) {
       bytes = new Uint8Array(await value.arrayBuffer());
     } else {
