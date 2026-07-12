@@ -32,6 +32,7 @@ Signup, `user_preferences` creation and verification-email outbox intent run in 
 
 OpenMarket extends authentication identity with additional separate domain tables:
 
+- `email_domain_policies`
 - `company_emails`
 - `business_identity_reviews`
 - `buyer_profiles`
@@ -42,6 +43,30 @@ OpenMarket extends authentication identity with additional separate domain table
 - `business_contacts`
 
 One user may have buyer and supplier workspaces. Workspace intent, company-domain verification, buyer activation, supplier activation, memberships, fixed operational roles and public contact data do not live in Better Auth core tables. Supplier membership roles are fixed at launch.
+
+### Business identity and buyer activation
+
+`email_domain_policies` is an administrator-managed domain registry with exactly three classifications:
+
+- `public_email` — account verification is valid, but business identity requires manual exception review;
+- `blocked` — the domain cannot be submitted for business identity;
+- `company_exception` — an explicitly approved exception may be treated as a company-domain candidate.
+
+An unlisted domain is a company-domain candidate, not a permanent trust decision. Automatic business-identity verification is allowed only when the submitted company email exactly matches the already verified account email and the domain is neither public nor blocked. A separate company email remains pending until its own verification path is completed.
+
+`company_emails` stores normalized email/domain pairs and `pending`, `verified` or `rejected` state with mutually exclusive verification/rejection timestamps. It is private identity data and is not a public contact record.
+
+`business_identity_reviews` stores the applicant, company name, submitted domain, optional company email, method, deterministic status, applicant note, reviewer note, rejection reason and reviewer/timestamps. Methods are `company_email`, `manual_exception` and `admin_override`; statuses are `draft`, `pending`, `verified` and `rejected`. Rejections require a reason, and only pending reviews may receive a manual decision.
+
+`buyer_profiles` keeps commercial buyer state separate from account and business-identity state:
+
+```text
+browser → active → suspended
+```
+
+An active or suspended buyer row must reference a business-identity review and retain activation evidence. Commercial buyer guards allow only `active`. Workspace selection widens `buyer` plus `supplier` to `both` and never silently deletes an already selected workspace. A supplier-only identity verification does not create a buyer profile.
+
+Submission, manual decision, workspace expansion and buyer activation outcomes are written with immutable audit records. Database checks enforce valid state/timestamp combinations; transition services enforce cross-table rules such as verified-review-before-active-buyer.
 
 ## Catalogue schema engine
 
