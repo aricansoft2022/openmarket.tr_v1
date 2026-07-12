@@ -5,3 +5,4 @@ export * from "./business-identity-evidence";
 export * from "./outbox";
 export * from "./platform-staff";
 export * from "./preferences";
+export * from "./supplier";
