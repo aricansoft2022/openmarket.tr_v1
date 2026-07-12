@@ -1,0 +1,22 @@
+:root {
+  --color-ink: #111111;
+  --color-ink-soft: #333333;
+  --color-muted: #666666;
+  --color-paper: #ffffff;
+  --color-paper-alt: #f4f4f4;
+  --color-clay: #d32f2f;
+  --color-clay-dark: #b71c1c;
+  --color-line: #e0e0e0;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Inter", Arial, sans-serif;
+  --max-width: 1440px;
+  --radius: 2px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+}

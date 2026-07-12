@@ -1,0 +1,17 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+node_modules/
+build/
+.react-router/
+.wrangler/
+.mf/
+coverage/
+*.tsbuildinfo
+worker-configuration.d.ts
+npm-debug.log*
+
+spec.full.md
