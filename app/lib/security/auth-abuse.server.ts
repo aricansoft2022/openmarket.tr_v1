@@ -32,7 +32,12 @@ export type AbuseControlResult =
   | { ok: true }
   | {
       ok: false;
-      reason: "rate-limited" | "turnstile-missing" | "turnstile-invalid" | "turnstile-unavailable";
+      reason:
+        | "abuse-control-unavailable"
+        | "rate-limited"
+        | "turnstile-missing"
+        | "turnstile-invalid"
+        | "turnstile-unavailable";
       retryAfterSeconds?: number;
     };
 
@@ -46,7 +51,11 @@ export type TurnstileVerification = {
 function isConfiguredSecret(value: string | undefined): value is string {
   if (!value) return false;
   const normalized = value.trim().toLowerCase();
-  return normalized.length >= 16 && !normalized.includes("replace") && !normalized.includes("example");
+  return (
+    normalized.length >= 16 &&
+    !normalized.includes("replace") &&
+    !normalized.includes("example")
+  );
 }
 
 export function clientAddress(request: Request): string {
@@ -119,7 +128,7 @@ export async function enforceAuthAbuseControls(input: {
   const policy = authRateLimitPolicies[input.action];
 
   if (!input.rateLimiter) {
-    return { ok: false, reason: "turnstile-unavailable" };
+    return { ok: false, reason: "abuse-control-unavailable" };
   }
 
   const limited = await input.rateLimiter.limit({
