@@ -9,6 +9,8 @@ jobs:
     if: github.head_ref == 'agent/business-identity-review-authorization'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
     permissions:
       contents: write
     steps:
@@ -116,7 +118,7 @@ jobs:
       - name: Commit prepared files
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "4189828+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet || git commit -m "feat(identity): prepare reviewer authorization migration"
           git push origin HEAD:agent/business-identity-review-authorization
