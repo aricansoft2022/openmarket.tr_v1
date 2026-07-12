@@ -7,7 +7,11 @@ import {
   responseSessionHeaders,
   signInWithEmail,
 } from "~/lib/auth/registration.server";
-import { hasErrors, validateLogin } from "~/lib/auth/registration";
+import {
+  hasErrors,
+  type LoginErrors,
+  validateLogin,
+} from "~/lib/auth/registration";
 
 import type { Route } from "./+types/auth.login";
 
@@ -30,21 +34,16 @@ export async function action({ request }: Route.ActionArgs) {
     });
 
     if (!response.ok) {
-      return data(
-        { errors: { form: await readAuthError(response) }, values },
-        { status: response.status },
-      );
+      const responseErrors: LoginErrors = { form: await readAuthError(response) };
+      return data({ errors: responseErrors, values }, { status: response.status });
     }
 
     return redirect("/", { headers: responseSessionHeaders(response) });
   } catch {
-    return data(
-      {
-        errors: { form: "Giriş servisine şu anda ulaşılamıyor. Lütfen yeniden deneyin." },
-        values,
-      },
-      { status: 503 },
-    );
+    const responseErrors: LoginErrors = {
+      form: "Giriş servisine şu anda ulaşılamıyor. Lütfen yeniden deneyin.",
+    };
+    return data({ errors: responseErrors, values }, { status: 503 });
   }
 }
 
