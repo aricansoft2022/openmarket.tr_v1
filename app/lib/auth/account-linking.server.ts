@@ -125,7 +125,11 @@ export async function loadAccountSecurity(
   });
 }
 
-async function verifyCurrentPassword(auth: ReturnType<typeof createAuth>, request: Request, password: string) {
+async function verifyCurrentPassword(
+  auth: ReturnType<typeof createAuth>,
+  request: Request,
+  password: string,
+) {
   const response = await auth.handler(
     authRequest(request, "/api/auth/verify-password", { password }),
   );
@@ -187,13 +191,9 @@ export async function beginGoogleAccountLink(
     const location = await safeGoogleAuthorizationUrl(response);
     if (!location) return Response.json({ code: "PROVIDER_RESPONSE_INVALID" }, { status: 502 });
 
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...Object.fromEntries(responseSessionHeaders(response)),
-        location: location.toString(),
-      },
-    });
+    const headers = responseSessionHeaders(response);
+    headers.set("location", location.toString());
+    return new Response(null, { status: 302, headers });
   });
 }
 
