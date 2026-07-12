@@ -21,32 +21,32 @@ npm run verify
 npm run db:check
 ```
 
-Node must satisfy the repository engine requirement. Do not replace `npm ci` with `npm install` in CI or documented verification flows unless the lockfile is intentionally being regenerated in a dedicated dependency PR.
+Node must satisfy the repository engine requirement. Do not replace `npm ci` with `npm install` in CI or documented verification flows unless the lockfile is intentionally regenerated in a dedicated dependency PR.
 
 ## Current state
 
-The repository foundation is intentionally small. It has a working SSR application, health route, Cloudflare Worker entry, queue contract, Drizzle/Hyperdrive connection helper, initial audit schema and workflow documentation. No user-facing marketplace domain has been implemented yet.
+Phase 0 was merged to `main` through PR #1. The repository contains a working SSR foundation, health route, Cloudflare Worker entry, queue contract, Drizzle/Hyperdrive connection helper, immutable audit schema and delivery documentation. No user-facing marketplace domain has been implemented yet.
 
-Dependencies are pinned in `package.json` and reproducibly locked in `package-lock.json`. CI installs from that lockfile with read-only repository permissions.
+Dependencies are pinned and reproducibly locked. CI uses read-only repository permissions and exposes formatting, documentation, types, tests and build as separate gates.
 
 `DESIGN_REFERENCE.md` is reference-only. Do not copy the prototype hash router, mock authentication or mock data into production.
 
 ## Exact next tasks
 
-1. Provision a development Neon database and create a Cloudflare Hyperdrive configuration.
-2. Add environment-specific bindings without committing secrets.
-3. Apply `drizzle/0000_fat_leo.sql` and verify that update/delete attempts on `audit_logs` fail.
-4. Create Phase 1 issues in this order:
-   - Better Auth schema and request-scoped auth factory
-   - email/password registration and verification
-   - Google OAuth
-   - business identity/company-email verification
-   - workspace selection and buyer activation
-   - supplier company profile, types and memberships
-   - private R2 document upload
-   - document review and supplier activation state machine
-   - fixed roles and permission guards
-5. Keep the first Phase 1 PR limited to auth persistence and `/api/auth/*`; do not mix onboarding UI into it.
+1. Work #2 — provision development Neon and Cloudflare resources.
+2. Verify runtime PostgreSQL access through Hyperdrive and migrations through a direct Neon URL.
+3. Apply `drizzle/0000_fat_leo.sql` and prove update/delete attempts on `audit_logs` fail.
+4. Record non-secret resource identifiers, secret names without values, verification output and rollback steps.
+5. Continue in dependency order:
+   - #3 Better Auth persistence and request-scoped auth factory
+   - #4 registration, verification and Google OAuth
+   - #5 business identity, workspace selection and buyer activation
+   - #6 supplier company profile, types and memberships
+   - #7 private company-document upload and review
+   - #8 supplier activation state machine
+   - #9 fixed roles, permissions and route guards
+   - #10 Phase 1 integration gate
+6. Keep the first implementation PR limited to #2. Do not mix infrastructure provisioning with auth persistence or onboarding UI.
 
 ## Verification commands
 
@@ -67,7 +67,7 @@ npm run db:generate
 
 ## Known blockers
 
-- No Cloudflare binding IDs or secrets are configured.
-- No Neon database has been provisioned.
+- No Cloudflare development binding IDs or secrets are configured.
+- No Neon development database has been provisioned.
 - Better Auth is installed but deliberately not configured until the request-scoped database lifecycle is tested.
 - Cloudflare Images and Email Sending require account-level provisioning outside the repository.
