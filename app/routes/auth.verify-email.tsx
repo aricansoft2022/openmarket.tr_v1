@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { data, Form, Link, useNavigation } from "react-router";
 
 import { AuthShell, FieldError } from "~/components/auth-shell";
+import { TurnstileField } from "~/components/turnstile-field";
 import {
   hasRecoveryErrors,
   type EmailRequestErrors,
@@ -9,11 +10,20 @@ import {
 } from "~/lib/auth/recovery";
 import { requestVerificationEmail } from "~/lib/auth/recovery.server";
 import type { PreferredLanguage } from "~/lib/db/schema";
+import {
+  enforceAuthRequest,
+  publicAbuseControlError,
+  turnstileClientConfiguration,
+} from "~/lib/security/auth-abuse.server";
 
 import type { Route } from "./+types/auth.verify-email";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "E-posta doğrulama — OpenMarket.tr" }];
+}
+
+export function loader() {
+  return turnstileClientConfiguration(env);
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -22,6 +32,22 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (hasRecoveryErrors(errors)) {
     return data({ sent: false, values, errors }, { status: 400 });
+  }
+
+  const abuseResult = await enforceAuthRequest({
+    env,
+    request,
+    formData,
+    action: "resend-verification",
+  });
+
+  if (!abuseResult.ok) {
+    const publicError = publicAbuseControlError(abuseResult);
+    const responseErrors: EmailRequestErrors = { form: publicError.message };
+    return data(
+      { sent: false, values, errors: responseErrors },
+      { status: publicError.status, headers: publicError.headers },
+    );
   }
 
   try {
@@ -49,10 +75,11 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function VerifyEmail({ actionData }: Route.ComponentProps) {
+export default function VerifyEmail({ actionData, loaderData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const submitting = navigation.state === "submitting";
   const errors = actionData?.errors;
+  const securityUnavailable = !loaderData.bypass && !loaderData.siteKey;
 
   return (
     <AuthShell
@@ -108,7 +135,17 @@ export default function VerifyEmail({ actionData }: Route.ComponentProps) {
           <FieldError id="verification-language-error" message={errors?.preferredLanguage} />
         </div>
 
-        <button className="button button--primary auth-submit" type="submit" disabled={submitting}>
+        <TurnstileField
+          siteKey={loaderData.siteKey}
+          action="resend-verification"
+          bypass={loaderData.bypass}
+        />
+
+        <button
+          className="button button--primary auth-submit"
+          type="submit"
+          disabled={submitting || securityUnavailable}
+        >
           {submitting ? "Bağlantı hazırlanıyor…" : "Doğrulama bağlantısını yeniden gönder"}
         </button>
         <p className="form-note">
