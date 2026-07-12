@@ -15,16 +15,19 @@ Then inspect the current branch and run:
 
 ```bash
 node --version
-npm install
+npm ci
 npm run spec:materialize
 npm run verify
+npm run db:check
 ```
 
-Node must satisfy the repository engine requirement.
+Node must satisfy the repository engine requirement. Do not replace `npm ci` with `npm install` in CI or documented verification flows unless the lockfile is intentionally being regenerated in a dedicated dependency PR.
 
 ## Current state
 
 The repository foundation is intentionally small. It has a working SSR application, health route, Cloudflare Worker entry, queue contract, Drizzle/Hyperdrive connection helper, initial audit schema and workflow documentation. No user-facing marketplace domain has been implemented yet.
+
+Dependencies are pinned in `package.json` and reproducibly locked in `package-lock.json`. CI installs from that lockfile with read-only repository permissions.
 
 `DESIGN_REFERENCE.md` is reference-only. Do not copy the prototype hash router, mock authentication or mock data into production.
 
