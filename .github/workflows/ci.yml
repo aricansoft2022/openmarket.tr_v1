@@ -129,6 +129,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add app drizzle scripts package.json README.md DATA_MODEL.md DECISIONS.md HANDOFF.md STATUS.md TEST_PLAN.md
           git diff --cached --quiet || git commit -m "feat(auth): generate recovery outbox migration"
           git push origin HEAD:agent/auth-verification-recovery
