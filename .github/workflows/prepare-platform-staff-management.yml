@@ -1,16 +1,20 @@
 name: Prepare platform staff management
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [agent/platform-staff-assignment-management]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prepare-platform-staff-management
+  cancel-in-progress: true
 
 jobs:
   prepare:
-    if: github.head_ref == 'agent/platform-staff-assignment-management'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: write
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
