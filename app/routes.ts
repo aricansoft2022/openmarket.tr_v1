@@ -32,6 +32,7 @@ const routes = [
     "admin/business-identity/reviews/:reviewId/evidence/:evidenceId/download",
     "routes/admin.business-identity-review-evidence-download.ts",
   ),
+  route("admin/staff", "routes/admin.staff.tsx"),
   route("giris", "routes/auth.login-alias.ts"),
   route("kayit", "routes/auth.register-alias.ts"),
   route("kayit/basarili", "routes/auth.registration-success-alias.ts"),
