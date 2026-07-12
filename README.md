@@ -35,13 +35,17 @@ npm run dev
 The current application exposes:
 
 - `/` — public foundation page and auth entry links
-- `/giris` — A01 email/password login
-- `/kayit` — A02 registration with country, preferred language and intended use
-- `/kayit/basarili` — A03 registration success state
+- `/auth/login` — A01 email/password login
+- `/auth/register` — A02 registration with country, preferred language and intended use
+- `/auth/verify-email` — A04 verification-pending and resend state
+- `/auth/verify-email/result` — A05 verification success/error state
+- `/auth/forgot-password` — A06 enumeration-safe reset request
+- `/auth/reset-password` — A07 reset form and token-error state
+- `/giris`, `/kayit` and `/kayit/basarili` — legacy redirects to canonical auth routes
 - `/api/auth/*` — Better Auth resource handler
 - `/health` — no-cache service health response with validated core metadata
 
-Email delivery, verification tokens, password reset, Google OAuth and Turnstile are not enabled yet. The registration route creates Better Auth identity data and `user_preferences` atomically; intended use does not activate a buyer or supplier workspace.
+Email verification and password-reset tokens are enabled. Their Turkish/English delivery contracts are written atomically to `outbox_events`; no external email sender is configured yet. Google OAuth, Turnstile and route-level rate limiting remain deferred. Registration creates Better Auth identity data, `user_preferences` and the verification outbox event in one transaction; intended use does not activate a buyer or supplier workspace.
 
 Wrangler locally emulates the configured private R2 bucket and background Queue. Hyperdrive remains intentionally unconfigured until a real development binding exists; no fake resource ID is committed. Read `RUNTIME_CONFIGURATION.md` before adding bindings or secrets.
 
@@ -55,12 +59,13 @@ npm run db:local:up
 npm run db:verify
 npm run db:verify:auth
 npm run db:verify:registration
+npm run db:verify:recovery
 npm run db:local:down
 ```
 
 `npm run db:verify` applies the committed Drizzle migrations, verifies the required audit indexes and proves that the database trigger rejects both UPDATE and DELETE operations on `audit_logs`.
 
-`npm run db:verify:auth` verifies Better Auth signup, hashed credential storage, signin and persisted sessions. `npm run db:verify:registration` verifies required preference persistence and proves that a failed preference write rolls back the user and credential account.
+`npm run db:verify:auth` verifies Better Auth signup, hashed credential storage, verification outbox creation, verified signin and persisted sessions. `npm run db:verify:registration` verifies required preference/outbox atomicity and duplicate-signup non-destruction. `npm run db:verify:recovery` verifies the email-verification gate, generic unknown-email reset response, password reset, session revocation, token replay rejection and expiry handling.
 
 Use `npm run db:local:reset` only when you intentionally want to delete the local PostgreSQL volume. Use `npm run db:local:logs` to inspect startup problems.
 
@@ -74,7 +79,7 @@ npm run config:check
 npm run db:check
 ```
 
-GitHub Actions also applies and verifies migrations, Better Auth persistence and transactional registration against an isolated PostgreSQL service container on every pull request and `main` push.
+GitHub Actions applies and verifies migrations, audit invariants, Better Auth persistence, transactional registration and auth recovery against an isolated PostgreSQL service container on every pull request and `main` push.
 
 ## Delivery discipline
 
