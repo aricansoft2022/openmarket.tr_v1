@@ -22,7 +22,10 @@ export const staffManagementPermissions = [
 ] as const;
 export type StaffManagementPermission = (typeof staffManagementPermissions)[number];
 
-export const staffManagerRoles = ["super_admin", "platform_admin"] as const satisfies readonly PlatformStaffRole[];
+export const staffManagerRoles = [
+  "super_admin",
+  "platform_admin",
+] as const satisfies readonly PlatformStaffRole[];
 export type StaffManagerRole = (typeof staffManagerRoles)[number];
 
 const businessIdentityPermissionMatrix: Record<
@@ -37,7 +40,10 @@ const businessIdentityPermissionMatrix: Record<
   privacy_support_manager: [],
 };
 
-const staffManagementPermissionMatrix: Record<PlatformStaffRole, readonly StaffManagementPermission[]> = {
+const staffManagementPermissionMatrix: Record<
+  PlatformStaffRole,
+  readonly StaffManagementPermission[]
+> = {
   super_admin: staffManagementPermissions,
   platform_admin: staffManagementPermissions,
   compliance_reviewer: [],
@@ -93,7 +99,10 @@ export function strongestStaffManagerRole(
   return null;
 }
 
-export function managerMayChangeRole(managerRole: StaffManagerRole, targetRole: PlatformStaffRole): boolean {
+export function managerMayChangeRole(
+  managerRole: StaffManagerRole,
+  targetRole: PlatformStaffRole,
+): boolean {
   if (managerRole === "super_admin") return true;
   return targetRole !== "super_admin" && targetRole !== "platform_admin";
 }

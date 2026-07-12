@@ -7,9 +7,7 @@ import {
   revokeStaffAssignment,
   StaffManagementError,
 } from "~/lib/authorization/staff-management.server";
-import {
-  StaffAuthorizationError,
-} from "~/lib/authorization/platform-staff.server";
+import { StaffAuthorizationError } from "~/lib/authorization/platform-staff.server";
 import { managerMayChangeRole } from "~/lib/authorization/platform-staff";
 import { platformStaffRoles, type PlatformStaffRole } from "~/lib/db/schema";
 
@@ -95,7 +93,10 @@ export async function action({ request }: Route.ActionArgs) {
         !platformStaffRoles.includes(role as PlatformStaffRole) ||
         typeof reason !== "string"
       ) {
-        return data<ActionData>({ error: "Hesap, rol ve gerekçe alanlarını tamamlayın." }, { status: 400 });
+        return data<ActionData>(
+          { error: "Hesap, rol ve gerekçe alanlarını tamamlayın." },
+          { status: 400 },
+        );
       }
       await grantStaffAssignment(env, request, {
         targetEmail,
@@ -109,7 +110,10 @@ export async function action({ request }: Route.ActionArgs) {
       const assignmentId = formData.get("assignmentId");
       const reason = formData.get("reason");
       if (typeof assignmentId !== "string" || typeof reason !== "string") {
-        return data<ActionData>({ error: "Rol kaydı ve kaldırma gerekçesi zorunludur." }, { status: 400 });
+        return data<ActionData>(
+          { error: "Rol kaydı ve kaldırma gerekçesi zorunludur." },
+          { status: 400 },
+        );
       }
       await revokeStaffAssignment(env, request, { assignmentId, reason });
       return redirect("/admin/staff?changed=revoked");
@@ -142,8 +146,8 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
         <p className="eyebrow">X04 · Admin yetkisi gerekli</p>
         <h1>Personel rollerini yönetemezsiniz.</h1>
         <p>
-          Reviewer, Moderator, Buyer veya Supplier durumu bu alana erişim vermez. Aktif Platform Admin
-          ya da Super Admin ataması gerekir.
+          Reviewer, Moderator, Buyer veya Supplier durumu bu alana erişim vermez. Aktif Platform
+          Admin ya da Super Admin ataması gerekir.
         </p>
         <Link className="button" to="/">
           Ana sayfaya dön
@@ -159,8 +163,8 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
           <p className="eyebrow">Platform operasyonları · Yetki yönetimi</p>
           <h1>Personel rolleri</h1>
           <p>
-            Etkin rol: <strong>{loaderData.effectiveRole}</strong>. Kendi rolünüzü değiştiremezsiniz;
-            tüm değişiklikler gerekçe ve audit kaydı gerektirir.
+            Etkin rol: <strong>{loaderData.effectiveRole}</strong>. Kendi rolünüzü
+            değiştiremezsiniz; tüm değişiklikler gerekçe ve audit kaydı gerektirir.
           </p>
         </div>
         <Link className="button" to="/admin/business-identity/reviews">
@@ -170,7 +174,8 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
 
       {loaderData.changed ? (
         <div className="form-alert" role="status">
-          Personel rolü başarıyla {loaderData.changed === "granted" ? "etkinleştirildi" : "kaldırıldı"}.
+          Personel rolü başarıyla{" "}
+          {loaderData.changed === "granted" ? "etkinleştirildi" : "kaldırıldı"}.
         </div>
       ) : null}
       {actionData?.error ? (
@@ -183,8 +188,8 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
         <p className="eyebrow">Gerekçeli rol ataması</p>
         <h2>Hesaba sabit rol verin</h2>
         <p>
-          Yalnız mevcut bir hesap seçilebilir. Platform Admin operasyon rollerini; Super Admin ayrıca
-          yönetici rollerini yönetebilir.
+          Yalnız mevcut bir hesap seçilebilir. Platform Admin operasyon rollerini; Super Admin
+          ayrıca yönetici rollerini yönetebilir.
         </p>
         <Form method="post" className="auth-form staff-review__grant-form">
           <input type="hidden" name="intent" value="grant" />
@@ -263,7 +268,11 @@ export default function AdminStaff({ loaderData, actionData }: Route.ComponentPr
                           required
                           disabled={!canChange || submitting}
                         />
-                        <button className="button" type="submit" disabled={!canChange || submitting}>
+                        <button
+                          className="button"
+                          type="submit"
+                          disabled={!canChange || submitting}
+                        >
                           Rolü kaldır
                         </button>
                       </Form>

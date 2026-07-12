@@ -328,8 +328,7 @@ try {
       role: "product_rfq_moderator",
       reason: "x",
     }),
-    (error: unknown) =>
-      error instanceof StaffManagementError && error.code === "INVALID_REASON",
+    (error: unknown) => error instanceof StaffManagementError && error.code === "INVALID_REASON",
   );
 
   console.log(

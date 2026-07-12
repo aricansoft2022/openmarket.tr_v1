@@ -67,7 +67,10 @@ function normalizedEmail(value: string): string {
 function validatedReason(value: string): string {
   const reason = value.trim();
   if (reason.length < 3) {
-    throw new StaffManagementError("INVALID_REASON", "A reason of at least three characters is required.");
+    throw new StaffManagementError(
+      "INVALID_REASON",
+      "A reason of at least three characters is required.",
+    );
   }
   return reason;
 }
@@ -206,7 +209,10 @@ export async function grantStaffAssignment(
         .limit(1)
         .for("update");
       if (!target) {
-        throw new StaffManagementError("USER_NOT_FOUND", "No account exists for the supplied email.");
+        throw new StaffManagementError(
+          "USER_NOT_FOUND",
+          "No account exists for the supplied email.",
+        );
       }
       assertNotSelfManagement(session.user.id, target.id);
 
@@ -338,7 +344,10 @@ export async function revokeStaffAssignment(
         .limit(1)
         .for("update");
       if (!assignment) {
-        throw new StaffManagementError("ASSIGNMENT_NOT_FOUND", "The staff assignment was not found.");
+        throw new StaffManagementError(
+          "ASSIGNMENT_NOT_FOUND",
+          "The staff assignment was not found.",
+        );
       }
       if (assignment.status !== "active") {
         throw new StaffManagementError(
