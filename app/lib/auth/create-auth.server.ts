@@ -15,10 +15,7 @@ import {
   type GoogleOAuthEnvironment,
 } from "./google-oauth";
 
-export type AuthEnvironment = Pick<
-  Env,
-  "HYPERDRIVE" | "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL"
-> &
+export type AuthEnvironment = Pick<Env, "HYPERDRIVE" | "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL"> &
   GoogleOAuthEnvironment;
 
 export function createAuth(database: Database, env: AuthEnvironment) {

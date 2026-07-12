@@ -1,10 +1,7 @@
 import { Link } from "react-router";
 
 import { AuthShell } from "~/components/auth-shell";
-import {
-  resolveGoogleCallbackState,
-  type GoogleCallbackState,
-} from "~/lib/auth/google-oauth";
+import { resolveGoogleCallbackState, type GoogleCallbackState } from "~/lib/auth/google-oauth";
 
 import type { Route } from "./+types/auth.callback";
 
@@ -30,8 +27,7 @@ const copy: Record<
   },
   "account-not-linked": {
     title: "Hesap otomatik bağlanmadı.",
-    description:
-      "Aynı e-posta görülse bile Google hesabını mevcut hesaba sessizce bağlamıyoruz.",
+    description: "Aynı e-posta görülse bile Google hesabını mevcut hesaba sessizce bağlamıyoruz.",
     message:
       "Önce e-posta ve şifrenizle giriş yapın. Açık onaylı hesap bağlama adımı daha sonra sunulacaktır.",
     action: "E-posta ile giriş yap",
@@ -39,16 +35,14 @@ const copy: Record<
   },
   unavailable: {
     title: "Google ile giriş henüz etkin değil.",
-    description:
-      "Bu ortamda Google OAuth yapılandırması tamamlanmadığı için giriş başlatılmadı.",
+    description: "Bu ortamda Google OAuth yapılandırması tamamlanmadığı için giriş başlatılmadı.",
     message: "E-posta ve şifre ile güvenli biçimde devam edebilirsiniz.",
     action: "Giriş ekranına dön",
     href: "/auth/login",
   },
   "provider-error": {
     title: "Google girişi tamamlanamadı.",
-    description:
-      "İstek reddedilmiş, süresi dolmuş veya sağlayıcı yanıtı doğrulanamamış olabilir.",
+    description: "İstek reddedilmiş, süresi dolmuş veya sağlayıcı yanıtı doğrulanamamış olabilir.",
     message:
       "Hesap veya sağlayıcı ayrıntıları gösterilmez. Yeniden deneyebilir ya da e-posta ile giriş yapabilirsiniz.",
     action: "Giriş ekranına dön",

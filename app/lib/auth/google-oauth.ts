@@ -8,11 +8,7 @@ export type GoogleOAuthReadiness = {
 };
 
 export type GoogleCallbackState =
-  | "success"
-  | "account-not-linked"
-  | "unavailable"
-  | "provider-error"
-  | "processing";
+  "success" | "account-not-linked" | "unavailable" | "provider-error" | "processing";
 
 const placeholderPattern = /^(?:replace-|example|placeholder|changeme|todo)/i;
 
@@ -20,9 +16,7 @@ function usable(value: string | undefined): value is string {
   return Boolean(value?.trim()) && !placeholderPattern.test(value!.trim());
 }
 
-export function inspectGoogleOAuthReadiness(
-  env: GoogleOAuthEnvironment,
-): GoogleOAuthReadiness {
+export function inspectGoogleOAuthReadiness(env: GoogleOAuthEnvironment): GoogleOAuthReadiness {
   const missing: GoogleOAuthReadiness["missing"] = [];
 
   if (!usable(env.GOOGLE_CLIENT_ID)) missing.push("GOOGLE_CLIENT_ID");
