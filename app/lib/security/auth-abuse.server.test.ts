@@ -5,6 +5,9 @@ import {
   authRateLimitPolicies,
   clientAddress,
   enforceAuthAbuseControls,
+  enforceAuthRequest,
+  publicAbuseControlError,
+  turnstileClientConfiguration,
   verifyTurnstile,
 } from "./auth-abuse.server";
 
@@ -29,14 +32,6 @@ describe("auth abuse controls", () => {
     });
     expect(authRateLimitPolicies["forgot-password"].requiresTurnstile).toBe(true);
     expect(authRateLimitPolicies.login.requiresTurnstile).toBe(false);
-  });
-
-  it("fails closed when the rate-limit binding is unavailable", async () => {
-    const request = new Request("https://openmarket.test/auth/login");
-
-    await expect(
-      enforceAuthAbuseControls({ request, action: "login" }),
-    ).resolves.toEqual({ ok: false, reason: "abuse-control-unavailable" });
   });
 
   it("fails closed when Turnstile is not configured", async () => {
@@ -67,6 +62,21 @@ describe("auth abuse controls", () => {
     expect(String(init?.body)).toContain("secret=secret-value-long-enough");
     expect(String(init?.body)).toContain("response=browser-token");
     expect(String(init?.body)).toContain("remoteip=203.0.113.7");
+  });
+
+  it("rejects a token issued for another action", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({ success: true, action: "forgot-password" }),
+    );
+
+    await expect(
+      verifyTurnstile({
+        secret: "secret-value-long-enough",
+        token: "browser-token",
+        expectedAction: "register",
+        fetcher,
+      }),
+    ).resolves.toEqual({ ok: false, reason: "turnstile-invalid" });
   });
 
   it("does not call Turnstile when the rate limit is exhausted", async () => {
@@ -104,5 +114,54 @@ describe("auth abuse controls", () => {
         rateLimiter: { limit: async () => ({ success: true }) },
       }),
     ).resolves.toEqual({ ok: true });
+  });
+
+  it("bypasses external controls only in the explicit local environment", async () => {
+    await expect(
+      enforceAuthRequest({
+        env: { APP_ENV: "local" },
+        request: new Request("http://localhost:5173/auth/register"),
+        formData: new FormData(),
+        action: "register",
+      }),
+    ).resolves.toEqual({ ok: true });
+
+    await expect(
+      enforceAuthRequest({
+        env: { APP_ENV: "preview" },
+        request: new Request("https://preview.openmarket.test/auth/register"),
+        formData: new FormData(),
+        action: "register",
+      }),
+    ).resolves.toEqual({ ok: false, reason: "abuse-control-unavailable" });
+  });
+
+  it("returns only the public Turnstile site key to route loaders", () => {
+    expect(
+      turnstileClientConfiguration({
+        APP_ENV: "preview",
+        TURNSTILE_SITE_KEY: "site-key-value",
+        TURNSTILE_SECRET_KEY: "secret-value-long-enough",
+      }),
+    ).toEqual({ bypass: false, siteKey: "site-key-value" });
+
+    expect(turnstileClientConfiguration({ APP_ENV: "local" })).toEqual({
+      bypass: true,
+      siteKey: null,
+    });
+  });
+
+  it("maps rate limiting to a stable public response with Retry-After", () => {
+    expect(
+      publicAbuseControlError({
+        ok: false,
+        reason: "rate-limited",
+        retryAfterSeconds: 900,
+      }),
+    ).toEqual({
+      message: "Çok fazla istek yapıldı. Lütfen daha sonra yeniden deneyin.",
+      status: 429,
+      headers: { "Retry-After": "900" },
+    });
   });
 });
