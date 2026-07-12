@@ -1,0 +1,10 @@
+# Copy to .dev.vars only when working on the related integration.
+# Never commit .dev.vars or real credentials.
+
+BETTER_AUTH_URL="http://localhost:5173"
+BETTER_AUTH_SECRET="replace-with-at-least-32-random-bytes"
+GOOGLE_CLIENT_ID="replace-with-google-client-id"
+GOOGLE_CLIENT_SECRET="replace-with-google-client-secret"
+TURNSTILE_SECRET_KEY="replace-with-turnstile-secret-key"
+CLOUDFLARE_ACCOUNT_ID="replace-with-cloudflare-account-id"
+CLOUDFLARE_IMAGES_TOKEN="replace-with-scoped-images-token"
