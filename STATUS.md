@@ -27,49 +27,52 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged A08–A10 workspace, submission, status and resubmission routes through PR #24.
 - Merged private manual-exception evidence metadata, R2 lifecycle and owner-only handlers through PR #25.
 - Merged route registration, A10 evidence entry and permanent evidence CI repair through PR #26 as `68db58fac2b3a2e4f725ea44a47edad7629d9e64`.
+- Merged fixed Reviewer/Admin business-identity authorization, self-review denial and private staff evidence access through PR #27 as `f3854595929089bbcb71289014c9e34aa5b93cf6`.
 - Kept fake Cloudflare resource IDs, public object URLs and credentials out of source control.
 
 ## In progress
 
-PR #27 on `agent/business-identity-review-authorization` adds permissioned business-identity review:
+PR #28 on `agent/platform-staff-assignment-management` adds audited platform staff assignment management:
 
-- fixed launch platform roles stored in `platform_staff_assignments` with active/revoked state;
-- code-owned list/read/decide/evidence permissions;
-- active Compliance Reviewer, Platform Admin and Super Admin authorization;
-- anonymous, unrelated-role, revoked-assignment and self-review denial;
-- pending review queue, detail and reasoned verify/reject routes;
-- private Reviewer/Admin evidence downloads without object-key disclosure;
-- effective staff role on privileged immutable audit records;
-- next-request revocation behavior;
-- unit, route and PostgreSQL/fake-R2 integration coverage.
+- administrator-only assignment list, grant, revoke and reactivation permissions;
+- Platform Admin management of operational roles only;
+- Super Admin management of operational and administrator roles;
+- exact existing-account lookup by normalized email;
+- server-side self-grant and self-revoke denial;
+- duplicate-active protection and revoked-row reactivation;
+- `/admin/staff` permission-denied, grant, active/revoked and reasoned revoke states;
+- immutable grant/revoke audits containing effective role, old/new values and request evidence;
+- next-request permission changes;
+- unit, route and PostgreSQL integration coverage.
 
-No staff self-service grant/revoke surface is introduced. Buyer, Supplier and Moderator state remain separate from platform staff authority.
+No arbitrary custom roles, permission JSON or delegation model is introduced.
 
 ## Verification
 
-GitHub Actions run `29211012955` passed both permanent jobs on the final branch head:
+Current PR #28 branch target:
 
 ```text
-npm run format:check                              PASS
-npm run docs:check                                PASS
-npm run config:check                              PASS
-npm run typecheck                                 PASS
-npm run test:run                                  PASS
-npm run build                                     PASS
-npm run db:check                                  PASS
-npm run db:verify                                 PASS
-npm run db:verify:auth                            PASS
-npm run db:verify:registration                    PASS
-npm run db:verify:recovery                        PASS
-npm run db:verify:google                          PASS
-npm run db:verify:google-linking                  PASS
-npm run db:verify:business-identity               PASS
-npm run db:verify:business-identity-onboarding    PASS
-npm run db:verify:business-identity-evidence      PASS
-npm run db:verify:business-identity-review        PASS
+npm run format:check                              pending final CI
+npm run docs:check                                pending final CI
+npm run config:check                              pending final CI
+npm run typecheck                                 pending final CI
+npm run test:run                                  pending final CI
+npm run build                                     pending final CI
+npm run db:check                                  pending final CI
+npm run db:verify                                 pending final CI
+npm run db:verify:auth                            pending final CI
+npm run db:verify:registration                    pending final CI
+npm run db:verify:recovery                        pending final CI
+npm run db:verify:google                          pending final CI
+npm run db:verify:google-linking                  pending final CI
+npm run db:verify:business-identity               pending final CI
+npm run db:verify:business-identity-onboarding    pending final CI
+npm run db:verify:business-identity-evidence      pending final CI
+npm run db:verify:business-identity-review        pending final CI
+npm run db:verify:platform-staff-management       pending final CI
 ```
 
-The authorization gate proves fixed-role resolution, Moderator and revoked-assignment denial, self-review denial, safe private evidence access, reasoned decisions, Buyer activation, effective-role audit evidence and revocation on the next request.
+The new staff-management gate must prove administrator-only access, hierarchy enforcement, self-management denial, exact-account grant, duplicate protection, revoke/reactivate lifecycle, immediate permission changes and effective-role audit evidence.
 
 ## Known issues and blockers
 
@@ -78,7 +81,6 @@ The authorization gate proves fixed-role resolution, Moderator and revoked-assig
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
 - Real Google OAuth credentials and authorized redirect URIs are not configured, so live callback completion remains unverified.
 - Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
-- Audited Admin-only staff grant/revoke management remains open after the authorization slice.
 - Evidence content inspection/scanning, quarantine and retention cleanup policy remain open.
 - Supplier workspace and document activation remain separate domain work in #6–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
@@ -87,9 +89,8 @@ These are remote integration or later feature blockers, not blockers for local p
 
 ## Next tasks
 
-1. Merge PR #27; both permanent read-only CI jobs pass on the final branch head.
-2. Add audited Admin-only staff assignment grant/revoke management without self-service escalation.
-3. Add company-email verification delivery after the email dispatcher is authorized.
-4. Define evidence scanning, quarantine and retention cleanup before claiming production-ready review.
-5. Provision remote Neon/Hyperdrive/R2 evidence before claiming preview or production readiness.
-6. Continue Phase 1 in dependency order through supplier issues #6–#8, fixed permission issue #9 and integration gate #10.
+1. Merge PR #28 only after both permanent read-only CI jobs pass on the final branch head.
+2. Add company-email verification delivery after the email dispatcher is authorized.
+3. Define evidence scanning, quarantine and retention cleanup before claiming production-ready review.
+4. Provision remote Neon/Hyperdrive/R2 evidence before claiming preview or production readiness.
+5. Continue Phase 1 in dependency order through supplier issues #6–#8, complete the remaining fixed permission coverage in #9 and close through integration gate #10.
