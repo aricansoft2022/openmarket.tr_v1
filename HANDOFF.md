@@ -28,7 +28,7 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery, guarded Google OAuth/A03 states, route-level auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding, private owner-only manual-exception evidence storage and fixed Reviewer/Admin business-identity authorization are merged to `main` through PR #27.
 
-The current PR #28 branch adds audited platform staff assignment management:
+The current PR #30 branch `agent/platform-staff-assignment-management-final` adds audited platform staff assignment management:
 
 - code-owned staff assignment list/grant/revoke permissions;
 - active Platform Admin and Super Admin manager resolution on every request;
@@ -41,11 +41,11 @@ The current PR #28 branch adds audited platform staff assignment management:
 - immutable grant/revoke audit evidence with effective role and old/new values;
 - PostgreSQL verification of hierarchy, immediate permission changes and audit behavior.
 
-Reviewer, Moderator, Buyer and Supplier states never imply staff-management authority. No custom role editor, arbitrary permission JSON or delegation model is included.
+Reviewer, Moderator, Buyer and Supplier states never imply staff-management authority. No custom role editor, arbitrary permission JSON or delegation model is included. Initial Super Admin bootstrap remains a controlled provisioning action; it is intentionally not exposed as a public or self-service workflow.
 
 ## Exact next tasks
 
-1. Merge PR #28 only after permanent application and PostgreSQL CI jobs pass on the final branch head.
+1. Merge PR #30 only after exact prepared-commit validation and restored permanent read-only CI pass.
 2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
 3. Keep issue #4 open for external delivery and remote auth evidence.
 4. Continue issue #5 in separate reviewed slices:
@@ -99,6 +99,7 @@ npm run db:local:down
 - Outbox records are produced, but Cloudflare Email Sending authorization and the dispatcher are not configured.
 - Real Google development credentials and authorized redirect URIs are not configured; live callback completion remains unverified.
 - Real Turnstile and Cloudflare Rate Limiting resources are not provisioned.
+- Initial Super Admin bootstrap requires controlled provisioning.
 - Evidence malware/content inspection, quarantine and retention cleanup are not implemented.
 - Cloudflare Images remains an account-level dependency for later media work.
 
