@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, agent/auth-abuse-controls]
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -96,35 +96,3 @@ jobs:
 
       - name: Verify Google OAuth policy and authorization contract
         run: npm run db:verify:google
-
-  format-auth-abuse-controls:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/auth-abuse-controls'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout abuse-control branch
-        uses: actions/checkout@v4
-        with:
-          ref: agent/auth-abuse-controls
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Format repository
-        run: npm run format
-
-      - name: Commit formatter output
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "style: format auth abuse controls"
-          git push origin HEAD:agent/auth-abuse-controls
