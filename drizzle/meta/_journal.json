@@ -43,6 +43,13 @@
       "when": 1783890001278,
       "tag": "0005_late_fixer",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783893503981,
+      "tag": "0006_massive_annihilus",
+      "breakpoints": true
     }
   ]
 }

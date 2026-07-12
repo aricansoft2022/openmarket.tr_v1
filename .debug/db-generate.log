@@ -4,4 +4,19 @@
 
 No config path provided, using default 'drizzle.config.ts'
 Reading config file '/home/runner/work/openmarket.tr_v1/openmarket.tr_v1/drizzle.config.ts'
-DATABASE_URL is required for Drizzle migrations.
+13 tables
+audit_logs 13 columns 3 indexes 0 fks
+account 13 columns 2 indexes 1 fks
+session 8 columns 1 indexes 1 fks
+user 7 columns 0 indexes 0 fks
+verification 6 columns 1 indexes 0 fks
+business_identity_reviews 15 columns 3 indexes 3 fks
+buyer_profiles 8 columns 1 indexes 2 fks
+company_emails 9 columns 3 indexes 1 fks
+email_domain_policies 6 columns 1 indexes 1 fks
+business_identity_evidence 14 columns 2 indexes 2 fks
+outbox_events 12 columns 3 indexes 0 fks
+platform_staff_assignments 12 columns 2 indexes 3 fks
+user_preferences 6 columns 0 indexes 1 fks
+
+[✓] Your SQL migration file ➜ drizzle/0006_massive_annihilus.sql 🚀
