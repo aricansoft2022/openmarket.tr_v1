@@ -1,0 +1,97 @@
+name: Prepare reviewer authorization docs
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  prepare:
+    if: github.head_ref == 'agent/business-identity-review-authorization'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/business-identity-review-authorization
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Update source documentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          additions = {
+              "DECISIONS.md": """
+
+## 2026-07-13 — Platform staff authority uses fixed assignments and request-time resolution
+
+**Decision:** Store launch platform staff assignments separately from authentication, Buyer, Supplier and company membership state. Resolve the effective role from active assignments on every privileged request. Only Compliance Reviewer, Platform Admin and Super Admin may list, inspect or decide business-identity reviews and read their private evidence.
+
+**Reason:** Workspace intent and commercial activation do not establish platform employment or moderation authority. Request-time resolution makes revocation effective without waiting for session expiry and keeps the fixed launch permission matrix auditable.
+
+**Security boundary:** Client visibility is never authorization. Anonymous users, unrelated roles, revoked assignments and self-review are denied server-side. Private evidence projections omit R2 object keys, decisions require reasons where applicable and privileged audit records store the effective role.
+
+**Rejected:** Inferring review authority from Buyer/Supplier/Moderator state; embedding role claims permanently in session cookies; allowing reviewers to decide their own applications; introducing custom roles, delegation or self-service escalation in this slice.
+""",
+              "DATA_MODEL.md": """
+
+## Platform staff authorization
+
+`platform_staff_assignments` stores fixed launch operational authority independently from Better Auth, workspace intent and company membership. Each row contains a user, one fixed role, active or revoked state, the assigning user, mandatory assignment reason and revocation actor/reason/timestamps when revoked. User and role are unique.
+
+Launch roles are `super_admin`, `platform_admin`, `catalogue_content_editor`, `compliance_reviewer`, `product_rfq_moderator` and `privacy_support_manager`. The application owns the Resource + Action permission matrix in code; the database stores assignments rather than arbitrary permission JSON or custom role definitions.
+
+Business-identity review list/read/decide and private evidence read permissions are granted only to active Compliance Reviewer, Platform Admin and Super Admin assignments. Effective role is resolved on every request, so revocation takes effect immediately for the next request. Buyer, Supplier, Moderator and other unrelated states never imply this authority, and self-review is prohibited.
+
+Privileged decision audit rows retain the effective role used for authorization. Staff assignment grant/revoke management is a separate Admin-only workflow and must create its own immutable audit evidence before production administration is enabled.
+""",
+              "TEST_PLAN.md": """
+
+## Business-identity staff authorization evidence
+
+The Phase 1 PostgreSQL and route gates must prove:
+
+- anonymous access redirects or fails without disclosing review data;
+- Product/RFQ Moderator, catalogue editor, privacy/support and accounts without staff assignments cannot list, read or decide business-identity reviews;
+- revoked Reviewer/Admin assignments are denied on the next request even when an existing session remains valid;
+- only active Compliance Reviewer, Platform Admin and Super Admin assignments resolve the required fixed permissions;
+- a staff user cannot list or decide their own application;
+- queue and detail projections expose only necessary applicant and evidence metadata and never expose R2 object keys;
+- private staff evidence downloads require both permission and the matching pending review/evidence identifiers;
+- verification and rejection use the shared transition service, rejection requires a reason and a decided review cannot be decided again;
+- verified decisions activate Buyer only when Buyer intent exists and do not activate Supplier;
+- privileged audit evidence stores the effective staff role and mandatory reason;
+- permission-denied, empty, read-only, validation and success states render for the staff routes.
+""",
+          }
+
+          for filename, block in additions.items():
+              path = Path(filename)
+              text = path.read_text()
+              heading = block.strip().splitlines()[0]
+              if heading not in text:
+                  path.write_text(text.rstrip() + block + "\n")
+          PY
+
+      - name: Format repository
+        run: npm run format
+
+      - name: Commit documentation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add DECISIONS.md DATA_MODEL.md TEST_PLAN.md
+          git diff --cached --quiet || git commit -m "docs(identity): define reviewer authorization boundaries"
+          git push origin HEAD:agent/business-identity-review-authorization
