@@ -8,11 +8,13 @@ Pure validators, runtime configuration readiness, schema resolver precedence, st
 
 ### Database integration
 
-Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
+Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
+
+Auth integration fixtures run inside rolled-back transactions. They must verify the core `user`, `account` and `session` writes through Better Auth APIs rather than inserting fixture rows directly.
 
 ### Worker integration
 
-Cloudflare Vitest pool for bindings, request context, R2 authorization, Queue retry behaviour, Turnstile verification wrappers, rate-limit decisions and Worker error handling.
+Cloudflare Vitest pool for bindings, request context, auth handler routing, session-cookie behaviour, R2 authorization, Queue retry behaviour, Turnstile verification wrappers, rate-limit decisions and Worker error handling.
 
 ### Route integration
 
@@ -46,8 +48,10 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 - local R2 and Queue binding emulation
 - isolated PostgreSQL migration application on every pull request
 - required audit indexes and UPDATE/DELETE immutability trigger verification
+- Better Auth core-schema migration
+- email/password signup, credential-account hashing, signin and session persistence
+- request-scoped `/api/auth/*` handler compilation
 - real Hyperdrive runtime and direct Neon migration-path verification before remote readiness
-- auth adapter integration
 - email verification and OAuth callback
 - business identity state transitions
 - supplier document private access

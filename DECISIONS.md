@@ -65,3 +65,11 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Reason:** Pinned direct versions alone do not make transitive dependency resolution reproducible. The lockfile must be updated intentionally with dependency changes.
 
 **Rejected:** Permanent `npm install` in CI, manually authored lockfile content or leaving write permission enabled after one-time lock generation.
+
+## 2026-07-12 — Better Auth owns authentication records only
+
+**Decision:** Use Better Auth's core `user`, `session`, `account` and `verification` models with UUID identifiers. Create the auth instance per request around the request-scoped Drizzle connection.
+
+**Reason:** Authentication identity and session lifecycle belong to Better Auth, while OpenMarket business identity, buyer activation, supplier activation, memberships and public contacts require explicit domain state machines and audit rules.
+
+**Rejected:** Adding workspace intent, business verification, supplier state, roles or public contact fields directly to Better Auth core tables; using a process-global PostgreSQL client in the Worker.

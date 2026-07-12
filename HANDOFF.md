@@ -26,30 +26,30 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0 and the runtime-configuration contract are merged to `main`. The repository contains a working SSR foundation, health route, Cloudflare Worker entry, queue contract, Drizzle/Hyperdrive connection helper, immutable audit schema and delivery documentation. No user-facing marketplace domain has been implemented yet.
+Phase 0, the runtime-configuration contract and local PostgreSQL verification are merged to `main`. The repository can be installed, built and tested without Neon or a Cloudflare account. CI runs application verification and PostgreSQL migration/invariant verification as separate read-only jobs.
 
-The repository can be installed, verified, built and run at foundation level without Neon or a Cloudflare account. Default local development emulates the configured private R2 bucket and background Queue. An optional Docker Compose PostgreSQL service now provides repeatable migration and database-invariant checks without remote infrastructure.
+The current #3 change adds Better Auth's four core models, a request-scoped auth factory around the existing Hyperdrive/Drizzle lifecycle, the `/api/auth/*` resource handler and isolated PostgreSQL signup/signin persistence verification.
 
-Dependencies are pinned and reproducibly locked. CI uses read-only repository permissions and exposes application verification and PostgreSQL migration verification as separate jobs.
-
-`DESIGN_REFERENCE.md` is reference-only. Do not copy the prototype hash router, mock authentication or mock data into production.
+Authentication identity remains separate from business identity, buyer/supplier activation, memberships, roles and public contact data.
 
 ## Exact next tasks
 
-1. Merge the local PostgreSQL verification PR after both CI jobs pass.
-2. Keep issue #2 open for the remaining real Neon and deployed Hyperdrive evidence.
-3. Start #3 as a narrow Better Auth schema and local persistence change:
-   - generate and review only the required identity/session migrations;
-   - keep the database lifecycle request-scoped;
-   - test persistence against isolated PostgreSQL;
-   - do not add registration screens or business activation logic.
-4. Before remote Worker readiness is claimed:
+1. Merge the Better Auth persistence PR only after both CI jobs pass, including `npm run db:verify:auth`.
+2. Keep issue #2 open for real development Neon and deployed Hyperdrive evidence.
+3. Start #4 in a separate PR series:
+   - registration and login screens/routes;
+   - account email verification and resend;
+   - forgot/reset password with expiry and replay protection;
+   - Google OAuth linking rules;
+   - Turnstile and route-level rate limiting;
+   - localized transactional-email contracts.
+4. Do not add business identity or workspace activation to auth core tables. Those begin in #5.
+5. Before remote Worker readiness is claimed:
    - provision isolated development Neon and Hyperdrive resources;
-   - verify runtime PostgreSQL access through Hyperdrive and migrations through a direct Neon URL;
-   - repeat the audit immutability verification against development Neon;
-   - record non-secret identifiers, secret names without values, verification output and rollback steps.
-5. Continue in dependency order through #4–#10.
-6. Do not mix external infrastructure provisioning, auth persistence and onboarding UI in one PR.
+   - apply the committed migrations through a direct Neon URL;
+   - verify `/api/auth/*` through deployed Hyperdrive;
+   - record safe identifiers, secret names without values, verification output and rollback steps.
+6. Continue in dependency order through #5–#10.
 
 ## Verification commands
 
@@ -64,23 +64,24 @@ npm run test:run
 npm run build
 ```
 
-Optional local PostgreSQL verification:
+Optional local PostgreSQL and auth verification:
 
 ```bash
 cp .env.example .env
 npm run db:local:up
 npm run db:check
 npm run db:verify
+npm run db:verify:auth
 npm run db:local:down
 ```
 
-`npm run db:verify` applies committed migrations and runs its audit mutation checks inside a rolled-back transaction. `npm run db:local:reset` is destructive and should only be used to intentionally delete the local database volume.
+The auth persistence verifier runs inside a rolled-back transaction. It creates a user through Better Auth, checks the credential account and password hashing, signs in, and verifies persisted sessions without leaving fixture rows behind.
 
 ## Known blockers
 
 - No Neon development database or deployed Hyperdrive configuration has been provisioned.
 - Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
-- Better Auth is installed but not configured; schema and local persistence work may begin only after the local database gate merges.
+- Email delivery, Google OAuth and Turnstile credentials are not configured; they are not required for this persistence slice.
 - Cloudflare Images and Email Sending require account-level provisioning outside the repository.
 
-These blockers do not prevent foundation development, local R2/Queue emulation, local PostgreSQL migration checks, tests or production builds.
+These blockers do not prevent Better Auth schema, local persistence, route compilation or isolated PostgreSQL integration tests.

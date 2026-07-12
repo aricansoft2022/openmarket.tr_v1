@@ -49,7 +49,7 @@ jobs:
 
   database:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
     services:
@@ -84,3 +84,6 @@ jobs:
 
       - name: Apply and verify migrations
         run: npm run db:verify
+
+      - name: Verify Better Auth persistence
+        run: npm run db:verify:auth
