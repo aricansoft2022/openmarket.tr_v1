@@ -1,0 +1,119 @@
+name: Prepare permissioned identity review
+
+on:
+  push:
+    branches: [agent/business-identity-review-authorization]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prepare-business-identity-review
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/business-identity-review-authorization
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Patch effective-role transition contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          transition = Path("app/lib/business-identity/transitions.server.ts")
+          text = transition.read_text()
+
+          old = """    reason: string;
+              requestId?: string;
+            },
+          ) {"""
+          new = """    reason: string;
+              requestId?: string;
+              effectiveRole?: string;
+            },
+          ) {"""
+          if old not in text:
+              raise SystemExit("writeAudit input contract not found")
+          text = text.replace(old, new, 1)
+
+          old = '    effectiveRole: "authenticated",'
+          new = '    effectiveRole: input.effectiveRole ?? "authenticated",'
+          if old not in text:
+              raise SystemExit("authenticated audit role assignment not found")
+          text = text.replace(old, new, 1)
+
+          old = """    reviewId: string;
+              reviewerId: string;
+              decision: \"verified\" | \"rejected\";"""
+          new = """    reviewId: string;
+              reviewerId: string;
+              effectiveRole: string;
+              decision: \"verified\" | \"rejected\";"""
+          if old not in text:
+              raise SystemExit("decision input contract not found")
+          text = text.replace(old, new, 1)
+
+          old = """  await writeAudit(database, {
+              actorId: input.reviewerId,
+              action:"""
+          new = """  await writeAudit(database, {
+              actorId: input.reviewerId,
+              effectiveRole: input.effectiveRole,
+              action:"""
+          if old not in text:
+              raise SystemExit("decision audit call not found")
+          text = text.replace(old, new, 1)
+          transition.write_text(text)
+
+          for filename in [
+              "scripts/verify-business-identity.ts",
+              "scripts/verify-business-identity-onboarding.ts",
+          ]:
+              path = Path(filename)
+              source = path.read_text()
+              updated, count = re.subn(
+                  r"(\n(?P<indent>\s+)reviewerId,\n)(?P=indent)decision:",
+                  lambda match: (
+                      match.group(1)
+                      + match.group("indent")
+                      + 'effectiveRole: "compliance_reviewer",\n'
+                      + match.group("indent")
+                      + "decision:"
+                  ),
+                  source,
+              )
+              if count == 0:
+                  raise SystemExit(f"reviewer decision fixture not found in {filename}")
+              path.write_text(updated)
+          PY
+
+      - name: Generate migration
+        run: npm run db:generate
+
+      - name: Format repository
+        run: npm run format
+
+      - name: Commit prepared files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "feat(identity): prepare reviewer authorization migration"
+          git push origin HEAD:agent/business-identity-review-authorization
