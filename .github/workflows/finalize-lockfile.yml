@@ -1,0 +1,60 @@
+name: Finalize dependency lock
+
+on:
+  push:
+    branches: [agent/phase-0-foundation]
+    paths:
+      - ".github/workflows/finalize-lockfile.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-lockfile-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout foundation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/phase-0-foundation
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Generate deterministic lockfile
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Restore reproducible CI install
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/ci.yml')
+          text = path.read_text()
+          expected = 'run: npm install --ignore-scripts'
+          if expected not in text:
+              raise SystemExit('CI install command was not in the expected temporary state')
+          path.write_text(text.replace(expected, 'run: npm ci --ignore-scripts'))
+          PY
+
+      - name: Verify from lockfile
+        run: |
+          npm ci --ignore-scripts
+          npm run verify
+
+      - name: Commit lockfile and CI restoration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json .github/workflows/ci.yml
+          git diff --cached --quiet || git commit -m "chore: lock dependencies and restore reproducible CI"
+          git push origin HEAD:agent/phase-0-foundation
