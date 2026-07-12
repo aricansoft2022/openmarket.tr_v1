@@ -40,6 +40,20 @@ const copy: Record<
     action: "Giriş ekranına dön",
     href: "/auth/login",
   },
+  "rate-limited": {
+    title: "Çok fazla giriş isteği yapıldı.",
+    description: "Kısa sürede çok sayıda Google giriş denemesi algılandı.",
+    message: "Bir süre bekleyip yeniden deneyin. Hesap veya sağlayıcı ayrıntıları gösterilmez.",
+    action: "Giriş ekranına dön",
+    href: "/auth/login",
+  },
+  "security-unavailable": {
+    title: "Güvenlik kontrolü kullanılamıyor.",
+    description: "Google girişini başlatmak için gereken istek korumasına şu anda ulaşılamıyor.",
+    message: "Güvenlik kontrolü olmadan giriş başlatılmaz. Lütfen daha sonra yeniden deneyin.",
+    action: "Giriş ekranına dön",
+    href: "/auth/login",
+  },
   "provider-error": {
     title: "Google girişi tamamlanamadı.",
     description: "İstek reddedilmiş, süresi dolmuş veya sağlayıcı yanıtı doğrulanamamış olabilir.",
