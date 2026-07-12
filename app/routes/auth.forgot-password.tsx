@@ -58,12 +58,17 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
       eyebrow="A06 · Hesap kurtarma"
       title="Şifrenizi güvenle yenileyin."
       description="Kayıt e-postanızı girin. Hesabın varlığını açıklamadan aynı yanıtı gösteririz."
-      alternate={{ label: "Şifrenizi hatırladınız mı?", linkLabel: "Girişe dönün", href: "/auth/login" }}
+      alternate={{
+        label: "Şifrenizi hatırladınız mı?",
+        linkLabel: "Girişe dönün",
+        href: "/auth/login",
+      }}
     >
       <Form method="post" className="auth-form" noValidate>
         {actionData?.sent ? (
           <div className="form-alert" role="status">
-            Adres kayıtlıysa bir şifre sıfırlama bağlantısı hazırlanmıştır. Gelen kutunuzu kontrol edin.
+            Adres kayıtlıysa bir şifre sıfırlama bağlantısı hazırlanmıştır. Gelen kutunuzu kontrol
+            edin.
           </div>
         ) : null}
         {errors?.form ? (

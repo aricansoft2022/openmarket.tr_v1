@@ -57,7 +57,11 @@ export default function Register({ actionData }: Route.ComponentProps) {
       eyebrow="A02 · Yeni hesap"
       title="Tekstili doğru verilerle buluşturalım."
       description="Hesabınız ücretsizdir. Alıcı veya tedarikçi seçimi yalnızca başlangıç çalışma alanınızı belirler; ticari yetki vermez."
-      alternate={{ label: "Zaten hesabınız var mı?", linkLabel: "Giriş yapın", href: "/auth/login" }}
+      alternate={{
+        label: "Zaten hesabınız var mı?",
+        linkLabel: "Giriş yapın",
+        href: "/auth/login",
+      }}
     >
       <Form method="post" className="auth-form" noValidate>
         {errors?.form ? (
@@ -197,7 +201,8 @@ export default function Register({ actionData }: Route.ComponentProps) {
           {submitting ? "Hesap oluşturuluyor…" : "Ücretsiz hesap oluştur"}
         </button>
         <p className="form-note">
-          Kayıt tamamlandıktan sonra e-posta doğrulaması gerekir. Bu işlem işletme doğrulaması veya alıcı/tedarikçi aktivasyonu anlamına gelmez.
+          Kayıt tamamlandıktan sonra e-posta doğrulaması gerekir. Bu işlem işletme doğrulaması veya
+          alıcı/tedarikçi aktivasyonu anlamına gelmez.
         </p>
       </Form>
     </AuthShell>

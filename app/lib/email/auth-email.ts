@@ -12,7 +12,8 @@ const copy: Record<
   tr: {
     "auth.verify-email": {
       subject: "OpenMarket.tr e-posta adresinizi doğrulayın",
-      intro: "OpenMarket.tr hesabınızın e-posta adresini doğrulamak için aşağıdaki bağlantıyı kullanın.",
+      intro:
+        "OpenMarket.tr hesabınızın e-posta adresini doğrulamak için aşağıdaki bağlantıyı kullanın.",
       action: "E-postayı doğrula",
       expiry: "Bu bağlantı 1 saat geçerlidir ve yalnızca bir kez kullanılabilir.",
     },

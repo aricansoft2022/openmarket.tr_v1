@@ -63,8 +63,6 @@ export function validateResetPassword(formData: FormData): {
   return { token, password, errors };
 }
 
-export function hasRecoveryErrors(
-  errors: EmailRequestErrors | ResetPasswordErrors,
-): boolean {
+export function hasRecoveryErrors(errors: EmailRequestErrors | ResetPasswordErrors): boolean {
   return Object.keys(errors).length > 0;
 }

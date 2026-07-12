@@ -22,6 +22,13 @@
       "when": 1783879119094,
       "tag": "0002_strange_sugar_man",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783882372902,
+      "tag": "0003_thankful_scrambler",
+      "breakpoints": true
     }
   ]
 }

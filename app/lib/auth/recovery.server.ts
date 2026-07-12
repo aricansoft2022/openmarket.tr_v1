@@ -27,10 +27,7 @@ export function requestVerificationEmail(
         "/api/auth/send-verification-email",
         {
           email: input.email,
-          callbackURL: new URL(
-            "/auth/verify-email/result?verified=1",
-            request.url,
-          ).toString(),
+          callbackURL: new URL("/auth/verify-email/result?verified=1", request.url).toString(),
         },
         { locale: input.preferredLanguage },
       ),

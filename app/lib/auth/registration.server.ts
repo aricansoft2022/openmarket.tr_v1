@@ -2,12 +2,7 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../db/client.server";
 import { withDatabase } from "../db/client.server";
-import {
-  user,
-  userPreferences,
-  type IntendedUse,
-  type PreferredLanguage,
-} from "../db/schema";
+import { user, userPreferences, type IntendedUse, type PreferredLanguage } from "../db/schema";
 import { createAuth, type AuthEnvironment, withAuth } from "./create-auth.server";
 
 export type RegistrationInput = {
@@ -105,10 +100,7 @@ export function registerWithPreferences(
             name: input.name,
             email: input.email,
             password: input.password,
-            callbackURL: new URL(
-              "/auth/verify-email/result?verified=1",
-              request.url,
-            ).toString(),
+            callbackURL: new URL("/auth/verify-email/result?verified=1", request.url).toString(),
           },
           { locale: input.preferredLanguage },
         ),

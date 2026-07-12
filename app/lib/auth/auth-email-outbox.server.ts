@@ -1,9 +1,5 @@
 import type { Database } from "../db/client.server";
-import {
-  outboxEvents,
-  type AuthEmailTemplate,
-  type PreferredLanguage,
-} from "../db/schema";
+import { outboxEvents, type AuthEmailTemplate, type PreferredLanguage } from "../db/schema";
 
 export const EMAIL_VERIFICATION_TOKEN_TTL_SECONDS = 60 * 60;
 export const PASSWORD_RESET_TOKEN_TTL_SECONDS = 60 * 60;

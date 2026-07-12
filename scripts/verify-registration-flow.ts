@@ -108,7 +108,11 @@ try {
     preferredLanguage: "en",
     intendedUse: "buyer",
   });
-  assert.equal(duplicate.status, 200, "Existing-email signup must keep a generic success response.");
+  assert.equal(
+    duplicate.status,
+    200,
+    "Existing-email signup must keep a generic success response.",
+  );
 
   const unchangedPreference = await client.query(
     `

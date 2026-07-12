@@ -62,7 +62,11 @@ export default function Login({ actionData, loaderData }: Route.ComponentProps) 
       eyebrow="A01 · Hesap erişimi"
       title="Tekrar hoş geldiniz."
       description="Kayıt e-postanızla giriş yapın. Giriş e-postası, açık işletme iletişim bilgisi olarak yayımlanmaz."
-      alternate={{ label: "Henüz hesabınız yok mu?", linkLabel: "Kayıt olun", href: "/auth/register" }}
+      alternate={{
+        label: "Henüz hesabınız yok mu?",
+        linkLabel: "Kayıt olun",
+        href: "/auth/register",
+      }}
     >
       <Form method="post" className="auth-form" noValidate>
         {loaderData.resetComplete ? (

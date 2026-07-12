@@ -81,7 +81,8 @@ export default function ResetPassword({ loaderData, actionData }: Route.Componen
       {tokenInvalid ? (
         <div className="auth-form auth-success" role="alert">
           <div className="form-alert">
-            Token ayrıntıları güvenlik nedeniyle gösterilmez. Yeni bir şifre sıfırlama bağlantısı isteyin.
+            Token ayrıntıları güvenlik nedeniyle gösterilmez. Yeni bir şifre sıfırlama bağlantısı
+            isteyin.
           </div>
           <Link className="button button--primary auth-submit" to="/auth/forgot-password">
             Yeni bağlantı iste
@@ -129,7 +130,11 @@ export default function ResetPassword({ loaderData, actionData }: Route.Componen
             <FieldError id="reset-confirm-error" message={errors?.confirmPassword} />
           </div>
 
-          <button className="button button--primary auth-submit" type="submit" disabled={submitting}>
+          <button
+            className="button button--primary auth-submit"
+            type="submit"
+            disabled={submitting}
+          >
             {submitting ? "Şifre güncelleniyor…" : "Şifreyi güncelle"}
           </button>
         </Form>

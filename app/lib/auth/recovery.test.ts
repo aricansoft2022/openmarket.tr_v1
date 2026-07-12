@@ -22,9 +22,7 @@ describe("verification and recovery validation", () => {
   });
 
   it("rejects malformed email requests", () => {
-    const result = validateEmailRequest(
-      form({ email: "not-an-email", preferredLanguage: "de" }),
-    );
+    const result = validateEmailRequest(form({ email: "not-an-email", preferredLanguage: "de" }));
 
     expect(result.errors.email).toBeTruthy();
     expect(result.errors.preferredLanguage).toBeTruthy();

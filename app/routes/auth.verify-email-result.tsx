@@ -42,7 +42,10 @@ export default function VerifyEmailResult({ loaderData }: Route.ComponentProps) 
             ? "Doğrulama tamamlandı. Hesap erişiminiz açıldı."
             : "Güvenlik nedeniyle token ayrıntıları gösterilmez. Yeni bir doğrulama bağlantısı isteyin."}
         </div>
-        <Link className="button button--primary auth-submit" to={success ? "/auth/login" : "/auth/verify-email"}>
+        <Link
+          className="button button--primary auth-submit"
+          to={success ? "/auth/login" : "/auth/verify-email"}
+        >
           {success ? "Girişe devam et" : "Yeni bağlantı iste"}
         </Link>
       </div>

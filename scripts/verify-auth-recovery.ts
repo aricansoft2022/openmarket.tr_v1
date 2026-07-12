@@ -108,19 +108,19 @@ try {
     assert.equal(typeof verificationActionUrl, "string");
 
     const verificationResponse = await auth.handler(new Request(verificationActionUrl));
-    assert(isRedirect(verificationResponse), "Verification action must redirect to the result route.");
+    assert(
+      isRedirect(verificationResponse),
+      "Verification action must redirect to the result route.",
+    );
     const verificationLocation = verificationResponse.headers.get("location");
     assert(verificationLocation?.includes("/auth/verify-email/result"));
 
-    const verifiedUser = await client.query(
-      'select email_verified from "user" where id = $1',
-      [userId],
-    );
+    const verifiedUser = await client.query('select email_verified from "user" where id = $1', [
+      userId,
+    ]);
     assert.equal(verifiedUser.rows[0]?.email_verified, true);
 
-    const verifiedSignIn = await auth.handler(
-      post("/api/auth/sign-in/email", { email, password }),
-    );
+    const verifiedSignIn = await auth.handler(post("/api/auth/sign-in/email", { email, password }));
     assert.equal(verifiedSignIn.status, 200, "Verified users must be able to sign in.");
 
     const activeSessions = await client.query(
