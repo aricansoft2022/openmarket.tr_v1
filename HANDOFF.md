@@ -26,39 +26,36 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery, guarded Google OAuth/A03 states, route-level auth abuse controls and explicit Google link/unlink safeguards are merged to `main`. The repository can be installed, built and tested without Neon, Google or a Cloudflare account.
+Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery, guarded Google OAuth/A03 states, route-level auth abuse controls, explicit Google link/unlink safeguards and the business-identity/Buyer state-machine foundation are merged to `main`.
 
-The current issue #5 foundation branch adds:
+The current issue #5 route branch adds:
 
-- `email_domain_policies` for public-email, blocked and approved company-domain exceptions;
-- private `company_emails` with deterministic pending/verified/rejected state;
-- `business_identity_reviews` with company-email, manual-exception and admin-override methods;
-- separate `buyer_profiles` with browser/active/suspended state;
-- workspace-intent expansion that never silently removes an existing Buyer or Supplier selection;
-- automatic business-identity verification only for an exactly matching, already verified company-domain account email;
-- mandatory manual review for public-email domains and separate company emails;
-- blocked-domain rejection;
-- active-buyer gating only after a verified review;
-- immutable audit records for submissions, decisions and workspace expansion;
-- migration `0004_empty_phil_sheldon.sql` and PostgreSQL state-machine verification.
+- A08 `/onboarding/workspaces` with authenticated Buyer/Supplier/Both selection;
+- A09 `/onboarding/business-identity` with company name/email and applicant note;
+- A10 `/onboarding/business-identity/status` with pending, verified and rejected states;
+- redirect gates for unauthenticated and unverified accounts;
+- pending/verified duplicate-form prevention;
+- rejected-state prefill and resubmission;
+- public-email/manual-review and separate-company-email explanations;
+- a disabled document-upload state until private R2 authorization exists;
+- transaction-level duplicate-pending protection;
+- session-bound PostgreSQL verification using a real Better Auth cookie.
 
-This branch deliberately does not add A08–A10 routes, manual evidence upload or admin/reviewer UI. Those depend on the committed state machine and remain separate reviewable slices.
+The routes call the committed transition service. They do not duplicate domain policy or activate Buyer directly from form input.
 
 ## Exact next tasks
 
-1. Merge the business-identity foundation only after both permanent read-only CI jobs pass.
+1. Merge the A08–A10 route PR only after both permanent read-only CI jobs pass.
 2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
 3. Keep issue #4 open for external delivery and remote auth evidence.
 4. Continue issue #5 in separate slices:
-   - A08 workspace selection using `selectWorkspaceIntent`;
-   - A09 company-email/manual-exception submission using `submitBusinessIdentity`;
-   - A10 review status, rejection reason and resubmission;
-   - private manual-evidence upload metadata and R2 authorization;
+   - private manual-exception evidence metadata and R2 upload authorization;
+   - company-email verification delivery and token lifecycle;
    - reviewer/admin decision routes using `decideBusinessIdentityReview` with explicit role checks;
-   - commercial buyer guards using `assertActiveBuyer`.
+   - commercial route guards using `assertActiveBuyer`.
 5. Do not infer business identity from account verification alone.
 6. Public email domains never grant automatic business identity.
-7. Do not add supplier activation or supplier documents to this issue #5 slice.
+7. Do not add supplier activation or supplier documents to issue #5.
 8. Continue in dependency order through #6–#10.
 
 ## Verification commands
@@ -87,12 +84,13 @@ npm run db:verify:recovery
 npm run db:verify:google
 npm run db:verify:google-linking
 npm run db:verify:business-identity
+npm run db:verify:business-identity-onboarding
 npm run db:local:down
 ```
 
-`db:verify:business-identity` proves company-domain automatic verification, public-domain manual review, blocked-domain rejection, pending separate-company-email state, workspace expansion, supplier-only non-activation, manual approval, duplicate-decision rejection, active-buyer gating, audit outcomes and database constraints.
+`db:verify:business-identity` proves domain classification, review decisions and Buyer activation. `db:verify:business-identity-onboarding` proves authenticated A08–A10 state loading, workspace widening, pending review, duplicate-pending guard, manual approval, active Buyer status and audit evidence.
 
-The state-machine test uses database fixtures and runs inside a rolled-back transaction. It does not claim that company-email delivery, manual documents, reviewer authorization or remote infrastructure is implemented.
+The onboarding test uses a real Better Auth session cookie and fresh PostgreSQL service container. It does not claim private document upload, reviewer permissions, company-email delivery or remote infrastructure readiness.
 
 ## Known blockers
 
@@ -102,6 +100,7 @@ The state-machine test uses database fixtures and runs inside a rolled-back tran
 - Real Google development credentials and authorized redirect URIs are not configured; live callback completion remains unverified.
 - Real Turnstile and Cloudflare Rate Limiting resources are not provisioned.
 - Company-email verification delivery and private manual-exception evidence upload remain open.
+- Reviewer/admin permissioned decision UI remains open.
 - Cloudflare Images remains an account-level dependency for later media work.
 
-These blockers do not prevent local state-machine work, CI, local PostgreSQL tests or production builds. They do prevent claiming remote auth, live company-email verification or document-backed manual review readiness.
+These blockers do not prevent local onboarding work, CI, local PostgreSQL tests or production builds. They do prevent claiming remote auth, live company-email verification or document-backed manual review readiness.
