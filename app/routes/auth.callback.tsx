@@ -1,37 +1,23 @@
 import { Link } from "react-router";
 
 import { AuthShell } from "~/components/auth-shell";
+import {
+  resolveGoogleCallbackState,
+  type GoogleCallbackState,
+} from "~/lib/auth/google-oauth";
 
 import type { Route } from "./+types/auth.callback";
-
-type CallbackState =
-  | "success"
-  | "account-not-linked"
-  | "unavailable"
-  | "provider-error"
-  | "processing";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Google giriş sonucu — OpenMarket.tr" }];
 }
 
 export function loader({ request }: Route.LoaderArgs) {
-  const url = new URL(request.url);
-  const status = url.searchParams.get("status");
-  const error = url.searchParams.get("error")?.toLowerCase();
-
-  let state: CallbackState = "processing";
-
-  if (status === "success" && !error) state = "success";
-  else if (error === "account_not_linked") state = "account-not-linked";
-  else if (error === "google_unavailable") state = "unavailable";
-  else if (error || status === "error") state = "provider-error";
-
-  return { state };
+  return { state: resolveGoogleCallbackState(new URL(request.url)) };
 }
 
 const copy: Record<
-  CallbackState,
+  GoogleCallbackState,
   { title: string; description: string; message: string; action: string; href: string }
 > = {
   success: {
@@ -63,7 +49,8 @@ const copy: Record<
     title: "Google girişi tamamlanamadı.",
     description:
       "İstek reddedilmiş, süresi dolmuş veya sağlayıcı yanıtı doğrulanamamış olabilir.",
-    message: "Hesap veya sağlayıcı ayrıntıları gösterilmez. Yeniden deneyebilir ya da e-posta ile giriş yapabilirsiniz.",
+    message:
+      "Hesap veya sağlayıcı ayrıntıları gösterilmez. Yeniden deneyebilir ya da e-posta ile giriş yapabilirsiniz.",
     action: "Giriş ekranına dön",
     href: "/auth/login",
   },
@@ -87,7 +74,9 @@ export default function AuthCallback({ loaderData }: Route.ComponentProps) {
       title={current.title}
       description={current.description}
       alternate={{
-        label: success ? "Hesabınıza geçmek ister misiniz?" : "Başka bir yöntem kullanmak ister misiniz?",
+        label: success
+          ? "Hesabınıza geçmek ister misiniz?"
+          : "Başka bir yöntem kullanmak ister misiniz?",
         linkLabel: current.action,
         href: current.href,
       }}
