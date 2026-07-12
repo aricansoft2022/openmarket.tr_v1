@@ -43,10 +43,20 @@ describe("platform staff authorization", () => {
     ).toBe("platform_admin");
   });
 
-  it("reserves administrator-role changes for super administrators", () => {
-    expect(managerMayChangeRole("platform_admin", "compliance_reviewer")).toBe(true);
+  it("lets Platform Admin manage every operational role but no administrator role", () => {
+    for (const role of [
+      "catalogue_content_editor",
+      "compliance_reviewer",
+      "product_rfq_moderator",
+      "privacy_support_manager",
+    ] as const) {
+      expect(managerMayChangeRole("platform_admin", role)).toBe(true);
+    }
     expect(managerMayChangeRole("platform_admin", "platform_admin")).toBe(false);
     expect(managerMayChangeRole("platform_admin", "super_admin")).toBe(false);
+  });
+
+  it("lets Super Admin manage operational and administrator roles", () => {
     expect(managerMayChangeRole("super_admin", "compliance_reviewer")).toBe(true);
     expect(managerMayChangeRole("super_admin", "platform_admin")).toBe(true);
     expect(managerMayChangeRole("super_admin", "super_admin")).toBe(true);
