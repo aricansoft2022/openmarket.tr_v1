@@ -47,7 +47,7 @@ No staff self-service grant/revoke surface is introduced. Buyer, Supplier and Mo
 
 ## Verification
 
-GitHub Actions run `29210967065` passed both permanent jobs on the clean branch head:
+GitHub Actions run `29211012955` passed both permanent jobs on the final branch head:
 
 ```text
 npm run format:check                              PASS
@@ -87,7 +87,7 @@ These are remote integration or later feature blockers, not blockers for local p
 
 ## Next tasks
 
-1. Merge PR #27; both permanent read-only CI jobs pass on the clean branch head.
+1. Merge PR #27; both permanent read-only CI jobs pass on the final branch head.
 2. Add audited Admin-only staff assignment grant/revoke management without self-service escalation.
 3. Add company-email verification delivery after the email dispatcher is authorized.
 4. Define evidence scanning, quarantine and retention cleanup before claiming production-ready review.
