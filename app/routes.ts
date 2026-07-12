@@ -23,6 +23,15 @@ const routes = [
     "onboarding/business-identity/evidence/:evidenceId/download",
     "routes/onboarding.business-identity-evidence-download.ts",
   ),
+  route("admin/business-identity/reviews", "routes/admin.business-identity-reviews.tsx"),
+  route(
+    "admin/business-identity/reviews/:reviewId",
+    "routes/admin.business-identity-review-detail.tsx",
+  ),
+  route(
+    "admin/business-identity/reviews/:reviewId/evidence/:evidenceId/download",
+    "routes/admin.business-identity-review-evidence-download.ts",
+  ),
   route("giris", "routes/auth.login-alias.ts"),
   route("kayit", "routes/auth.register-alias.ts"),
   route("kayit/basarili", "routes/auth.registration-success-alias.ts"),
