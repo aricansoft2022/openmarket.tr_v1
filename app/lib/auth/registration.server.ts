@@ -105,7 +105,10 @@ export function registerWithPreferences(
             name: input.name,
             email: input.email,
             password: input.password,
-            callbackURL: new URL("/auth/verify-email/result", request.url).toString(),
+            callbackURL: new URL(
+              "/auth/verify-email/result?verified=1",
+              request.url,
+            ).toString(),
           },
           { locale: input.preferredLanguage },
         ),
