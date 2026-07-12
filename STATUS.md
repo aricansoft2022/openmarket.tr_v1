@@ -6,54 +6,48 @@
 
 ## Current phase
 
-Phase 0 — Foundation, ready for merge after final CI verification.
+Phase 1 — Identity and supplier activation planning/provisioning.
 
 ## Completed
 
-- Confirmed the repository was empty and preserved the exact version 2.1 specification as a SHA-verified source artifact referenced by `spec.md`.
-- Extracted the uploaded static prototype into `DESIGN_REFERENCE.md` as a non-production visual reference.
+- Merged Phase 0 foundation through PR #1 using a squash merge.
 - Added the React Router v8 + Cloudflare Workers TypeScript scaffold.
-- Added design tokens matching the red editorial reference direction without importing prototype runtime code.
-- Added Drizzle/Hyperdrive database access convention and the initial audit-log schema.
-- Added typed Cloudflare binding and background-job contracts.
-- Added CI, formatting, documentation checks, unit tests, type generation and build commands.
-- Added architecture, data model, seed, test, roadmap, workflow and handoff documentation.
-- Added `package-lock.json`; CI and documented setup now use reproducible `npm ci` installs.
-- Restored GitHub Actions to read-only repository permissions after lockfile generation.
+- Added reproducible `package-lock.json` installation and read-only GitHub Actions CI.
+- Added the Drizzle/Hyperdrive database convention and immutable audit-log migration foundation.
+- Added design tokens, source-of-truth preservation, architecture, data model, seed, test, workflow and handoff documentation.
+- Final Phase 0 CI passed installation, formatting, documentation contract, type generation/checking, unit tests and production build.
+- Created dependency-ordered Phase 1 issues #2–#10.
 
 ## In progress
 
-- Final foundation PR verification and merge.
-- Cloudflare/Neon development resource provisioning is the first post-merge infrastructure task.
+- #2 — Provision development Neon and Cloudflare resources.
+- Phase 1 implementation remains blocked until the development database, Hyperdrive and private R2 contracts are verified.
 
 ## Verification
 
-Verified locally on Node.js 24.18.0:
+Phase 0 verification evidence:
 
 ```text
 npm run verify       PASS
 npm run db:check     PASS
 GET /                200, SSR markers present
 GET /health           200, valid no-cache JSON payload
+GitHub Actions        PASS with npm ci
 ```
 
-The final GitHub Actions run must pass using `npm ci` before merge.
-
-Initial migration generated: `drizzle/0000_fat_leo.sql`. It creates `audit_logs`, three operational indexes and a database trigger that rejects updates or deletes.
+Initial migration: `drizzle/0000_fat_leo.sql`. It creates `audit_logs`, three operational indexes and a database trigger that rejects updates or deletes.
 
 ## Known issues and blockers
 
-- Cloudflare account resource IDs and production secrets are not yet available in the repository.
-- Neon project, direct migration URL and Hyperdrive configuration have not yet been provisioned.
-- Email Sending authorization and sender-domain setup are external dashboard tasks.
-- The static prototype does not replace production accessibility or responsive validation.
-
-These are Phase 1 integration blockers, not blockers for merging the repository foundation.
+- Cloudflare development binding IDs and secrets are not yet configured.
+- Neon development database, direct migration URL and Hyperdrive configuration are not yet provisioned.
+- Email Sending authorization and sender-domain setup remain external dashboard tasks.
+- Cloudflare Images account configuration is not yet verified.
+- The static prototype remains a reference and does not replace production accessibility or responsive validation.
 
 ## Next tasks
 
-1. Merge the foundation PR after green CI.
-2. Provision development Neon and Cloudflare resources; add non-secret binding IDs through environment-specific Wrangler configuration.
-3. Apply `drizzle/0000_fat_leo.sql` to development and verify audit immutability.
-4. Create dependency-ordered Phase 1 issues for auth, business identity, company documents, roles and activation.
-5. Start Better Auth integration only after the database and secret contract is validated.
+1. Complete #2 and record safe resource identifiers, secret names, migration results and rollback steps.
+2. Start #3 only after Hyperdrive runtime access and direct Neon migrations are verified.
+3. Continue Phase 1 in dependency order: #4, #5, #6, #7, #8 and #9.
+4. Close Phase 1 through integration gate #10 before beginning catalogue work.
