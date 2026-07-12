@@ -49,30 +49,30 @@ No arbitrary custom roles, permission JSON or delegation model is introduced.
 
 ## Verification
 
-GitHub Actions run `29211331029` passed the complete PostgreSQL chain, including `db:verify:platform-staff-management`. The current final branch uses a preparation job that formats and commits the branch, then verifies the exact prepared commit SHA. Permanent read-only CI will be restored before merge.
+GitHub Actions run `29211970888` passed both permanent read-only jobs on the final branch head:
 
 ```text
-npm run format:check                              pending final CI
-npm run docs:check                                pending final CI
-npm run config:check                              pending final CI
-npm run typecheck                                 pending final CI
-npm run test:run                                  pending final CI
-npm run build                                     pending final CI
-npm run db:check                                  preliminary PASS
-npm run db:verify                                 preliminary PASS
-npm run db:verify:auth                            preliminary PASS
-npm run db:verify:registration                    preliminary PASS
-npm run db:verify:recovery                        preliminary PASS
-npm run db:verify:google                          preliminary PASS
-npm run db:verify:google-linking                  preliminary PASS
-npm run db:verify:business-identity               preliminary PASS
-npm run db:verify:business-identity-onboarding    preliminary PASS
-npm run db:verify:business-identity-evidence      preliminary PASS
-npm run db:verify:business-identity-review        preliminary PASS
-npm run db:verify:platform-staff-management       preliminary PASS
+npm run format:check                              PASS
+npm run docs:check                                PASS
+npm run config:check                              PASS
+npm run typecheck                                 PASS
+npm run test:run                                  PASS
+npm run build                                     PASS
+npm run db:check                                  PASS
+npm run db:verify                                 PASS
+npm run db:verify:auth                            PASS
+npm run db:verify:registration                    PASS
+npm run db:verify:recovery                        PASS
+npm run db:verify:google                          PASS
+npm run db:verify:google-linking                  PASS
+npm run db:verify:business-identity               PASS
+npm run db:verify:business-identity-onboarding    PASS
+npm run db:verify:business-identity-evidence      PASS
+npm run db:verify:business-identity-review        PASS
+npm run db:verify:platform-staff-management       PASS
 ```
 
-The new staff-management gate proves administrator-only access, hierarchy enforcement, self-management denial, exact-account grant, duplicate protection, revoke/reactivate lifecycle, immediate permission changes and effective-role audit evidence.
+The staff-management gate proves administrator-only access, hierarchy enforcement, self-management denial, exact-account grant, duplicate protection, revoke/reactivate lifecycle, immediate permission changes and effective-role audit evidence.
 
 ## Known issues and blockers
 
@@ -90,7 +90,7 @@ These are remote integration or later feature blockers, not blockers for local p
 
 ## Next tasks
 
-1. Merge PR #30 only after exact prepared-commit validation and restored permanent read-only CI pass.
+1. Merge PR #30; both permanent read-only CI jobs pass on the final branch head.
 2. Add company-email verification delivery after the email dispatcher is authorized.
 3. Define evidence scanning, quarantine and retention cleanup before claiming production-ready review.
 4. Provision remote Neon/Hyperdrive/R2 evidence before claiming preview or production readiness.
