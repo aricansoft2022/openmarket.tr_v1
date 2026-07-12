@@ -96,3 +96,6 @@ jobs:
 
       - name: Verify Google OAuth policy and authorization contract
         run: npm run db:verify:google
+
+      - name: Verify explicit Google account linking and unlinking
+        run: npm run db:verify:google-linking
