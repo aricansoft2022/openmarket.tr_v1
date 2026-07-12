@@ -1,9 +1,9 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
 
-import type { Database } from "~/lib/db/client.server";
-import { withDatabase } from "~/lib/db/client.server";
-import * as authSchema from "~/lib/db/schema/auth";
+import type { Database } from "../db/client.server";
+import { withDatabase } from "../db/client.server";
+import * as authSchema from "../db/schema/auth";
 
 export type AuthEnvironment = Pick<Env, "HYPERDRIVE" | "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL">;
 
