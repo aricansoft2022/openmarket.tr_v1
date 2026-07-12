@@ -5,6 +5,8 @@ export const authAbuseActions = [
   "resend-verification",
   "reset-password",
   "google-start",
+  "account-link",
+  "account-unlink",
 ] as const;
 
 export type AuthAbuseAction = (typeof authAbuseActions)[number];
@@ -22,6 +24,8 @@ export const authRateLimitPolicies: Record<AuthAbuseAction, AuthRateLimitPolicy>
   "resend-verification": { limit: 5, periodSeconds: 3600, requiresTurnstile: true },
   "reset-password": { limit: 10, periodSeconds: 3600, requiresTurnstile: true },
   "google-start": { limit: 20, periodSeconds: 900, requiresTurnstile: false },
+  "account-link": { limit: 5, periodSeconds: 3600, requiresTurnstile: false },
+  "account-unlink": { limit: 5, periodSeconds: 3600, requiresTurnstile: false },
 };
 
 export type RateLimitBinding = {
