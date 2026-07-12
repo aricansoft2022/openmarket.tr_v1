@@ -10,7 +10,34 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is required for database verification.");
 }
 
-const client = new Client({ connectionString });
+const wait = (milliseconds) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function connectWithRetry() {
+  let lastError;
+
+  for (let attempt = 1; attempt <= 20; attempt += 1) {
+    const candidate = new Client({ connectionString });
+
+    try {
+      await candidate.connect();
+      return candidate;
+    } catch (error) {
+      lastError = error;
+      await candidate.end().catch(() => undefined);
+
+      if (attempt < 20) {
+        await wait(500);
+      }
+    }
+  }
+
+  throw new Error("PostgreSQL did not become ready for verification.", {
+    cause: lastError,
+  });
+}
+
+const client = await connectWithRetry();
 
 async function expectImmutable({ label, savepoint, text, values }) {
   await client.query(`SAVEPOINT ${savepoint}`);
@@ -38,8 +65,6 @@ async function expectImmutable({ label, savepoint, text, values }) {
     await client.query(`RELEASE SAVEPOINT ${savepoint}`);
   }
 }
-
-await client.connect();
 
 try {
   const tableResult = await client.query(
