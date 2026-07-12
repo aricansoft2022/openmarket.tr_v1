@@ -43,28 +43,28 @@ Without this repair, the evidence route modules exist in source control but are 
 
 ## Verification
 
-Current branch target:
+GitHub Actions run `29209552848` passed both permanent jobs on the clean branch head:
 
 ```text
-npm run format:check                              pending CI
-npm run docs:check                                pending CI
-npm run config:check                              pending CI
-npm run typecheck                                 pending CI
-npm run test:run                                  pending CI
-npm run build                                     pending CI
-npm run db:check                                  pending CI
-npm run db:verify                                 pending CI
-npm run db:verify:auth                            pending CI
-npm run db:verify:registration                    pending CI
-npm run db:verify:recovery                        pending CI
-npm run db:verify:google                          pending CI
-npm run db:verify:google-linking                  pending CI
-npm run db:verify:business-identity               pending CI
-npm run db:verify:business-identity-onboarding    pending CI
-npm run db:verify:business-identity-evidence      pending CI
+npm run format:check                              PASS
+npm run docs:check                                PASS
+npm run config:check                              PASS
+npm run typecheck                                 PASS
+npm run test:run                                  PASS
+npm run build                                     PASS
+npm run db:check                                  PASS
+npm run db:verify                                 PASS
+npm run db:verify:auth                            PASS
+npm run db:verify:registration                    PASS
+npm run db:verify:recovery                        PASS
+npm run db:verify:google                          PASS
+npm run db:verify:google-linking                  PASS
+npm run db:verify:business-identity               PASS
+npm run db:verify:business-identity-onboarding    PASS
+npm run db:verify:business-identity-evidence      PASS
 ```
 
-The evidence gate must prove owner-only upload/list/download/remove, private object-key handling, file limits, failure compensation, immutable audit evidence and non-owner download denial.
+The evidence gate proves owner-only upload/list/download/remove, private object-key handling, file limits, failure compensation, immutable audit evidence and non-owner download denial.
 
 ## Known issues and blockers
 
@@ -82,7 +82,7 @@ These are remote integration or later feature blockers, not blockers for local C
 
 ## Next tasks
 
-1. Merge the evidence-route/CI repair only after both permanent read-only CI jobs pass.
+1. Review and merge PR #26; both permanent CI jobs pass.
 2. Implement reviewer/admin authorization for pending business-identity queues, evidence access and reasoned decisions.
 3. Add audited Admin-only staff grant/revoke management without self-service escalation.
 4. Add company-email verification delivery after the email dispatcher is authorized.
