@@ -95,7 +95,9 @@ jobs:
         run: npm run db:verify:recovery
 
   prepare-auth-recovery:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/auth-verification-recovery'
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/agent/auth-verification-recovery') ||
+      (github.event_name == 'pull_request' && github.head_ref == 'agent/auth-verification-recovery')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
