@@ -71,18 +71,18 @@ This local mode does not exercise Hyperdrive pooling or query caching. Remote Hy
 
 ## External resources by delivery point
 
-| Resource                        | Needed now           | First required work                                  |
-| ------------------------------- | -------------------- | ---------------------------------------------------- |
-| Local PostgreSQL                | Optional             | Migration and database-invariant verification        |
-| Neon development database       | No                   | Remote migration and runtime verification             |
-| Hyperdrive development binding  | No                   | Remote Worker database verification                   |
-| Private R2 bucket               | No; locally emulated | Issue #7 private document integration                 |
-| Background Queue and DLQ        | No; locally emulated | Issue #8 transactional outbox delivery                |
-| Better Auth secret and URL      | No                   | Issue #3 Worker auth runtime integration               |
-| Google OAuth credentials        | No                   | Issue #4 Google login                                 |
-| Turnstile secret                | No                   | Issue #4 abuse-sensitive auth flows                   |
-| Cloudflare Images account/token | No                   | Product and approved public media work                |
-| Email Sending authorization     | No                   | Transactional notification delivery                  |
+| Resource                        | Needed now           | First required work                           |
+| ------------------------------- | -------------------- | --------------------------------------------- |
+| Local PostgreSQL                | Optional             | Migration and database-invariant verification |
+| Neon development database       | No                   | Remote migration and runtime verification     |
+| Hyperdrive development binding  | No                   | Remote Worker database verification           |
+| Private R2 bucket               | No; locally emulated | Issue #7 private document integration         |
+| Background Queue and DLQ        | No; locally emulated | Issue #8 transactional outbox delivery        |
+| Better Auth secret and URL      | No                   | Issue #3 Worker auth runtime integration      |
+| Google OAuth credentials        | No                   | Issue #4 Google login                         |
+| Turnstile secret                | No                   | Issue #4 abuse-sensitive auth flows           |
+| Cloudflare Images account/token | No                   | Product and approved public media work        |
+| Email Sending authorization     | No                   | Transactional notification delivery           |
 
 ## Remote provisioning rule
 

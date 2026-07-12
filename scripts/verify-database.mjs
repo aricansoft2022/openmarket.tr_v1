@@ -10,8 +10,7 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is required for database verification.");
 }
 
-const wait = (milliseconds) =>
-  new Promise((resolve) => setTimeout(resolve, milliseconds));
+const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function connectWithRetry() {
   let lastError;
@@ -52,10 +51,7 @@ async function expectImmutable({ label, savepoint, text, values }) {
       throw error;
     }
 
-    assert(
-      error instanceof Error,
-      `${label} failed with a non-Error value.`,
-    );
+    assert(error instanceof Error, `${label} failed with a non-Error value.`);
     assert.match(
       error.message,
       /audit_logs rows are immutable/,
@@ -86,10 +82,7 @@ try {
     "audit_logs_actor_idx",
     "audit_logs_created_at_idx",
   ]) {
-    assert(
-      indexNames.has(requiredIndex),
-      `Missing required audit index: ${requiredIndex}`,
-    );
+    assert(indexNames.has(requiredIndex), `Missing required audit index: ${requiredIndex}`);
   }
 
   const triggerResult = await client.query(`
