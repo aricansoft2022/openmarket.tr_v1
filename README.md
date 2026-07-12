@@ -25,7 +25,7 @@ OpenMarket.tr is a free, donation-supported B2B directory and RFQ platform for h
 Requirements: Node.js 24 and npm.
 
 ```bash
-npm install
+npm ci
 npm run spec:materialize
 npm run dev
 ```
@@ -47,6 +47,7 @@ npm run db:migrate
 
 ```bash
 npm run verify
+npm run db:check
 ```
 
 ## Delivery discipline
