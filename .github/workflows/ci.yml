@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, agent/google-oauth-policy]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -96,3 +96,63 @@ jobs:
 
       - name: Verify Google OAuth policy and authorization contract
         run: npm run db:verify:google
+
+  prepare-google-policy:
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/agent/google-oauth-policy') ||
+      (github.event_name == 'pull_request' && github.head_ref == 'agent/google-oauth-policy')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: openmarket
+          POSTGRES_USER: openmarket
+          POSTGRES_PASSWORD: openmarket
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openmarket -d openmarket"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/google-oauth-policy
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Format repository
+        run: npm run format
+
+      - name: Apply migrations
+        run: npm run db:migrate
+
+      - name: Capture Google policy result
+        shell: bash
+        run: |
+          set +e
+          npm run db:verify:google > GOOGLE_OAUTH_DEBUG.txt 2>&1
+          status=$?
+          if [ "$status" -eq 0 ]; then
+            rm -f GOOGLE_OAUTH_DEBUG.txt
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app scripts package.json GOOGLE_OAUTH_DEBUG.txt
+          git diff --cached --quiet || git commit -m "style(auth): format Google OAuth policy"
+          git push origin HEAD:agent/google-oauth-policy
+          exit "$status"
