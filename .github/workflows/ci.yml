@@ -99,3 +99,6 @@ jobs:
 
       - name: Verify explicit Google account linking and unlinking
         run: npm run db:verify:google-linking
+
+      - name: Verify business identity and buyer activation state machine
+        run: npm run db:verify:business-identity
