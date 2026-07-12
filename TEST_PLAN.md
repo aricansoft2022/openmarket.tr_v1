@@ -8,7 +8,7 @@ Pure validators, runtime configuration readiness, schema resolver precedence, st
 
 ### Database integration
 
-Drizzle repositories against an isolated Neon/PostgreSQL database branch. Cover constraints, transactions, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes.
+Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
 
 ### Worker integration
 
@@ -44,7 +44,9 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 ### Phase 1
 
 - local R2 and Queue binding emulation
-- real Hyperdrive runtime and direct migration-path verification
+- isolated PostgreSQL migration application on every pull request
+- required audit indexes and UPDATE/DELETE immutability trigger verification
+- real Hyperdrive runtime and direct Neon migration-path verification before remote readiness
 - auth adapter integration
 - email verification and OAuth callback
 - business identity state transitions
