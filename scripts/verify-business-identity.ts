@@ -255,16 +255,22 @@ try {
       error instanceof BusinessIdentityTransitionError && error.code === "ACCOUNT_NOT_VERIFIED",
   );
 
-  await assert.rejects(
-    client.query(
-      `
-        insert into buyer_profiles (user_id, status, activated_at)
-        values ($1, 'active', $2)
-      `,
-      [unverifiedId, now],
-    ),
-    /buyer_profiles_state_fields_check/,
-  );
+  await client.query("savepoint invalid_buyer_state");
+  try {
+    await assert.rejects(
+      client.query(
+        `
+          insert into buyer_profiles (user_id, status, activated_at)
+          values ($1, 'active', $2)
+        `,
+        [unverifiedId, now],
+      ),
+      /buyer_profiles_state_fields_check/,
+    );
+  } finally {
+    await client.query("rollback to savepoint invalid_buyer_state");
+    await client.query("release savepoint invalid_buyer_state");
+  }
 
   const publicPolicyEvidence = await client.query(
     `
