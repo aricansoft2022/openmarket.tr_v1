@@ -61,4 +61,6 @@ for (const heading of ["## Start here", "## Exact next tasks", "## Known blocker
   }
 }
 
-console.log(`Documentation contract verified (${requiredFiles.length} files, spec sha256 ${hash}).`);
+console.log(
+  `Documentation contract verified (${requiredFiles.length} files, spec sha256 ${hash}).`,
+);
