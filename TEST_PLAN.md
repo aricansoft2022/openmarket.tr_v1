@@ -4,13 +4,13 @@
 
 ### Unit
 
-Pure validators, runtime configuration readiness, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
+Pure validators, runtime configuration readiness, registration/login form validation, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
 
 ### Database integration
 
-Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
+Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
 
-Auth integration fixtures run inside rolled-back transactions. They must verify the core `user`, `account` and `session` writes through Better Auth APIs rather than inserting fixture rows directly.
+Auth integration fixtures must verify the core `user`, `account` and `session` writes through Better Auth APIs rather than inserting fixture rows directly. Registration verification must also prove that country/language/intent persistence succeeds atomically and that a forced preference-constraint failure leaves no user or credential account.
 
 ### Worker integration
 
@@ -18,7 +18,7 @@ Cloudflare Vitest pool for bindings, request context, auth handler routing, sess
 
 ### Route integration
 
-React Router loaders/actions with authenticated and unauthenticated contexts. Cover redirects, permissions, validation errors, status codes and localized metadata.
+React Router loaders/actions with authenticated and unauthenticated contexts. Cover redirects, permissions, validation errors, status codes and localized metadata. A01/A02 tests include loading, invalid email, weak/mismatched password, missing preferences, duplicate-account response and recoverable database failure.
 
 ### End to end
 
@@ -50,6 +50,9 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 - required audit indexes and UPDATE/DELETE immutability trigger verification
 - Better Auth core-schema migration
 - email/password signup, credential-account hashing, signin and session persistence
+- separate country, UI-language and intended-use preference model
+- atomic signup + registration-preference rollback verification
+- A01 login, A02 registration and A03 success route states
 - request-scoped `/api/auth/*` handler compilation
 - real Hyperdrive runtime and direct Neon migration-path verification before remote readiness
 - email verification and OAuth callback
