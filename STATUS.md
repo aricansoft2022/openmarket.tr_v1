@@ -22,45 +22,49 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged A04–A07 email verification and password recovery, transactional auth email outbox intent and token lifecycle checks through PR #19.
 - Merged guarded Google OAuth policy, POST-only initiation and A03 callback states through PR #20.
 - Merged route-level rate limiting, Turnstile policy, local-only bypass and remote fail-closed auth controls through PR #21.
+- Merged explicit authenticated Google link/unlink safeguards, password re-verification and audit evidence through PR #22.
 - Kept fake Cloudflare resource IDs and credentials out of source control.
 
 ## In progress
 
-The explicit Google account-linking slice advances issue #4 with:
+The first issue #5 slice establishes business identity and buyer activation foundations:
 
-- authenticated `/account/security` settings;
-- current-password re-verification before link and unlink;
-- separate rate-limit budgets for link and unlink actions;
-- explicit `/api/auth/link-social` initiation with session cookies;
-- same-email-only policy inherited from the guarded Better Auth configuration;
-- linked-provider listing without exposing provider tokens;
-- unlink protection that preserves at least one login method;
-- immutable audit records for completed Google link and unlink changes;
-- PostgreSQL verification for session/password gates, provider redirect, pre-callback zero write, listing, unlink and audit evidence.
+- administrator-managed `public_email`, `blocked` and `company_exception` domain policies;
+- normalized private company-email records with pending/verified/rejected state;
+- deterministic business-identity review methods and statuses;
+- separate browser/active/suspended buyer profiles;
+- workspace intent expansion that preserves Buyer plus Supplier as Both;
+- company-domain auto-verification only for an exactly matching, already verified account email;
+- mandatory manual review for public-email domains;
+- immediate rejection for blocked domains;
+- `ACTIVE_BUYER` gating only after a verified review;
+- immutable submission, decision and workspace-intent audit records;
+- migration `drizzle/0004_empty_phil_sheldon.sql` and PostgreSQL state-machine verification.
 
-No owner action is required for local development or CI. A real Google callback still requires development credentials and an authorized redirect URI.
+A08–A10 routes, manual-exception document upload and admin review UI are intentionally separate follow-up slices. No owner action is required for this local/CI foundation.
 
 ## Verification
 
 Current branch target:
 
 ```text
-npm run format:check              PASS
-npm run docs:check                PASS
-npm run config:check              PASS
-npm run typecheck                 PASS
-npm run test:run                  PASS
-npm run build                     PASS
-npm run db:check                  PASS
-npm run db:verify                 PASS
-npm run db:verify:auth            PASS
-npm run db:verify:registration    PASS
-npm run db:verify:recovery        PASS
-npm run db:verify:google          PASS
-npm run db:verify:google-linking  PASS
+npm run format:check                 PASS
+npm run docs:check                   PASS
+npm run config:check                 PASS
+npm run typecheck                    PASS
+npm run test:run                     PASS
+npm run build                        PASS
+npm run db:check                     PASS
+npm run db:verify                    PASS
+npm run db:verify:auth               PASS
+npm run db:verify:registration       PASS
+npm run db:verify:recovery           PASS
+npm run db:verify:google             PASS
+npm run db:verify:google-linking     PASS
+npm run db:verify:business-identity  PASS
 ```
 
-The Google-linking integration test uses dummy CI credentials only to produce the authorization request. It does not contact Google or claim a live callback. A provider-linked fixture is then used to verify account listing, credential preservation, unlink persistence and audit outcomes.
+The business-identity verification covers company-domain auto verification, public-domain manual review, blocked-domain rejection, separate-company-email pending state, workspace expansion, supplier-only non-activation, manual approval, duplicate-decision rejection, active-buyer commercial guard, audit outcomes and database constraints.
 
 ## Known issues and blockers
 
@@ -69,16 +73,18 @@ The Google-linking integration test uses dummy CI credentials only to produce th
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
 - Real Google OAuth credentials and authorized redirect URIs are not configured, so live link callbacks remain unverified.
 - Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
-- Buyer/supplier workspace creation and commercial activation remain separate domain work in #5–#8.
+- Company-email verification delivery, manual evidence upload and reviewer/admin authorization remain open in issue #5.
+- Supplier workspace and document activation remain separate domain work in #6–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
 - The static prototype remains a reference and does not replace production accessibility or responsive validation.
 
-These are remote integration or later feature blockers, not blockers for local policy validation, UI development, CI or production builds.
+These are remote integration or later feature blockers, not blockers for local state-machine validation, CI or production builds.
 
 ## Next tasks
 
-1. Merge the explicit Google account-linking PR only after permanent read-only application and PostgreSQL CI jobs pass.
-2. Add the email outbox dispatcher only when Cloudflare Email Sending authorization exists; never log token-bearing action URLs.
-3. Provision Neon, deployed Hyperdrive, Google development credentials, Turnstile and the auth rate-limit binding before claiming remote auth readiness.
-4. Hand off the remaining external auth integrations and begin #5 business-identity verification as a separate domain slice.
-5. Continue Phase 1 in dependency order through #5–#9 and close it through integration gate #10.
+1. Merge the business-identity foundation only after permanent read-only application and PostgreSQL CI jobs pass.
+2. Add A08 workspace selection and A09/A10 applicant status/resubmission routes against the committed transition service.
+3. Add manual exception evidence metadata and private R2 upload authorization without mixing supplier activation.
+4. Add reviewer/admin decision routes with explicit permission checks, reasons and audit evidence.
+5. Provision remote auth/database resources before claiming remote readiness.
+6. Continue Phase 1 in dependency order through #6–#9 and close it through integration gate #10.
