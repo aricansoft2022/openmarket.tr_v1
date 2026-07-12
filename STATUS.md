@@ -20,21 +20,23 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged Better Auth core schema, request-scoped Drizzle adapter, `/api/auth/*` handler and signup/signin persistence verification through PR #14.
 - Merged transactional `user_preferences`, canonical A01/A02 entry forms and rollback verification through PR #17.
 - Merged A04–A07 email verification and password recovery, transactional auth email outbox intent and token lifecycle checks through PR #19.
+- Merged guarded Google OAuth policy, POST-only initiation and A03 callback states through PR #20.
 - Kept fake Cloudflare resource IDs and credentials out of source control.
 
 ## In progress
 
-PR #20 advances issue #4 with:
+PR #21 advances issue #4 with:
 
-- Google provider readiness that requires both real credentials;
-- POST-only `/auth/google` initiation and A03 `/auth/callback` states;
-- OpenID, email and profile scopes only;
-- disabled Google-only signup so required registration preferences cannot be bypassed;
-- disabled implicit and cross-email account linking;
-- no Google profile overwrite of OpenMarket profile data;
-- PostgreSQL-backed verification of authorization URL, state, callback URI, scopes, secret protection and zero pre-callback identity/session writes.
+- per-action budgets for registration, login, password recovery, verification resend, password reset and Google OAuth initiation;
+- Cloudflare client-address rate-limit keys;
+- server-side Turnstile Siteverify with expected-action validation;
+- route-level integration for A01, A02, A04, A06, A07 and Google OAuth start;
+- explicit local-only bypass and preview/production fail-closed behaviour;
+- public `429`/`503` error mapping without account enumeration;
+- separate public Turnstile site key and Worker-only secret;
+- unit coverage for exhausted limits, missing infrastructure, action mismatch and secret isolation.
 
-No owner action is required for the current local or CI work. A live Google login cannot be completed until real development credentials and authorized redirect URIs exist.
+No owner action is required for local development or CI. Remote protected auth forms remain unavailable until a real `AUTH_RATE_LIMITER`, `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` are configured.
 
 ## Verification
 
@@ -55,7 +57,7 @@ npm run db:verify:recovery     PASS
 npm run db:verify:google       PASS
 ```
 
-The Google policy integration check uses dummy CI-only values to generate the Better Auth authorization URL without contacting Google. It verifies that the browser URL targets Google, contains state and the expected callback/scopes, excludes the client secret and creates no user, account or session before callback validation.
+The abuse-control unit suite verifies local-only bypass, preview/production fail-closed behaviour, `Retry-After`, Turnstile action matching, server-side secret handling and that an exhausted rate limit prevents a Siteverify request.
 
 ## Known issues and blockers
 
@@ -64,18 +66,18 @@ The Google policy integration check uses dummy CI-only values to generate the Be
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
 - Real Google OAuth credentials and authorized redirect URIs are not configured.
 - Explicit authenticated Google account-linking UI remains to be built; implicit linking is intentionally blocked.
-- Turnstile and route-level rate limiting remain open within #4.
+- Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
 - Buyer/supplier workspace creation and commercial activation remain separate domain work in #5–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
 - The static prototype remains a reference and does not replace production accessibility or responsive validation.
 
-These are later integration or deployment blockers, not blockers for local policy validation, A03 UI states or CI authorization-contract tests.
+These are remote integration or later feature blockers, not blockers for local policy validation, UI development, CI or production builds.
 
 ## Next tasks
 
-1. Merge PR #20 only after permanent read-only application and PostgreSQL CI jobs pass.
+1. Merge PR #21 only after permanent read-only application and PostgreSQL CI jobs pass.
 2. Add explicit authenticated Google account linking without silent same-email linking.
-3. Add Turnstile and route-level rate limiting for abuse-sensitive auth actions.
-4. Add the email outbox dispatcher only when Cloudflare Email Sending authorization exists; never log token-bearing action URLs.
-5. Provision Neon, deployed Hyperdrive and real Google development credentials before claiming remote auth readiness.
+3. Add the email outbox dispatcher only when Cloudflare Email Sending authorization exists; never log token-bearing action URLs.
+4. Provision Neon, deployed Hyperdrive, Google development credentials, Turnstile and the auth rate-limit binding before claiming remote auth readiness.
+5. Begin #5 business-identity verification as a separate domain slice after #4 repository work is closed or explicitly handed off.
 6. Continue Phase 1 in dependency order through #5–#9 and close it through integration gate #10.
