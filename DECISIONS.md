@@ -101,3 +101,13 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Follow-up:** A future authenticated account-settings flow may link Google only after re-authentication and explicit user confirmation. It must test duplicate-provider, unlink, last-login-method and audit behaviour before enabling Google-only signin for that account.
 
 **Rejected:** Enabling Google signup before preferences can be persisted atomically; treating matching email as consent to link; allowing different-email linking; sending the Google client secret to the browser; initiating OAuth from a GET route that can be prefetched.
+
+## 2026-07-12 — Auth abuse controls fail closed outside local development
+
+**Decision:** Apply per-action Cloudflare Rate Limiting before Turnstile verification. Require Turnstile for registration and recovery-sensitive actions, validate the expected action server-side and expose only the public site key. Allow bypass only when `APP_ENV=local`; preview and production reject protected actions if the rate-limit binding, site key, secret or Siteverify service is unavailable.
+
+**Reason:** Authentication and recovery endpoints are abuse-sensitive, while a fake in-memory limiter would provide misleading confidence and inconsistent multi-instance behaviour. Ordering the limit before Siteverify reduces unnecessary external verification traffic. Expected-action validation prevents a token issued for one form from being replayed on another.
+
+**Security boundary:** Client IP keys are derived from Cloudflare's connection header, public recovery responses remain enumeration-safe and secrets never enter rendered HTML, redirects, logs or committed files. Remote readiness requires evidence from real preview bindings; local bypass is not production evidence.
+
+**Rejected:** Silently allowing requests when security infrastructure is missing; trusting arbitrary forwarded hops over the Cloudflare client address; committing fake Turnstile credentials or a fake rate-limit namespace; treating local bypass tests as proof of remote enforcement.
