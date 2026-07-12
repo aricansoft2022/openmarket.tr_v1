@@ -114,3 +114,6 @@ jobs:
 
       - name: Verify audited platform staff assignment management
         run: npm run db:verify:platform-staff-management
+
+      - name: Verify supplier company profile foundation
+        run: npm run db:verify:supplier-company
