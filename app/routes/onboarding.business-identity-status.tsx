@@ -58,6 +58,9 @@ export default function BusinessIdentityStatus({ loaderData }: Route.ComponentPr
   const review = loaderData.latestReview!;
   const copy = statusCopy[review.status];
   const buyerActive = loaderData.buyerStatus === "active";
+  const canManageEvidence =
+    review.method === "manual_exception" &&
+    (review.status === "pending" || review.status === "rejected");
 
   return (
     <OnboardingShell current="A10" title={copy.title} description={copy.description}>
@@ -107,6 +110,21 @@ export default function BusinessIdentityStatus({ loaderData }: Route.ComponentPr
             </div>
           </dl>
         </section>
+
+        {canManageEvidence ? (
+          <section className="domain-explanation" aria-labelledby="evidence-heading">
+            <p className="eyebrow">Manuel istisna belgeleri</p>
+            <h2 id="evidence-heading">İnceleme kanıtlarını yönetin</h2>
+            <p>
+              PDF, JPEG veya PNG belgelerinizi private depoya ekleyebilir, mevcut belgeleri indirebilir
+              ya da inceleme tamamlanmadan kaldırabilirsiniz. Belge yüklemek başvuruyu otomatik olarak
+              onaylamaz.
+            </p>
+            <Link className="button button--primary" to="/onboarding/business-identity/evidence">
+              Belgeleri yönet
+            </Link>
+          </section>
+        ) : null}
 
         {review.status === "rejected" ? (
           <section className="rejection-panel" aria-labelledby="rejection-heading">
