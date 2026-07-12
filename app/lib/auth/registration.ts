@@ -23,9 +23,13 @@ export type LoginValues = {
 
 export type LoginErrors = Partial<Record<keyof LoginValues | "password" | "form", string>>;
 
-function readString(formData: FormData, key: string): string {
+function readRawString(formData: FormData, key: string): string {
   const value = formData.get(key);
-  return typeof value === "string" ? value.trim() : "";
+  return typeof value === "string" ? value : "";
+}
+
+function readString(formData: FormData, key: string): string {
+  return readRawString(formData, key).trim();
 }
 
 function isEmail(value: string): boolean {
@@ -44,8 +48,8 @@ export function validateRegistration(formData: FormData): {
     preferredLanguage: readString(formData, "preferredLanguage") as PreferredLanguage | "",
     intendedUse: readString(formData, "intendedUse") as IntendedUse | "",
   };
-  const password = readString(formData, "password");
-  const confirmPassword = readString(formData, "confirmPassword");
+  const password = readRawString(formData, "password");
+  const confirmPassword = readRawString(formData, "confirmPassword");
   const errors: RegistrationErrors = {};
 
   if (values.name.length < 2 || values.name.length > 120) {
@@ -79,7 +83,7 @@ export function validateLogin(formData: FormData): {
   errors: LoginErrors;
 } {
   const values = { email: readString(formData, "email").toLowerCase() };
-  const password = readString(formData, "password");
+  const password = readRawString(formData, "password");
   const errors: LoginErrors = {};
 
   if (!isEmail(values.email)) {
