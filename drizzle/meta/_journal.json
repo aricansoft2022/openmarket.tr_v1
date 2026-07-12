@@ -15,6 +15,13 @@
       "when": 1783871511416,
       "tag": "0001_opposite_gorgon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783879119094,
+      "tag": "0002_strange_sugar_man",
+      "breakpoints": true
     }
   ]
 }

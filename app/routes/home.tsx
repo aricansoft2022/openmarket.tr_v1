@@ -74,7 +74,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <article>
           <span className="eyebrow">02</span>
           <h2>Identity foundation</h2>
-          <p>Better Auth, PostgreSQL oturumları ve kayıt tercihleri ayrı veri sınırlarında tutulur.</p>
+          <p>
+            Better Auth, PostgreSQL oturumları ve kayıt tercihleri ayrı veri sınırlarında tutulur.
+          </p>
         </article>
         <article>
           <span className="eyebrow">03</span>

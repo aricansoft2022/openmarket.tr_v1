@@ -26,10 +26,7 @@ export const userPreferences = pgTable(
       "user_preferences_country_length_check",
       sql`char_length(trim(${table.country})) between 2 and 80`,
     ),
-    check(
-      "user_preferences_language_check",
-      sql`${table.preferredLanguage} in ('tr', 'en')`,
-    ),
+    check("user_preferences_language_check", sql`${table.preferredLanguage} in ('tr', 'en')`),
     check(
       "user_preferences_intended_use_check",
       sql`${table.intendedUse} in ('buyer', 'supplier', 'both')`,

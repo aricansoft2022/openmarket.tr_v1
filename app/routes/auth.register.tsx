@@ -138,7 +138,12 @@ export default function Register({ actionData }: Route.ComponentProps) {
           <fieldset className="field-group field-group--fieldset">
             <legend>Kullanım amacı</legend>
             <label className="choice-row">
-              <input type="radio" name="intendedUse" value="buyer" defaultChecked={values?.intendedUse === "buyer"} />
+              <input
+                type="radio"
+                name="intendedUse"
+                value="buyer"
+                defaultChecked={values?.intendedUse === "buyer"}
+              />
               Alıcı
             </label>
             <label className="choice-row">
