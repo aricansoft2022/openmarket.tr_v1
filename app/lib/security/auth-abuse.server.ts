@@ -67,7 +67,9 @@ const placeholderPattern = /^(?:replace-|example|placeholder|changeme|todo)/i;
 
 function isConfiguredValue(value: string | undefined, minimumLength: number): value is string {
   const normalized = value?.trim();
-  return Boolean(normalized && normalized.length >= minimumLength && !placeholderPattern.test(normalized));
+  return Boolean(
+    normalized && normalized.length >= minimumLength && !placeholderPattern.test(normalized),
+  );
 }
 
 export function isLocalAbuseBypass(env: AuthAbuseEnvironment): boolean {
@@ -82,9 +84,7 @@ export function turnstileClientConfiguration(env: AuthAbuseEnvironment): {
 
   return {
     bypass: false,
-    siteKey: isConfiguredValue(env.TURNSTILE_SITE_KEY, 8)
-      ? env.TURNSTILE_SITE_KEY.trim()
-      : null,
+    siteKey: isConfiguredValue(env.TURNSTILE_SITE_KEY, 8) ? env.TURNSTILE_SITE_KEY.trim() : null,
   };
 }
 
@@ -208,7 +208,9 @@ export async function enforceAuthRequest(input: {
   });
 }
 
-export function publicAbuseControlError(result: Exclude<AbuseControlResult, { ok: true }>): PublicAbuseControlError {
+export function publicAbuseControlError(
+  result: Exclude<AbuseControlResult, { ok: true }>,
+): PublicAbuseControlError {
   if (result.reason === "rate-limited") {
     return {
       message: "Çok fazla istek yapıldı. Lütfen daha sonra yeniden deneyin.",

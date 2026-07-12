@@ -94,10 +94,10 @@ This local mode does not exercise Hyperdrive pooling or query caching. Remote Hy
 | Hyperdrive development binding  | No                   | Remote Worker database verification           |
 | Private R2 bucket               | No; locally emulated | Issue #7 private document integration         |
 | Background Queue and DLQ        | No; locally emulated | Issue #8 transactional outbox delivery        |
-| Better Auth secret and URL      | No                   | Remote auth runtime verification               |
-| Google OAuth credentials        | No                   | Live Google login                              |
-| Turnstile site key and secret   | No                   | Remote abuse-sensitive auth flows              |
-| Auth rate-limit binding         | No                   | Remote auth request enforcement                |
+| Better Auth secret and URL      | No                   | Remote auth runtime verification              |
+| Google OAuth credentials        | No                   | Live Google login                             |
+| Turnstile site key and secret   | No                   | Remote abuse-sensitive auth flows             |
+| Auth rate-limit binding         | No                   | Remote auth request enforcement               |
 | Cloudflare Images account/token | No                   | Product and approved public media work        |
 | Email Sending authorization     | No                   | Transactional notification delivery           |
 

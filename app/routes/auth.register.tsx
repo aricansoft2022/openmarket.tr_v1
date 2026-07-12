@@ -224,11 +224,7 @@ export default function Register({ actionData, loaderData }: Route.ComponentProp
           </div>
         </div>
 
-        <TurnstileField
-          siteKey={loaderData.siteKey}
-          action="register"
-          bypass={loaderData.bypass}
-        />
+        <TurnstileField siteKey={loaderData.siteKey} action="register" bypass={loaderData.bypass} />
 
         <button
           className="button button--primary auth-submit"

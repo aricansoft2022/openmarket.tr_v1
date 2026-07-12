@@ -9,10 +9,7 @@ import {
   signInWithEmail,
 } from "~/lib/auth/registration.server";
 import { hasErrors, type LoginErrors, validateLogin } from "~/lib/auth/registration";
-import {
-  enforceAuthRequest,
-  publicAbuseControlError,
-} from "~/lib/security/auth-abuse.server";
+import { enforceAuthRequest, publicAbuseControlError } from "~/lib/security/auth-abuse.server";
 
 import type { Route } from "./+types/auth.login";
 

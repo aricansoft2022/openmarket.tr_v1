@@ -41,9 +41,9 @@ describe("auth abuse controls", () => {
   });
 
   it("submits only server-side Turnstile fields and validates the action", async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({ success: true, action: "register" }),
-    );
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ success: true, action: "register" }));
 
     await expect(
       verifyTurnstile({
@@ -65,9 +65,9 @@ describe("auth abuse controls", () => {
   });
 
   it("rejects a token issued for another action", async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({ success: true, action: "forgot-password" }),
-    );
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ success: true, action: "forgot-password" }));
 
     await expect(
       verifyTurnstile({
