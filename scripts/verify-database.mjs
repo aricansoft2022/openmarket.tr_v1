@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 
+import "dotenv/config";
 import pg from "pg";
 
 const { Client } = pg;
