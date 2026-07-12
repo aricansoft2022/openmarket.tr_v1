@@ -7,6 +7,13 @@ export type GoogleOAuthReadiness = {
   missing: Array<"GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">;
 };
 
+export type GoogleCallbackState =
+  | "success"
+  | "account-not-linked"
+  | "unavailable"
+  | "provider-error"
+  | "processing";
+
 const placeholderPattern = /^(?:replace-|example|placeholder|changeme|todo)/i;
 
 function usable(value: string | undefined): value is string {
@@ -43,3 +50,14 @@ export const googleAccountLinkingPolicy = {
   allowDifferentEmails: false,
   updateUserInfoOnLink: false,
 } as const;
+
+export function resolveGoogleCallbackState(url: URL): GoogleCallbackState {
+  const status = url.searchParams.get("status");
+  const error = url.searchParams.get("error")?.toLowerCase();
+
+  if (status === "success" && !error) return "success";
+  if (error === "account_not_linked") return "account-not-linked";
+  if (error === "google_unavailable") return "unavailable";
+  if (error || status === "error") return "provider-error";
+  return "processing";
+}
