@@ -1,0 +1,61 @@
+
+> openmarket-tr@0.0.0 typecheck
+> npm run typegen && tsc -b
+
+
+> openmarket-tr@0.0.0 typegen
+> wrangler types && react-router typegen
+
+
+ ⛅️ wrangler 4.110.0
+────────────────────
+Generating project types...
+
+interface __BaseEnv_Env {
+	PRIVATE_DOCUMENTS: R2Bucket;
+	BACKGROUND_JOBS: Queue;
+	APP_ENV: "local";
+	COMMIT_SHA: "local";
+}
+declare namespace Cloudflare {
+	interface GlobalProps {
+		mainModule: typeof import("./workers/app");
+	}
+	interface Env extends __BaseEnv_Env {}
+}
+interface Env extends __BaseEnv_Env {}
+type StringifyValues<EnvType extends Record<string, unknown>> = {
+	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
+};
+declare namespace NodeJS {
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "APP_ENV" | "COMMIT_SHA">> {}
+}
+
+Generating runtime types...
+
+Runtime types generated.
+
+
+✨ Types written to worker-configuration.d.ts
+
+📖 Read about runtime types
+https://developers.cloudflare.com/workers/languages/typescript/#generate-types
+📣 Remember to rerun 'wrangler types' after you change your wrangler.jsonc file.
+
+app/routes/auth.forgot-password.tsx(74,18): error TS2339: Property 'form' does not exist on type '{}'.
+app/routes/auth.forgot-password.tsx(76,21): error TS2339: Property 'form' does not exist on type '{}'.
+app/routes/auth.forgot-password.tsx(88,43): error TS2339: Property 'email' does not exist on type '{}'.
+app/routes/auth.forgot-password.tsx(89,39): error TS2339: Property 'email' does not exist on type '{}'.
+app/routes/auth.forgot-password.tsx(92,64): error TS2339: Property 'email' does not exist on type '{}'.
+app/routes/auth.forgot-password.tsx(101,43): error TS2339: Property 'preferredLanguage' does not exist on type '{}'.
+app/routes/auth.forgot-password.tsx(102,39): error TS2339: Property 'preferredLanguage' does not exist on type '{}'.
+app/routes/auth.forgot-password.tsx(107,67): error TS2339: Property 'preferredLanguage' does not exist on type '{}'.
+app/routes/auth.registration-success.tsx(3,28): error TS2307: Cannot find module './+types/auth.registration-success' or its corresponding type declarations.
+app/routes/auth.verify-email.tsx(74,18): error TS2339: Property 'form' does not exist on type '{}'.
+app/routes/auth.verify-email.tsx(76,21): error TS2339: Property 'form' does not exist on type '{}'.
+app/routes/auth.verify-email.tsx(88,43): error TS2339: Property 'email' does not exist on type '{}'.
+app/routes/auth.verify-email.tsx(89,39): error TS2339: Property 'email' does not exist on type '{}'.
+app/routes/auth.verify-email.tsx(92,70): error TS2339: Property 'email' does not exist on type '{}'.
+app/routes/auth.verify-email.tsx(101,43): error TS2339: Property 'preferredLanguage' does not exist on type '{}'.
+app/routes/auth.verify-email.tsx(102,39): error TS2339: Property 'preferredLanguage' does not exist on type '{}'.
+app/routes/auth.verify-email.tsx(107,73): error TS2339: Property 'preferredLanguage' does not exist on type '{}'.
