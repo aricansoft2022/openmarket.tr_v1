@@ -131,3 +131,13 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Transition boundary:** Workspace selection may widen Buyer plus Supplier to Both but must not silently remove an existing workspace. Separate company emails remain pending until their own verification path completes. Manual decisions accept only pending reviews, rejections require reasons and all submission/decision/intent changes are audited.
 
 **Rejected:** Treating account email verification as business identity for public providers; putting buyer state on the auth user; activating Buyer directly from intended use; overwriting a decided review; allowing application code to create active buyers without verified-review evidence.
+
+## 2026-07-13 — Platform staff authority uses fixed assignments and request-time resolution
+
+**Decision:** Store launch platform staff assignments separately from authentication, Buyer, Supplier and company membership state. Resolve the effective role from active assignments on every privileged request. Only Compliance Reviewer, Platform Admin and Super Admin may list, inspect or decide business-identity reviews and read their private evidence.
+
+**Reason:** Workspace intent and commercial activation do not establish platform employment or moderation authority. Request-time resolution makes revocation effective without waiting for session expiry and keeps the fixed launch permission matrix auditable.
+
+**Security boundary:** Client visibility is never authorization. Anonymous users, unrelated roles, revoked assignments and self-review are denied server-side. Private evidence projections omit R2 object keys, decisions require reasons where applicable and privileged audit records store the effective role.
+
+**Rejected:** Inferring review authority from Buyer/Supplier/Moderator state; embedding role claims permanently in session cookies; allowing reviewers to decide their own applications; introducing custom roles, delegation or self-service escalation in this slice.

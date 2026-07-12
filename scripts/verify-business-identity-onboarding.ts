@@ -143,6 +143,7 @@ try {
   const decision = await decideBusinessIdentityReview(database, {
     reviewId: submission.reviewId,
     reviewerId,
+    effectiveRole: "compliance_reviewer",
     decision: "verified",
     reviewNote: "Manual fixture approved.",
     requestId: "onboarding-manual-approval",

@@ -68,6 +68,16 @@ An active or suspended buyer row must reference a business-identity review and r
 
 Submission, manual decision, workspace expansion and buyer activation outcomes are written with immutable audit records. Database checks enforce valid state/timestamp combinations; transition services enforce cross-table rules such as verified-review-before-active-buyer.
 
+### Platform staff authorization
+
+`platform_staff_assignments` stores fixed launch operational authority independently from Better Auth, workspace intent and company membership. Each row contains a user, one fixed role, active or revoked state, the assigning user, mandatory assignment reason and revocation actor/reason/timestamps when revoked. User and role are unique.
+
+Launch roles are `super_admin`, `platform_admin`, `catalogue_content_editor`, `compliance_reviewer`, `product_rfq_moderator` and `privacy_support_manager`. The application owns the Resource + Action permission matrix in code; the database stores assignments rather than arbitrary permission JSON or custom role definitions.
+
+Business-identity review list/read/decide and private evidence read permissions are granted only to active Compliance Reviewer, Platform Admin and Super Admin assignments. Effective role is resolved on every request, so revocation takes effect immediately for the next request. Buyer, Supplier, Moderator and other unrelated states never imply this authority, and self-review is prohibited.
+
+Privileged decision audit rows retain the effective role used for authorization. Staff assignment grant/revoke management is a separate Admin-only workflow and must create its own immutable audit evidence before production administration is enabled.
+
 ## Catalogue schema engine
 
 Core tables:

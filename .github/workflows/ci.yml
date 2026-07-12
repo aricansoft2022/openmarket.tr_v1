@@ -108,3 +108,6 @@ jobs:
 
       - name: Verify private business identity evidence lifecycle
         run: npm run db:verify:business-identity-evidence
+
+      - name: Verify permissioned business identity review lifecycle
+        run: npm run db:verify:business-identity-review

@@ -27,6 +27,7 @@
     "db:verify:business-identity": "tsx scripts/verify-business-identity.ts",
     "db:verify:business-identity-onboarding": "tsx scripts/verify-business-identity-onboarding.ts",
     "db:verify:business-identity-evidence": "tsx scripts/verify-business-identity-evidence.ts",
+    "db:verify:business-identity-review": "tsx scripts/verify-business-identity-review-authorization.ts",
     "db:local:up": "docker compose up -d postgres",
     "db:local:down": "docker compose down",
     "db:local:reset": "docker compose down -v",

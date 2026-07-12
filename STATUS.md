@@ -26,24 +26,28 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged the business-identity domain policy, review and Buyer activation state machine through PR #23.
 - Merged A08–A10 workspace, submission, status and resubmission routes through PR #24.
 - Merged private manual-exception evidence metadata, R2 lifecycle and owner-only handlers through PR #25.
+- Merged route registration, A10 evidence entry and permanent evidence CI repair through PR #26 as `68db58fac2b3a2e4f725ea44a47edad7629d9e64`.
 - Kept fake Cloudflare resource IDs, public object URLs and credentials out of source control.
 
 ## In progress
 
-The current branch `agent/register-business-identity-evidence-routes` repairs incomplete PR #25 integration:
+PR #27 on `agent/business-identity-review-authorization` adds permissioned business-identity review:
 
-- registers `/onboarding/business-identity/evidence` in the explicit React Router route config;
-- registers `/onboarding/business-identity/evidence/:evidenceId/download`;
-- exposes eligible manual-exception evidence management from A10 status;
-- adds a route-registration regression test;
-- wires `scripts/verify-business-identity-evidence.ts` into `package.json` and permanent PostgreSQL CI;
-- updates the public route and verification documentation.
+- fixed launch platform roles stored in `platform_staff_assignments` with active/revoked state;
+- code-owned list/read/decide/evidence permissions;
+- active Compliance Reviewer, Platform Admin and Super Admin authorization;
+- anonymous, unrelated-role, revoked-assignment and self-review denial;
+- pending review queue, detail and reasoned verify/reject routes;
+- private Reviewer/Admin evidence downloads without object-key disclosure;
+- effective staff role on privileged immutable audit records;
+- next-request revocation behavior;
+- unit, route and PostgreSQL/fake-R2 integration coverage.
 
-Without this repair, the evidence route modules exist in source control but are unreachable, and their PostgreSQL/fake-R2 lifecycle verification is never executed by CI.
+No staff self-service grant/revoke surface is introduced. Buyer, Supplier and Moderator state remain separate from platform staff authority.
 
 ## Verification
 
-GitHub Actions run `29209552848` passed both permanent jobs on the clean branch head:
+GitHub Actions run `29211012955` passed both permanent jobs on the final branch head:
 
 ```text
 npm run format:check                              PASS
@@ -62,9 +66,10 @@ npm run db:verify:google-linking                  PASS
 npm run db:verify:business-identity               PASS
 npm run db:verify:business-identity-onboarding    PASS
 npm run db:verify:business-identity-evidence      PASS
+npm run db:verify:business-identity-review        PASS
 ```
 
-The evidence gate proves owner-only upload/list/download/remove, private object-key handling, file limits, failure compensation, immutable audit evidence and non-owner download denial.
+The authorization gate proves fixed-role resolution, Moderator and revoked-assignment denial, self-review denial, safe private evidence access, reasoned decisions, Buyer activation, effective-role audit evidence and revocation on the next request.
 
 ## Known issues and blockers
 
@@ -73,19 +78,18 @@ The evidence gate proves owner-only upload/list/download/remove, private object-
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
 - Real Google OAuth credentials and authorized redirect URIs are not configured, so live callback completion remains unverified.
 - Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
-- Reviewer/admin authorization for business-identity evidence and decisions is not implemented on the verified main branch.
-- Evidence content inspection/scanning and retention cleanup policy remain open.
+- Audited Admin-only staff grant/revoke management remains open after the authorization slice.
+- Evidence content inspection/scanning, quarantine and retention cleanup policy remain open.
 - Supplier workspace and document activation remain separate domain work in #6–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
 
-These are remote integration or later feature blockers, not blockers for local CI, PostgreSQL verification or production builds.
+These are remote integration or later feature blockers, not blockers for local permission validation, CI, PostgreSQL verification or production builds.
 
 ## Next tasks
 
-1. Review and merge PR #26; both permanent CI jobs pass.
-2. Implement reviewer/admin authorization for pending business-identity queues, evidence access and reasoned decisions.
-3. Add audited Admin-only staff grant/revoke management without self-service escalation.
-4. Add company-email verification delivery after the email dispatcher is authorized.
-5. Define evidence scanning, quarantine and retention cleanup before claiming document-review readiness.
-6. Provision remote Neon/Hyperdrive/R2 evidence before claiming preview or production readiness.
-7. Continue Phase 1 in dependency order through #6–#9 and close it through integration gate #10.
+1. Merge PR #27; both permanent read-only CI jobs pass on the final branch head.
+2. Add audited Admin-only staff assignment grant/revoke management without self-service escalation.
+3. Add company-email verification delivery after the email dispatcher is authorized.
+4. Define evidence scanning, quarantine and retention cleanup before claiming production-ready review.
+5. Provision remote Neon/Hyperdrive/R2 evidence before claiming preview or production readiness.
+6. Continue Phase 1 in dependency order through supplier issues #6–#8, fixed permission issue #9 and integration gate #10.
