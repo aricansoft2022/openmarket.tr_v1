@@ -105,3 +105,6 @@ jobs:
 
       - name: Verify authenticated A08-A10 onboarding workflow
         run: npm run db:verify:business-identity-onboarding
+
+      - name: Verify private business identity evidence lifecycle
+        run: npm run db:verify:business-identity-evidence
