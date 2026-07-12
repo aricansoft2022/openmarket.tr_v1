@@ -7,11 +7,7 @@ import {
   registerWithPreferences,
   responseSessionHeaders,
 } from "~/lib/auth/registration.server";
-import {
-  hasErrors,
-  type RegistrationErrors,
-  validateRegistration,
-} from "~/lib/auth/registration";
+import { hasErrors, type RegistrationErrors, validateRegistration } from "~/lib/auth/registration";
 import type { IntendedUse, PreferredLanguage } from "~/lib/db/schema";
 
 import type { Route } from "./+types/auth.register";
