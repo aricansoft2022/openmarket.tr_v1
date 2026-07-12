@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { assertNotSelfManagement, StaffAuthorizationError } from "./platform-staff.server";
 import {
   managerMayChangeRole,
   roleAllows,
@@ -48,5 +49,12 @@ describe("platform staff authorization", () => {
     expect(managerMayChangeRole("platform_admin", "super_admin")).toBe(false);
     expect(managerMayChangeRole("super_admin", "platform_admin")).toBe(true);
     expect(managerMayChangeRole("super_admin", "super_admin")).toBe(true);
+  });
+
+  it("rejects self-management before any role mutation", () => {
+    expect(() => assertNotSelfManagement("same-user", "same-user")).toThrow(
+      StaffAuthorizationError,
+    );
+    expect(() => assertNotSelfManagement("manager", "target")).not.toThrow();
   });
 });
