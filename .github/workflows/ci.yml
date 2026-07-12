@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, agent/phase-0-foundation]
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -24,37 +24,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: npm ci --ignore-scripts
 
       - name: Verify
         run: npm run verify
-
-  finalize-lockfile:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/phase-0-foundation'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout foundation branch
-        uses: actions/checkout@v4
-        with:
-          ref: agent/phase-0-foundation
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Generate deterministic lockfile
-        run: npm install --package-lock-only --ignore-scripts
-
-      - name: Commit lockfile
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git diff --cached --quiet || git commit -m "chore: lock dependencies"
-          git push origin HEAD:agent/phase-0-foundation
