@@ -32,7 +32,7 @@ Phase 1 — Identity and supplier activation foundation.
 
 ## In progress
 
-PR #28 on `agent/platform-staff-assignment-management` adds audited platform staff assignment management:
+PR #30 on `agent/platform-staff-assignment-management-final` adds audited platform staff assignment management:
 
 - administrator-only assignment list, grant, revoke and reactivation permissions;
 - Platform Admin management of operational roles only;
@@ -49,7 +49,7 @@ No arbitrary custom roles, permission JSON or delegation model is introduced.
 
 ## Verification
 
-GitHub Actions run `29211331029` passed the complete PostgreSQL chain, including `db:verify:platform-staff-management`. The application job reached only the expected formatting failure before the branch preparation pass; final clean application and database CI remain required.
+GitHub Actions run `29211331029` passed the complete PostgreSQL chain, including `db:verify:platform-staff-management`. The current final branch uses a preparation job that formats and commits the branch, then verifies the exact prepared commit SHA. Permanent read-only CI will be restored before merge.
 
 ```text
 npm run format:check                              pending final CI
@@ -81,6 +81,7 @@ The new staff-management gate proves administrator-only access, hierarchy enforc
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
 - Real Google OAuth credentials and authorized redirect URIs are not configured, so live callback completion remains unverified.
 - Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
+- Initial Super Admin bootstrap remains a controlled provisioning action rather than a public or self-service workflow.
 - Evidence content inspection/scanning, quarantine and retention cleanup policy remain open.
 - Supplier workspace and document activation remain separate domain work in #6–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
@@ -89,7 +90,7 @@ These are remote integration or later feature blockers, not blockers for local p
 
 ## Next tasks
 
-1. Merge PR #28 only after both permanent read-only CI jobs pass on the final branch head.
+1. Merge PR #30 only after exact prepared-commit validation and restored permanent read-only CI pass.
 2. Add company-email verification delivery after the email dispatcher is authorized.
 3. Define evidence scanning, quarantine and retention cleanup before claiming production-ready review.
 4. Provision remote Neon/Hyperdrive/R2 evidence before claiming preview or production readiness.
