@@ -3,10 +3,10 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, agent/google-oauth-policy]
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -96,36 +96,3 @@ jobs:
 
       - name: Verify Google OAuth policy and authorization contract
         run: npm run db:verify:google
-
-  capture-formatted-workflow:
-    if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/agent/google-oauth-policy') ||
-      (github.event_name == 'pull_request' && github.head_ref == 'agent/google-oauth-policy')
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          ref: agent/google-oauth-policy
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Capture Prettier output
-        shell: bash
-        run: |
-          npm run format
-          base64 -w0 .github/workflows/ci.yml > FORMATTED_CI.b64
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add FORMATTED_CI.b64
-          git commit -m "chore(auth): capture formatted CI workflow"
-          git push origin HEAD:agent/google-oauth-policy
