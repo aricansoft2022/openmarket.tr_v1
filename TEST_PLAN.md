@@ -4,7 +4,7 @@
 
 ### Unit
 
-Pure validators, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
+Pure validators, runtime configuration readiness, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
 
 ### Database integration
 
@@ -35,6 +35,7 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 ### Phase 0
 
 - documentation contract
+- runtime variable/binding/secret contract
 - TypeScript and generated route/binding types
 - unit smoke test
 - production build
@@ -42,6 +43,8 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 
 ### Phase 1
 
+- local R2 and Queue binding emulation
+- real Hyperdrive runtime and direct migration-path verification
 - auth adapter integration
 - email verification and OAuth callback
 - business identity state transitions

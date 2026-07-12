@@ -11,4 +11,28 @@
     "APP_ENV": "local",
     "COMMIT_SHA": "local",
   },
+  "r2_buckets": [
+    {
+      "binding": "PRIVATE_DOCUMENTS",
+      "bucket_name": "openmarket-private-documents-dev",
+      "preview_bucket_name": "openmarket-private-documents-preview",
+    },
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "BACKGROUND_JOBS",
+        "queue": "openmarket-background-jobs-dev",
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "openmarket-background-jobs-dev",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "dead_letter_queue": "openmarket-background-jobs-dlq-dev",
+      },
+    ],
+  },
 }

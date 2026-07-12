@@ -12,6 +12,7 @@ const requiredFiles = [
   "SEED_CATALOGUE.md",
   "TEST_PLAN.md",
   "WORKFLOW.md",
+  "RUNTIME_CONFIGURATION.md",
 ];
 
 for (const path of requiredFiles) {

@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "environments": ["local", "preview", "production"],
+  "variables": [
+    {
+      "name": "APP_ENV",
+      "capability": "core",
+      "source": "wrangler-vars",
+      "status": "configured"
+    },
+    {
+      "name": "COMMIT_SHA",
+      "capability": "core",
+      "source": "wrangler-vars",
+      "status": "configured"
+    },
+    {
+      "name": "BETTER_AUTH_URL",
+      "capability": "authentication",
+      "source": "environment-variable",
+      "status": "external-pending"
+    },
+    {
+      "name": "GOOGLE_CLIENT_ID",
+      "capability": "google-oauth",
+      "source": "environment-variable",
+      "status": "external-pending"
+    },
+    {
+      "name": "CLOUDFLARE_ACCOUNT_ID",
+      "capability": "images",
+      "source": "environment-variable",
+      "status": "external-pending"
+    }
+  ],
+  "secrets": [
+    {
+      "name": "BETTER_AUTH_SECRET",
+      "capability": "authentication",
+      "source": "worker-secret",
+      "status": "external-pending"
+    },
+    {
+      "name": "GOOGLE_CLIENT_SECRET",
+      "capability": "google-oauth",
+      "source": "worker-secret",
+      "status": "external-pending"
+    },
+    {
+      "name": "TURNSTILE_SECRET_KEY",
+      "capability": "turnstile",
+      "source": "worker-secret",
+      "status": "external-pending"
+    },
+    {
+      "name": "CLOUDFLARE_IMAGES_TOKEN",
+      "capability": "images",
+      "source": "worker-secret",
+      "status": "external-pending"
+    }
+  ],
+  "bindings": [
+    {
+      "name": "HYPERDRIVE",
+      "capability": "database",
+      "kind": "hyperdrive",
+      "status": "external-pending"
+    },
+    {
+      "name": "PRIVATE_DOCUMENTS",
+      "capability": "private-documents",
+      "kind": "r2-bucket",
+      "status": "local-configured"
+    },
+    {
+      "name": "BACKGROUND_JOBS",
+      "capability": "background-jobs",
+      "kind": "queue",
+      "status": "local-configured"
+    }
+  ]
+}
