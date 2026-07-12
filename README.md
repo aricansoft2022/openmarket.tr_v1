@@ -38,29 +38,34 @@ The current application exposes:
 - `/auth/login` — A01 email/password login and guarded Google entry
 - `/auth/register` — A02 registration with country, preferred language and intended use
 - `/auth/google` — POST-only Google OAuth initiation
-- `/auth/callback` — A03 Google success, unavailable, account-not-linked, rate-limited, security-unavailable and provider-error states
+- `/auth/callback` — A03 Google result states
 - `/auth/verify-email` — A04 verification-pending and resend state
 - `/auth/verify-email/result` — A05 verification success/error state
 - `/auth/forgot-password` — A06 enumeration-safe reset request
 - `/auth/reset-password` — A07 reset form and token-error state
+- `/onboarding/workspaces` — A08 authenticated Buyer/Supplier/Both selection
+- `/onboarding/business-identity` — A09 business-identity submission and resubmission
+- `/onboarding/business-identity/status` — A10 pending/verified/rejected status timeline
 - `/account/security` — authenticated provider list plus explicit Google link/unlink controls
 - `/giris`, `/kayit` and `/kayit/basarili` — legacy redirects to canonical auth routes
-- `/api/auth/*` — Better Auth resource handler, including `/api/auth/callback/google`
+- `/api/auth/*` — Better Auth resource handler
 - `/health` — no-cache service health response with validated core metadata
 
-Email verification and password-reset tokens are enabled. Their Turkish/English delivery contracts are written atomically to `outbox_events`; no external email sender is configured yet. Registration creates Better Auth identity data, `user_preferences` and the verification outbox event in one transaction; intended use does not activate a buyer or supplier workspace.
+Email verification and password-reset tokens are enabled. Their Turkish/English delivery contracts are written atomically to `outbox_events`; no external email sender is configured yet. Registration creates Better Auth identity data, `user_preferences` and the verification outbox event in one transaction.
 
-Google OAuth is enabled only when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` contain non-placeholder values. The provider requests OpenID, email and profile scopes. Google-only signup is disabled so required registration preferences cannot be bypassed. Same-email accounts are not silently linked, cross-email linking is forbidden and Google profile data does not overwrite OpenMarket profile data.
+Business identity is separate from authentication. A verified matching company-domain email may verify automatically; public-email domains require manual review, blocked domains are rejected and a separate company email remains pending. Buyer becomes active only after a verified business-identity review. A08 workspace selection may widen Buyer plus Supplier to Both but never silently removes a workspace.
 
-Authenticated users may manage Google through `/account/security`. Link and unlink actions require the current password again, have separate rate-limit budgets and never expose provider tokens. Unlink is rejected when it would remove the last login method. Completed link and unlink changes create immutable audit records. A real provider callback still requires development Google credentials and an authorized redirect URI.
+A09 currently records the application and explains manual review, but private document upload remains disabled until R2 authorization is implemented. A10 reads current database state, shows rejection reasons and permits resubmission only after rejection. Supplier activation remains separate.
 
-Registration, login, password recovery, verification resend, reset-password, Google initiation and account-linking actions pass through a shared abuse-control policy. Local development bypasses external security services only when `APP_ENV=local`. Preview and production require the real `AUTH_RATE_LIMITER`; registration and recovery-sensitive forms also require `TURNSTILE_SITE_KEY` and the Worker-only `TURNSTILE_SECRET_KEY`. Missing remote security infrastructure fails closed rather than silently accepting requests.
+Google OAuth is enabled only when both credentials contain non-placeholder values. Google-only signup, implicit linking, cross-email linking and provider profile overwrite are disabled. Explicit link and unlink require an authenticated session plus current-password re-verification and preserve at least one login method.
 
-Wrangler locally emulates the configured private R2 bucket and background Queue. Hyperdrive remains intentionally unconfigured until a real development binding exists; no fake resource ID is committed. Read `RUNTIME_CONFIGURATION.md` before adding bindings or secrets.
+Auth-sensitive actions use a shared abuse-control policy. Local development bypasses external controls only when `APP_ENV=local`; preview and production fail closed when required Rate Limiting or Turnstile resources are missing.
+
+Wrangler locally emulates the private R2 bucket and background Queue. Hyperdrive remains intentionally unconfigured until a real development binding exists; no fake resource ID is committed. Read `RUNTIME_CONFIGURATION.md` before adding bindings or secrets.
 
 ## Local database verification
 
-Docker is optional and is needed only when you want to run PostgreSQL migrations and database integration checks locally. The default compose database is isolated development data and does not require Neon.
+Docker is optional and is needed only for PostgreSQL migrations and integration checks.
 
 ```bash
 cp .env.example .env
@@ -71,16 +76,14 @@ npm run db:verify:registration
 npm run db:verify:recovery
 npm run db:verify:google
 npm run db:verify:google-linking
+npm run db:verify:business-identity
+npm run db:verify:business-identity-onboarding
 npm run db:local:down
 ```
 
-`npm run db:verify` applies the committed Drizzle migrations, verifies the required audit indexes and proves that the database trigger rejects both UPDATE and DELETE operations on `audit_logs`.
+The verification chain covers immutable audit behavior, Better Auth persistence, transactional registration, recovery tokens, Google policy/linking, business-identity transitions and the authenticated A08–A10 workflow with a real session cookie.
 
-`npm run db:verify:auth` verifies Better Auth signup, hashed credential storage, verification outbox creation, verified signin and persisted sessions. `npm run db:verify:registration` verifies required preference/outbox atomicity and duplicate-signup non-destruction. `npm run db:verify:recovery` verifies the email-verification gate, generic unknown-email reset response, password reset, session revocation, token replay rejection and expiry handling. `npm run db:verify:google` verifies credential gating, the Google authorization URL, state, callback URI, minimal scopes, client-secret protection and that OAuth initiation creates no identity or session. `npm run db:verify:google-linking` verifies explicit authenticated linking initiation, password confirmation, pre-callback zero write, provider listing, credential-preserving unlink and audit evidence.
-
-Use `npm run db:local:reset` only when you intentionally want to delete the local PostgreSQL volume. Use `npm run db:local:logs` to inspect startup problems.
-
-A future Neon development database will replace the local `DATABASE_URL` only for direct migrations and administrative scripts. Runtime Worker traffic will continue to use the `HYPERDRIVE` binding.
+Use `npm run db:local:reset` only when you intentionally want to delete the local PostgreSQL volume. A future Neon development database will replace the local `DATABASE_URL` only for direct migrations and administrative scripts; Worker runtime traffic will use `HYPERDRIVE`.
 
 ## Verification
 
@@ -90,7 +93,7 @@ npm run config:check
 npm run db:check
 ```
 
-GitHub Actions applies and verifies migrations, audit invariants, Better Auth persistence, transactional registration, auth recovery, Google OAuth policy and explicit Google account linking against an isolated PostgreSQL service container on every pull request and `main` push. Unit tests also verify auth rate-limit decisions, Turnstile action matching, local-only bypass and remote fail-closed behaviour.
+GitHub Actions applies all migrations and runs application plus PostgreSQL integration gates on every pull request and `main` push.
 
 ## Delivery discipline
 

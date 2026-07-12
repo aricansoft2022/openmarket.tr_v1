@@ -102,3 +102,6 @@ jobs:
 
       - name: Verify business identity and buyer activation state machine
         run: npm run db:verify:business-identity
+
+      - name: Verify authenticated A08-A10 onboarding workflow
+        run: npm run db:verify:business-identity-onboarding

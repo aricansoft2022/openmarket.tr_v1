@@ -12,6 +12,7 @@ import type { Route } from "./+types/root";
 import "./styles/global.css";
 import "./styles/auth.css";
 import "./styles/account-security.css";
+import "./styles/onboarding.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

@@ -25,6 +25,7 @@
     "db:verify:google": "tsx scripts/verify-google-oauth-policy.ts",
     "db:verify:google-linking": "tsx scripts/verify-google-account-linking.ts",
     "db:verify:business-identity": "tsx scripts/verify-business-identity.ts",
+    "db:verify:business-identity-onboarding": "tsx scripts/verify-business-identity-onboarding.ts",
     "db:local:up": "docker compose up -d postgres",
     "db:local:down": "docker compose down",
     "db:local:reset": "docker compose down -v",
