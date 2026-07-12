@@ -19,7 +19,7 @@ const env: AuthEnvironment = {
 };
 
 function request(): Request {
-  return new Request("http://localhost:3000/kayit", {
+  return new Request("http://localhost:3000/auth/register", {
     method: "POST",
     headers: { "user-agent": "openmarket-registration-verifier" },
   });
@@ -88,6 +88,43 @@ try {
     intended_use: "both",
   });
 
+  const validOutbox = await client.query(
+    `
+      select event_type, payload
+      from outbox_events
+      where payload->>'recipient' = $1
+    `,
+    [validEmail],
+  );
+  assert.equal(validOutbox.rowCount, 1, "Registration must atomically enqueue verification.");
+  assert.equal(validOutbox.rows[0]?.event_type, "auth.email-verification.requested");
+  assert.equal(validOutbox.rows[0]?.payload?.locale, "tr");
+
+  const duplicate = await registerWithPreferences(env, request(), {
+    name: "Duplicate Registration Attempt",
+    email: validEmail,
+    password: "OpenMarket-Duplicate-2026",
+    country: "Germany",
+    preferredLanguage: "en",
+    intendedUse: "buyer",
+  });
+  assert.equal(duplicate.status, 200, "Existing-email signup must keep a generic success response.");
+
+  const unchangedPreference = await client.query(
+    `
+      select country, preferred_language, intended_use
+      from user_preferences p
+      join "user" u on u.id = p.user_id
+      where u.email = $1
+    `,
+    [validEmail],
+  );
+  assert.deepEqual(
+    unchangedPreference.rows[0],
+    { country: "Türkiye", preferred_language: "tr", intended_use: "both" },
+    "A duplicate signup must not overwrite existing preferences.",
+  );
+
   await assert.rejects(
     registerWithPreferences(env, request(), {
       name: "Rollback Test",
@@ -118,8 +155,18 @@ try {
     "Failed preference persistence must not leave a user or credential account.",
   );
 
+  const rollbackOutbox = await client.query(
+    `select count(*)::int as count from outbox_events where payload->>'recipient' = $1`,
+    [rollbackEmail],
+  );
+  assert.equal(
+    rollbackOutbox.rows[0]?.count,
+    0,
+    "Failed preference persistence must roll back the verification outbox event.",
+  );
+
   console.log(
-    "Registration verified: required preferences persisted and preference failure rolled back user/account writes.",
+    "Registration verified: preferences and verification outbox are atomic; duplicate signup is non-destructive.",
   );
 } finally {
   await client.end();
