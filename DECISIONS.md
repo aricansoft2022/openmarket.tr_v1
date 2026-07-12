@@ -73,3 +73,11 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Reason:** Authentication identity and session lifecycle belong to Better Auth, while OpenMarket business identity, buyer activation, supplier activation, memberships and public contacts require explicit domain state machines and audit rules.
 
 **Rejected:** Adding workspace intent, business verification, supplier state, roles or public contact fields directly to Better Auth core tables; using a process-global PostgreSQL client in the Worker.
+
+## 2026-07-12 — Registration preferences are separate and transactional
+
+**Decision:** Store country, preferred UI language and Buyer/Supplier/Both intent in a one-to-one `user_preferences` table. Execute Better Auth signup and preference insertion in the same PostgreSQL transaction.
+
+**Reason:** These fields are required at registration but are OpenMarket onboarding data, not authentication identity. Atomic persistence prevents a valid credential account from surviving when required onboarding data fails database validation.
+
+**Rejected:** Adding the fields to Better Auth's `user` table; writing preferences after signup in an unrelated transaction; treating intended use as immediate buyer or supplier activation.
