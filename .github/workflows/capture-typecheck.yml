@@ -1,4 +1,4 @@
-name: Capture auth typecheck
+name: Capture auth failures
 
 on:
   push:
@@ -11,7 +11,23 @@ jobs:
   capture:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: openmarket
+          POSTGRES_USER: openmarket
+          POSTGRES_PASSWORD: openmarket
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openmarket -d openmarket"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
@@ -28,19 +44,32 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Capture TypeScript output
+      - name: Capture verification output
         shell: bash
         run: |
           set +e
-          npm run typecheck > TYPECHECK_DEBUG.txt 2>&1
-          status=$?
-          if [ "$status" -eq 0 ]; then
-            rm -f TYPECHECK_DEBUG.txt
+          {
+            echo "== TYPECHECK =="
+            npm run typecheck
+            type_status=$?
+            echo
+            echo "== MIGRATE =="
+            npm run db:migrate
+            migrate_status=$?
+            echo
+            echo "== REGISTRATION =="
+            npm run db:verify:registration
+            registration_status=$?
+            echo
+            echo "statuses: type=$type_status migrate=$migrate_status registration=$registration_status"
+          } > AUTH_DEBUG.txt 2>&1
+          if [ "$type_status" -eq 0 ] && [ "$migrate_status" -eq 0 ] && [ "$registration_status" -eq 0 ]; then
+            rm -f AUTH_DEBUG.txt
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add TYPECHECK_DEBUG.txt
-          git commit -m "chore(auth): capture typecheck output"
+          git add AUTH_DEBUG.txt
+          git commit -m "chore(auth): capture verification output"
           git push origin HEAD:agent/auth-entry-screens
-          exit "$status"
+          exit 1
