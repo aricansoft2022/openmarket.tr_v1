@@ -87,7 +87,10 @@ async function requireSupplierEligibility(database: Database, userId: string): P
     .where(eq(userPreferences.userId, userId))
     .limit(1);
 
-  if (!preferences || (preferences.intendedUse !== "supplier" && preferences.intendedUse !== "both")) {
+  if (
+    !preferences ||
+    (preferences.intendedUse !== "supplier" && preferences.intendedUse !== "both")
+  ) {
     throw new SupplierProfileActionError(
       "SUPPLIER_INTENT_REQUIRED",
       "Supplier or Both workspace intent is required before creating a supplier company.",
@@ -122,7 +125,9 @@ async function requireSeededSelections(
     const rows = await database
       .select({ key: supplierTypes.key })
       .from(supplierTypes)
-      .where(and(inArray(supplierTypes.key, [...supplierTypeKeys]), eq(supplierTypes.active, true)));
+      .where(
+        and(inArray(supplierTypes.key, [...supplierTypeKeys]), eq(supplierTypes.active, true)),
+      );
     if (rows.length !== supplierTypeKeys.length) {
       throw new SupplierProfileActionError(
         "UNKNOWN_SUPPLIER_TYPE",
@@ -162,27 +167,31 @@ async function replaceProfileSelections(
   await database
     .delete(supplierProductionCapabilities)
     .where(eq(supplierProductionCapabilities.companyId, companyId));
-  await database.delete(supplierExportMarkets).where(eq(supplierExportMarkets.companyId, companyId));
+  await database
+    .delete(supplierExportMarkets)
+    .where(eq(supplierExportMarkets.companyId, companyId));
 
   if (profile.supplierTypeKeys.length > 0) {
-    await database.insert(supplierCompanyTypes).values(
-      profile.supplierTypeKeys.map((supplierTypeKey) => ({ companyId, supplierTypeKey })),
-    );
+    await database
+      .insert(supplierCompanyTypes)
+      .values(profile.supplierTypeKeys.map((supplierTypeKey) => ({ companyId, supplierTypeKey })));
   }
   if (profile.applicationContextKeys.length > 0) {
-    await database.insert(supplierApplicationContexts).values(
-      profile.applicationContextKeys.map((contextKey) => ({ companyId, contextKey })),
-    );
+    await database
+      .insert(supplierApplicationContexts)
+      .values(profile.applicationContextKeys.map((contextKey) => ({ companyId, contextKey })));
   }
   if (profile.productionCapabilityKeys.length > 0) {
-    await database.insert(supplierProductionCapabilities).values(
-      profile.productionCapabilityKeys.map((capabilityKey) => ({ companyId, capabilityKey })),
-    );
+    await database
+      .insert(supplierProductionCapabilities)
+      .values(
+        profile.productionCapabilityKeys.map((capabilityKey) => ({ companyId, capabilityKey })),
+      );
   }
   if (profile.exportMarketCountryCodes.length > 0) {
-    await database.insert(supplierExportMarkets).values(
-      profile.exportMarketCountryCodes.map((countryCode) => ({ companyId, countryCode })),
-    );
+    await database
+      .insert(supplierExportMarkets)
+      .values(profile.exportMarketCountryCodes.map((countryCode) => ({ companyId, countryCode })));
   }
 }
 

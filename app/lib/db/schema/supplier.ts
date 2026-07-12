@@ -64,14 +64,8 @@ export const supplierCompanies = pgTable(
       "supplier_companies_trading_name_check",
       sql`${table.tradingName} is null or char_length(trim(${table.tradingName})) between 2 and 200`,
     ),
-    check(
-      "supplier_companies_country_code_check",
-      sql`${table.countryCode} ~ '^[A-Z]{2}$'`,
-    ),
-    check(
-      "supplier_companies_city_check",
-      sql`char_length(trim(${table.city})) between 2 and 120`,
-    ),
+    check("supplier_companies_country_code_check", sql`${table.countryCode} ~ '^[A-Z]{2}$'`),
+    check("supplier_companies_city_check", sql`char_length(trim(${table.city})) between 2 and 120`),
     check(
       "supplier_companies_description_check",
       sql`${table.description} is null or char_length(trim(${table.description})) between 20 and 4000`,
@@ -112,10 +106,7 @@ export const supplierMemberships = pgTable(
       "supplier_memberships_role_check",
       sql`${table.role} in ('owner', 'admin', 'editor', 'viewer')`,
     ),
-    check(
-      "supplier_memberships_status_check",
-      sql`${table.status} in ('active', 'revoked')`,
-    ),
+    check("supplier_memberships_status_check", sql`${table.status} in ('active', 'revoked')`),
     check(
       "supplier_memberships_state_check",
       sql`(${table.status} = 'active' and ${table.revokedBy} is null and ${table.revokedAt} is null and ${table.revocationReason} is null)
@@ -137,8 +128,14 @@ export const supplierTypes = pgTable(
   },
   (table) => [
     check("supplier_types_key_check", sql`${table.key} ~ '^supplier_type\.[a-z0-9_]+$'`),
-    check("supplier_types_label_tr_check", sql`char_length(trim(${table.labelTr})) between 2 and 120`),
-    check("supplier_types_label_en_check", sql`char_length(trim(${table.labelEn})) between 2 and 120`),
+    check(
+      "supplier_types_label_tr_check",
+      sql`char_length(trim(${table.labelTr})) between 2 and 120`,
+    ),
+    check(
+      "supplier_types_label_en_check",
+      sql`char_length(trim(${table.labelEn})) between 2 and 120`,
+    ),
   ],
 );
 

@@ -98,7 +98,10 @@ export function validateSupplierProfile(input: SupplierProfileInput): SupplierPr
 
   const countryCode = normalizedCountryCode(input.countryCode);
   if (!/^[A-Z]{2}$/.test(countryCode)) {
-    throw new SupplierProfileValidationError("INVALID_COUNTRY", "Country must be an ISO alpha-2 code.");
+    throw new SupplierProfileValidationError(
+      "INVALID_COUNTRY",
+      "Country must be an ISO alpha-2 code.",
+    );
   }
 
   const city = input.city.trim();
@@ -126,7 +129,10 @@ export function validateSupplierProfile(input: SupplierProfileInput): SupplierPr
   }
 
   const foundedYear = input.foundedYear ?? null;
-  if (foundedYear !== null && (!Number.isInteger(foundedYear) || foundedYear < 1800 || foundedYear > 2100)) {
+  if (
+    foundedYear !== null &&
+    (!Number.isInteger(foundedYear) || foundedYear < 1800 || foundedYear > 2100)
+  ) {
     throw new SupplierProfileValidationError(
       "INVALID_FOUNDED_YEAR",
       "Founded year must be between 1800 and 2100.",
@@ -154,11 +160,7 @@ export function validateSupplierProfile(input: SupplierProfileInput): SupplierPr
   }
 
   const productionCapabilityKeys = uniqueNormalizedKeys(input.productionCapabilityKeys);
-  if (
-    productionCapabilityKeys.some(
-      (key) => !/^production_capability\.[a-z0-9_]+$/.test(key),
-    )
-  ) {
+  if (productionCapabilityKeys.some((key) => !/^production_capability\.[a-z0-9_]+$/.test(key))) {
     throw new SupplierProfileValidationError(
       "INVALID_PRODUCTION_CAPABILITY",
       "Production capability keys must use the seeded production_capability namespace.",

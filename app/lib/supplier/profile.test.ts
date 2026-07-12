@@ -41,12 +41,7 @@ describe("supplier profile", () => {
       }),
     ).toEqual({
       complete: false,
-      missing: [
-        "description",
-        "supplier_type",
-        "application_context",
-        "production_capability",
-      ],
+      missing: ["description", "supplier_type", "application_context", "production_capability"],
     });
     expect(evaluateSupplierProfileCompleteness(completeProfile)).toEqual({
       complete: true,

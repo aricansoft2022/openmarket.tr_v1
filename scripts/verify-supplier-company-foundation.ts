@@ -216,17 +216,12 @@ try {
       created.company.id,
       completeProfile,
     ),
-    (error: unknown) =>
-      error instanceof SupplierProfileActionError && error.code === "FORBIDDEN",
+    (error: unknown) => error instanceof SupplierProfileActionError && error.code === "FORBIDDEN",
   );
 
   const incomplete = await updateSupplierCompanyProfile(
     environment,
-    request(
-      "/supplier/onboarding/company",
-      editor.cookie,
-      "supplier-company-editor-update",
-    ),
+    request("/supplier/onboarding/company", editor.cookie, "supplier-company-editor-update"),
     created.company.id,
     {
       ...completeProfile,
@@ -257,11 +252,7 @@ try {
 
   const completeAgain = await updateSupplierCompanyProfile(
     environment,
-    request(
-      "/supplier/onboarding/company",
-      owner.cookie,
-      "supplier-company-owner-complete",
-    ),
+    request("/supplier/onboarding/company", owner.cookie, "supplier-company-owner-complete"),
     created.company.id,
     completeProfile,
   );
@@ -330,7 +321,9 @@ try {
   if (createdUserIds.length > 0) {
     await client.query('delete from "user" where id = any($1::uuid[])', [createdUserIds]);
   }
-  await database.delete(schema.supplierTypes).where(eq(schema.supplierTypes.key, fixtureSupplierTypeKey));
+  await database
+    .delete(schema.supplierTypes)
+    .where(eq(schema.supplierTypes.key, fixtureSupplierTypeKey));
   await database
     .delete(schema.productionCapabilities)
     .where(eq(schema.productionCapabilities.key, fixtureCapabilityKey));
