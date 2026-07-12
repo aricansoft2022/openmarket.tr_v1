@@ -15,6 +15,19 @@ npm run dev
 
 The current local application exposes `/` and `/health`. Cloudflare R2 and Queues have deterministic development names in `wrangler.jsonc`; Wrangler uses local emulation for them during default local development. These names are contracts, not proof that remote resources exist.
 
+## Optional local PostgreSQL
+
+Docker Compose provides an isolated PostgreSQL instance for migration and database-invariant verification. It is not a Worker runtime binding and does not simulate Hyperdrive pooling or caching.
+
+```bash
+cp .env.example .env
+npm run db:local:up
+npm run db:verify
+npm run db:local:down
+```
+
+The same migration verification runs in GitHub Actions against a fresh PostgreSQL service container. `DATABASE_URL` is used only by Drizzle Kit, verification and administrative scripts. The committed local credentials are development-only defaults for the isolated compose service.
+
 ## Runtime contract
 
 `config/runtime-contract.json` is the machine-readable inventory of variables, secrets and bindings. `npm run config:check` verifies that:
@@ -58,17 +71,18 @@ This local mode does not exercise Hyperdrive pooling or query caching. Remote Hy
 
 ## External resources by delivery point
 
-| Resource                        | Needed now           | First required work                         |
-| ------------------------------- | -------------------- | ------------------------------------------- |
-| Neon development database       | No                   | Issue #2 migration and runtime verification |
-| Hyperdrive development binding  | No                   | Issue #2 runtime verification               |
-| Private R2 bucket               | No; locally emulated | Issue #7 private document integration       |
-| Background Queue and DLQ        | No; locally emulated | Issue #8 transactional outbox delivery      |
-| Better Auth secret and URL      | No                   | Issue #3 auth persistence                   |
-| Google OAuth credentials        | No                   | Issue #4 Google login                       |
-| Turnstile secret                | No                   | Issue #4 abuse-sensitive auth flows         |
-| Cloudflare Images account/token | No                   | Product and approved public media work      |
-| Email Sending authorization     | No                   | Transactional notification delivery         |
+| Resource                        | Needed now           | First required work                                  |
+| ------------------------------- | -------------------- | ---------------------------------------------------- |
+| Local PostgreSQL                | Optional             | Migration and database-invariant verification        |
+| Neon development database       | No                   | Remote migration and runtime verification             |
+| Hyperdrive development binding  | No                   | Remote Worker database verification                   |
+| Private R2 bucket               | No; locally emulated | Issue #7 private document integration                 |
+| Background Queue and DLQ        | No; locally emulated | Issue #8 transactional outbox delivery                |
+| Better Auth secret and URL      | No                   | Issue #3 Worker auth runtime integration               |
+| Google OAuth credentials        | No                   | Issue #4 Google login                                 |
+| Turnstile secret                | No                   | Issue #4 abuse-sensitive auth flows                   |
+| Cloudflare Images account/token | No                   | Product and approved public media work                |
+| Email Sending authorization     | No                   | Transactional notification delivery                  |
 
 ## Remote provisioning rule
 
