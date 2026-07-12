@@ -28,16 +28,25 @@ export type RateLimitBinding = {
   limit(input: { key: string }): Promise<{ success: boolean }>;
 };
 
+export type AuthAbuseEnvironment = {
+  APP_ENV?: string;
+  AUTH_RATE_LIMITER?: RateLimitBinding;
+  TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_SITE_KEY?: string;
+};
+
+export type AbuseControlReason =
+  | "rate-limited"
+  | "abuse-control-unavailable"
+  | "turnstile-missing"
+  | "turnstile-invalid"
+  | "turnstile-unavailable";
+
 export type AbuseControlResult =
   | { ok: true }
   | {
       ok: false;
-      reason:
-        | "abuse-control-unavailable"
-        | "rate-limited"
-        | "turnstile-missing"
-        | "turnstile-invalid"
-        | "turnstile-unavailable";
+      reason: AbuseControlReason;
       retryAfterSeconds?: number;
     };
 
@@ -48,23 +57,42 @@ export type TurnstileVerification = {
   "error-codes"?: string[];
 };
 
-function isConfiguredSecret(value: string | undefined): value is string {
-  if (!value) return false;
-  const normalized = value.trim().toLowerCase();
-  return (
-    normalized.length >= 16 &&
-    !normalized.includes("replace") &&
-    !normalized.includes("example")
-  );
+export type PublicAbuseControlError = {
+  message: string;
+  status: 400 | 429 | 503;
+  headers?: Record<string, string>;
+};
+
+const placeholderPattern = /^(?:replace-|example|placeholder|changeme|todo)/i;
+
+function isConfiguredValue(value: string | undefined, minimumLength: number): value is string {
+  const normalized = value?.trim();
+  return Boolean(normalized && normalized.length >= minimumLength && !placeholderPattern.test(normalized));
+}
+
+export function isLocalAbuseBypass(env: AuthAbuseEnvironment): boolean {
+  return env.APP_ENV?.trim().toLowerCase() === "local";
+}
+
+export function turnstileClientConfiguration(env: AuthAbuseEnvironment): {
+  bypass: boolean;
+  siteKey: string | null;
+} {
+  if (isLocalAbuseBypass(env)) return { bypass: true, siteKey: null };
+
+  return {
+    bypass: false,
+    siteKey: isConfiguredValue(env.TURNSTILE_SITE_KEY, 8)
+      ? env.TURNSTILE_SITE_KEY.trim()
+      : null,
+  };
 }
 
 export function clientAddress(request: Request): string {
   const cloudflareAddress = request.headers.get("CF-Connecting-IP")?.trim();
   if (cloudflareAddress) return cloudflareAddress;
 
-  const forwarded = request.headers.get("X-Forwarded-For")
-    ?.split(",")[0]
-    ?.trim();
+  const forwarded = request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim();
   return forwarded || "unknown";
 }
 
@@ -79,7 +107,7 @@ export async function verifyTurnstile(input: {
   expectedAction?: string;
   fetcher?: typeof fetch;
 }): Promise<AbuseControlResult> {
-  if (!isConfiguredSecret(input.secret)) {
+  if (!isConfiguredValue(input.secret, 16)) {
     return { ok: false, reason: "turnstile-unavailable" };
   }
 
@@ -131,9 +159,15 @@ export async function enforceAuthAbuseControls(input: {
     return { ok: false, reason: "abuse-control-unavailable" };
   }
 
-  const limited = await input.rateLimiter.limit({
-    key: authRateLimitKey(input.request, input.action),
-  });
+  let limited: { success: boolean };
+  try {
+    limited = await input.rateLimiter.limit({
+      key: authRateLimitKey(input.request, input.action),
+    });
+  } catch {
+    return { ok: false, reason: "abuse-control-unavailable" };
+  }
+
   if (!limited.success) {
     return {
       ok: false,
@@ -151,4 +185,49 @@ export async function enforceAuthAbuseControls(input: {
     expectedAction: input.action,
     fetcher: input.fetcher,
   });
+}
+
+export async function enforceAuthRequest(input: {
+  env: AuthAbuseEnvironment;
+  request: Request;
+  formData: FormData;
+  action: AuthAbuseAction;
+  fetcher?: typeof fetch;
+}): Promise<AbuseControlResult> {
+  if (isLocalAbuseBypass(input.env)) return { ok: true };
+
+  const tokenValue = input.formData.get("cf-turnstile-response");
+
+  return enforceAuthAbuseControls({
+    request: input.request,
+    action: input.action,
+    rateLimiter: input.env.AUTH_RATE_LIMITER,
+    turnstileSecret: input.env.TURNSTILE_SECRET_KEY,
+    turnstileToken: typeof tokenValue === "string" ? tokenValue : null,
+    fetcher: input.fetcher,
+  });
+}
+
+export function publicAbuseControlError(result: Exclude<AbuseControlResult, { ok: true }>): PublicAbuseControlError {
+  if (result.reason === "rate-limited") {
+    return {
+      message: "Çok fazla istek yapıldı. Lütfen daha sonra yeniden deneyin.",
+      status: 429,
+      headers: {
+        "Retry-After": String(result.retryAfterSeconds ?? 60),
+      },
+    };
+  }
+
+  if (result.reason === "turnstile-missing" || result.reason === "turnstile-invalid") {
+    return {
+      message: "Güvenlik doğrulamasını tamamlayıp yeniden deneyin.",
+      status: 400,
+    };
+  }
+
+  return {
+    message: "Güvenlik doğrulaması şu anda kullanılamıyor. Lütfen daha sonra yeniden deneyin.",
+    status: 503,
+  };
 }
