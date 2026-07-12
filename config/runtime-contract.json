@@ -27,6 +27,12 @@
       "status": "external-pending"
     },
     {
+      "name": "TURNSTILE_SITE_KEY",
+      "capability": "turnstile",
+      "source": "environment-variable",
+      "status": "external-pending"
+    },
+    {
       "name": "CLOUDFLARE_ACCOUNT_ID",
       "capability": "images",
       "source": "environment-variable",
@@ -77,6 +83,12 @@
       "capability": "background-jobs",
       "kind": "queue",
       "status": "local-configured"
+    },
+    {
+      "name": "AUTH_RATE_LIMITER",
+      "capability": "auth-abuse-controls",
+      "kind": "rate-limit",
+      "status": "external-pending"
     }
   ]
 }

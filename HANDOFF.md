@@ -26,39 +26,37 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration and A04–A07 verification/password recovery are merged to `main`. The repository can be installed, built and tested without Neon, Google or a Cloudflare account.
+Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery and guarded Google OAuth/A03 states are merged to `main`. The repository can be installed, built and tested without Neon, Google or a Cloudflare account.
 
-PR #20 adds the next issue #4 slice:
+PR #21 adds the next issue #4 slice:
 
-- conditional Google provider configuration requiring both non-placeholder credentials;
-- POST-only `/auth/google` initiation;
-- A03 `/auth/callback` success, processing, unavailable, provider-error and account-not-linked states;
-- OpenID, email and profile scopes only;
-- Google-only signup disabled so country, preferred language and intended-use requirements cannot be bypassed;
-- implicit same-email and cross-email linking disabled;
-- Google profile overwrite disabled;
-- authorization-contract verification for Google host, state, callback URI, scopes, prompt and client-secret protection;
-- proof that OAuth initiation creates no user, account or session before callback validation.
+- per-action rate-limit budgets for registration, login, forgot-password, verification resend, reset-password and Google OAuth start;
+- Cloudflare client-address keys and `Retry-After` responses;
+- server-side Turnstile Siteverify with expected-action validation;
+- Turnstile widgets on account creation and recovery-sensitive forms;
+- local-only bypass when `APP_ENV=local`;
+- preview/production fail-closed behaviour when rate-limit or Turnstile configuration is unavailable;
+- separate public `TURNSTILE_SITE_KEY` and Worker-only `TURNSTILE_SECRET_KEY`;
+- route integration that preserves generic unknown-email recovery responses.
 
-The actual provider callback remains Better Auth's `/api/auth/callback/google`; A03 is the application result surface. No live credential is committed. Existing users are not silently linked to Google. Explicit account linking must require an authenticated user and a separate confirmation flow.
+No fake rate-limit namespace, site key or secret is committed. Remote enforcement is not considered verified until real Cloudflare resources are provisioned and exercised in an isolated preview environment.
 
 ## Exact next tasks
 
-1. Merge PR #20 only after both permanent read-only CI jobs pass.
+1. Merge PR #21 only after both permanent read-only CI jobs pass.
 2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
 3. Continue issue #4 in separate reviewable slices:
    - explicit authenticated Google account linking and unlink safeguards;
-   - Turnstile verification for registration, recovery and other abuse-sensitive actions;
-   - route-level rate-limit policy and tests;
    - Cloudflare email dispatcher after sender authorization exists.
-4. Do not enable Google-only signup until required registration preferences can be persisted atomically for that path.
-5. Do not add business identity or workspace activation to Better Auth core tables. Those begin in #5.
-6. Before remote Worker readiness is claimed:
-   - provision isolated development Neon and Hyperdrive resources;
-   - configure development Google credentials and exact authorized redirect URI;
-   - apply committed migrations through a direct Neon URL;
-   - verify `/api/auth/*` and A01–A07 through deployed Hyperdrive;
-   - record safe identifiers, secret names without values, verification output and rollback steps.
+4. Provision preview auth security resources before claiming remote readiness:
+   - create a Turnstile widget and configure its exact hostnames;
+   - add `TURNSTILE_SITE_KEY` as a non-secret runtime value;
+   - add `TURNSTILE_SECRET_KEY` as a Worker secret;
+   - create and bind `AUTH_RATE_LIMITER` with budgets matching the committed policy;
+   - test `429`, missing-token, invalid-token, action-mismatch and unavailable-service states;
+   - record only safe identifiers, secret names without values, evidence and rollback steps.
+5. Do not enable Google-only signup until required registration preferences can be persisted atomically for that path.
+6. Do not add business identity or workspace activation to Better Auth core tables. Those begin in #5.
 7. Continue in dependency order through #5–#10.
 
 ## Verification commands
@@ -90,13 +88,16 @@ npm run db:local:down
 
 `db:verify:google` uses CI-only dummy credentials to generate—but not complete—the Google authorization request. It checks provider gating, Google host, state, callback URI, minimal scopes, prompt, secret exclusion and zero identity/session writes before callback validation.
 
+The auth abuse-control unit suite checks local bypass, remote fail-closed decisions, stable client keys, exhausted limits, `Retry-After`, Turnstile secret isolation and expected-action matching. Local bypass is a development convenience, not evidence of remote enforcement.
+
 ## Known blockers
 
 - No Neon development database or deployed Hyperdrive configuration has been provisioned.
 - Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
 - Outbox records are produced, but Cloudflare Email Sending authorization and the dispatcher are not configured.
 - Real Google development credentials and authorized redirect URIs are not configured.
-- Explicit Google account linking, Turnstile and route-level rate limiting remain open.
+- Explicit Google account linking remains open.
+- Real Turnstile and Cloudflare Rate Limiting resources are not provisioned.
 - Cloudflare Images remains an account-level dependency for later media work.
 
-These blockers do not prevent auth policy work, A03 UI states, local PostgreSQL tests or production builds.
+These blockers do not prevent local policy work, CI, local PostgreSQL tests or production builds. They do prevent claiming that remote auth protection or live OAuth is ready.

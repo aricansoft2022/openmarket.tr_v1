@@ -2,14 +2,24 @@ import { env } from "cloudflare:workers";
 import { data, Form, redirect, useNavigation } from "react-router";
 
 import { AuthShell, FieldError } from "~/components/auth-shell";
+import { TurnstileField } from "~/components/turnstile-field";
 import { readAuthError, registerWithPreferences } from "~/lib/auth/registration.server";
 import { hasErrors, type RegistrationErrors, validateRegistration } from "~/lib/auth/registration";
 import type { IntendedUse, PreferredLanguage } from "~/lib/db/schema";
+import {
+  enforceAuthRequest,
+  publicAbuseControlError,
+  turnstileClientConfiguration,
+} from "~/lib/security/auth-abuse.server";
 
 import type { Route } from "./+types/auth.register";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Kayıt ol — OpenMarket.tr" }];
+}
+
+export function loader() {
+  return turnstileClientConfiguration(env);
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -18,6 +28,22 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (hasErrors(errors)) {
     return data({ errors, values }, { status: 400 });
+  }
+
+  const abuseResult = await enforceAuthRequest({
+    env,
+    request,
+    formData,
+    action: "register",
+  });
+
+  if (!abuseResult.ok) {
+    const publicError = publicAbuseControlError(abuseResult);
+    const responseErrors: RegistrationErrors = { form: publicError.message };
+    return data(
+      { errors: responseErrors, values },
+      { status: publicError.status, headers: publicError.headers },
+    );
   }
 
   try {
@@ -46,11 +72,12 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function Register({ actionData }: Route.ComponentProps) {
+export default function Register({ actionData, loaderData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const submitting = navigation.state === "submitting";
   const errors = actionData?.errors;
   const values = actionData?.values;
+  const securityUnavailable = !loaderData.bypass && !loaderData.siteKey;
 
   return (
     <AuthShell
@@ -197,7 +224,13 @@ export default function Register({ actionData }: Route.ComponentProps) {
           </div>
         </div>
 
-        <button className="button button--primary auth-submit" type="submit" disabled={submitting}>
+        <TurnstileField siteKey={loaderData.siteKey} action="register" bypass={loaderData.bypass} />
+
+        <button
+          className="button button--primary auth-submit"
+          type="submit"
+          disabled={submitting || securityUnavailable}
+        >
           {submitting ? "Hesap oluşturuluyor…" : "Ücretsiz hesap oluştur"}
         </button>
         <p className="form-note">

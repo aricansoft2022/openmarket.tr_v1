@@ -13,7 +13,9 @@ npm run verify
 npm run dev
 ```
 
-The current local application exposes `/` and `/health`. Cloudflare R2 and Queues have deterministic development names in `wrangler.jsonc`; Wrangler uses local emulation for them during default local development. These names are contracts, not proof that remote resources exist.
+The current local application exposes the public foundation, A01–A07 auth routes and `/health`. Cloudflare R2 and Queues have deterministic development names in `wrangler.jsonc`; Wrangler uses local emulation for them during default local development. These names are contracts, not proof that remote resources exist.
+
+Auth abuse controls use an explicit local bypass only when `APP_ENV=local`. Preview and production do not use an in-memory or fake limiter: missing `AUTH_RATE_LIMITER`, Turnstile site key or Turnstile secret causes protected actions to fail closed with a generic public error.
 
 ## Optional local PostgreSQL
 
@@ -56,6 +58,20 @@ Replace only the values needed for the task. `.dev.vars` and `.env` are ignored.
 
 Cloudflare documentation requires sensitive values to use secrets rather than Wrangler `vars` and recommends keeping local secrets in an ignored `.dev.vars` or `.env` file.
 
+## Authentication abuse controls
+
+The repository defines separate budgets for registration, login, forgot-password, verification resend, password reset and Google OAuth initiation. Cloudflare client IP is used for the rate-limit key. A rate-limit decision occurs before Turnstile verification so already-exhausted requests do not consume Siteverify traffic.
+
+Turnstile is required for account creation and recovery-sensitive forms. The browser receives only `TURNSTILE_SITE_KEY`. `TURNSTILE_SECRET_KEY` remains Worker-only and is sent server-to-server to Cloudflare Siteverify together with the browser token, remote IP and expected action. A token issued for one action cannot be reused for another protected form.
+
+Required remote configuration:
+
+- `AUTH_RATE_LIMITER` — Cloudflare Rate Limiting binding;
+- `TURNSTILE_SITE_KEY` — non-secret public widget key;
+- `TURNSTILE_SECRET_KEY` — Worker secret.
+
+Do not commit a fake rate-limit namespace or Turnstile credential. After provisioning, verify each protected route in an isolated preview environment and record only non-secret identifiers plus the secret names—not their values.
+
 ## Hyperdrive
 
 Do not commit a fake Hyperdrive ID. The `HYPERDRIVE` binding remains `external-pending` until a development configuration exists.
@@ -78,9 +94,10 @@ This local mode does not exercise Hyperdrive pooling or query caching. Remote Hy
 | Hyperdrive development binding  | No                   | Remote Worker database verification           |
 | Private R2 bucket               | No; locally emulated | Issue #7 private document integration         |
 | Background Queue and DLQ        | No; locally emulated | Issue #8 transactional outbox delivery        |
-| Better Auth secret and URL      | No                   | Issue #3 Worker auth runtime integration      |
-| Google OAuth credentials        | No                   | Issue #4 Google login                         |
-| Turnstile secret                | No                   | Issue #4 abuse-sensitive auth flows           |
+| Better Auth secret and URL      | No                   | Remote auth runtime verification              |
+| Google OAuth credentials        | No                   | Live Google login                             |
+| Turnstile site key and secret   | No                   | Remote abuse-sensitive auth flows             |
+| Auth rate-limit binding         | No                   | Remote auth request enforcement               |
 | Cloudflare Images account/token | No                   | Product and approved public media work        |
 | Email Sending authorization     | No                   | Transactional notification delivery           |
 

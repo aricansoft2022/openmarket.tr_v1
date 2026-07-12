@@ -8,7 +8,13 @@ export type GoogleOAuthReadiness = {
 };
 
 export type GoogleCallbackState =
-  "success" | "account-not-linked" | "unavailable" | "provider-error" | "processing";
+  | "success"
+  | "account-not-linked"
+  | "unavailable"
+  | "rate-limited"
+  | "security-unavailable"
+  | "provider-error"
+  | "processing";
 
 const placeholderPattern = /^(?:replace-|example|placeholder|changeme|todo)/i;
 
@@ -52,6 +58,8 @@ export function resolveGoogleCallbackState(url: URL): GoogleCallbackState {
   if (status === "success" && !error) return "success";
   if (error === "account_not_linked") return "account-not-linked";
   if (error === "google_unavailable") return "unavailable";
+  if (error === "rate_limited") return "rate-limited";
+  if (error === "security_unavailable") return "security-unavailable";
   if (error || status === "error") return "provider-error";
   return "processing";
 }

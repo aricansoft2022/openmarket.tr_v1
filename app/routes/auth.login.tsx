@@ -9,6 +9,7 @@ import {
   signInWithEmail,
 } from "~/lib/auth/registration.server";
 import { hasErrors, type LoginErrors, validateLogin } from "~/lib/auth/registration";
+import { enforceAuthRequest, publicAbuseControlError } from "~/lib/security/auth-abuse.server";
 
 import type { Route } from "./+types/auth.login";
 
@@ -29,6 +30,22 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (hasErrors(errors)) {
     return data({ errors, values }, { status: 400 });
+  }
+
+  const abuseResult = await enforceAuthRequest({
+    env,
+    request,
+    formData,
+    action: "login",
+  });
+
+  if (!abuseResult.ok) {
+    const publicError = publicAbuseControlError(abuseResult);
+    const responseErrors: LoginErrors = { form: publicError.message };
+    return data(
+      { errors: responseErrors, values },
+      { status: publicError.status, headers: publicError.headers },
+    );
   }
 
   try {

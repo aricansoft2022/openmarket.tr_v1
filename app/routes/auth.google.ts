@@ -4,6 +4,7 @@ import { redirect } from "react-router";
 import { withAuth } from "~/lib/auth/create-auth.server";
 import { inspectGoogleOAuthReadiness } from "~/lib/auth/google-oauth";
 import { responseSessionHeaders } from "~/lib/auth/registration.server";
+import { enforceAuthRequest } from "~/lib/security/auth-abuse.server";
 
 import type { Route } from "./+types/auth.google";
 
@@ -39,6 +40,19 @@ function safeGoogleAuthorizationUrl(value: unknown): string | null {
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const abuseResult = await enforceAuthRequest({
+    env,
+    request,
+    formData,
+    action: "google-start",
+  });
+
+  if (!abuseResult.ok) {
+    const error = abuseResult.reason === "rate-limited" ? "rate_limited" : "security_unavailable";
+    return redirect(`/auth/callback?error=${error}`);
+  }
+
   if (!inspectGoogleOAuthReadiness(env).configured) {
     return redirect("/auth/callback?error=google_unavailable");
   }

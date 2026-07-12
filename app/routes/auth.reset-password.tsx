@@ -2,12 +2,18 @@ import { env } from "cloudflare:workers";
 import { data, Form, Link, redirect, useNavigation } from "react-router";
 
 import { AuthShell, FieldError } from "~/components/auth-shell";
+import { TurnstileField } from "~/components/turnstile-field";
 import {
   hasRecoveryErrors,
   type ResetPasswordErrors,
   validateResetPassword,
 } from "~/lib/auth/recovery";
 import { resetPassword } from "~/lib/auth/recovery.server";
+import {
+  enforceAuthRequest,
+  publicAbuseControlError,
+  turnstileClientConfiguration,
+} from "~/lib/security/auth-abuse.server";
 
 import type { Route } from "./+types/auth.reset-password";
 
@@ -23,6 +29,7 @@ export function loader({ request }: Route.LoaderArgs) {
   return {
     token,
     tokenInvalid: Boolean(providerError) || !token,
+    ...turnstileClientConfiguration(env),
   };
 }
 
@@ -32,6 +39,22 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (hasRecoveryErrors(errors)) {
     return data({ token, errors }, { status: 400 });
+  }
+
+  const abuseResult = await enforceAuthRequest({
+    env,
+    request,
+    formData,
+    action: "reset-password",
+  });
+
+  if (!abuseResult.ok) {
+    const publicError = publicAbuseControlError(abuseResult);
+    const responseErrors: ResetPasswordErrors = { form: publicError.message };
+    return data(
+      { token, errors: responseErrors },
+      { status: publicError.status, headers: publicError.headers },
+    );
   }
 
   try {
@@ -62,6 +85,7 @@ export default function ResetPassword({ loaderData, actionData }: Route.Componen
   const token = actionData?.token ?? loaderData.token;
   const errors = actionData?.errors;
   const tokenInvalid = loaderData.tokenInvalid || Boolean(errors?.token && !token);
+  const securityUnavailable = !loaderData.bypass && !loaderData.siteKey;
 
   return (
     <AuthShell
@@ -130,10 +154,16 @@ export default function ResetPassword({ loaderData, actionData }: Route.Componen
             <FieldError id="reset-confirm-error" message={errors?.confirmPassword} />
           </div>
 
+          <TurnstileField
+            siteKey={loaderData.siteKey}
+            action="reset-password"
+            bypass={loaderData.bypass}
+          />
+
           <button
             className="button button--primary auth-submit"
             type="submit"
-            disabled={submitting}
+            disabled={submitting || securityUnavailable}
           >
             {submitting ? "Şifre güncelleniyor…" : "Şifreyi güncelle"}
           </button>
