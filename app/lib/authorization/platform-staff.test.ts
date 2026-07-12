@@ -47,6 +47,7 @@ describe("platform staff authorization", () => {
     expect(managerMayChangeRole("platform_admin", "compliance_reviewer")).toBe(true);
     expect(managerMayChangeRole("platform_admin", "platform_admin")).toBe(false);
     expect(managerMayChangeRole("platform_admin", "super_admin")).toBe(false);
+    expect(managerMayChangeRole("super_admin", "compliance_reviewer")).toBe(true);
     expect(managerMayChangeRole("super_admin", "platform_admin")).toBe(true);
     expect(managerMayChangeRole("super_admin", "super_admin")).toBe(true);
   });
