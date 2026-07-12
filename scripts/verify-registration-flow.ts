@@ -25,6 +25,29 @@ function request(): Request {
   });
 }
 
+function containsConstraint(error: unknown, expectedConstraint: string): boolean {
+  let current: unknown = error;
+  const visited = new Set<unknown>();
+
+  while (current && typeof current === "object" && !visited.has(current)) {
+    visited.add(current);
+    const record = current as {
+      cause?: unknown;
+      constraint?: unknown;
+      message?: unknown;
+    };
+
+    if (record.constraint === expectedConstraint) return true;
+    if (typeof record.message === "string" && record.message.includes(expectedConstraint)) {
+      return true;
+    }
+
+    current = record.cause;
+  }
+
+  return false;
+}
+
 const validEmail = "registration.preferences@example.test";
 const rollbackEmail = "registration.rollback@example.test";
 
@@ -74,7 +97,7 @@ try {
       preferredLanguage: "en",
       intendedUse: "buyer",
     }),
-    /user_preferences_country_length_check/,
+    (error) => containsConstraint(error, "user_preferences_country_length_check"),
     "A preference constraint failure must reject the whole registration transaction.",
   );
 
