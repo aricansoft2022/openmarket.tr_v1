@@ -42,16 +42,16 @@ Draft PR #36 on `agent/supplier-onboarding-screens` implements the specification
 - `/supplier/company` creation and update for the verified-identity-bound Supplier company, including company details and export-market code capture;
 - `/supplier/capabilities` for seeded Supplier types, fixed application contexts and reviewed production capabilities;
 - server-side owner/admin/editor edit permissions and viewer read-only behaviour;
-- Turkish/English shell, checklist and form-error copy derived from the account preference;
+- complete Turkish/English shell, page, form, checklist, catalogue-order and error copy selected from the persisted account language preference;
 - loading, empty, blocked, error, validation, success and read-only states;
 - explicit preservation of Supplier draft/activation state: profile completion never grants commercial access;
-- route-registration regression coverage and deterministic onboarding/form-normalization unit tests.
+- route-registration regression coverage, deterministic onboarding/form-normalization tests and bilingual-copy contract tests.
 
 Company-document upload/review and Supplier activation remain separate work in issues #7 and #8. Product creation, RFQ response and team invitations are not part of PR #36.
 
 ## Verification
 
-GitHub Actions run `29244872091` passed on PR #36 application head `da82d2f3893974612b7f4a8a3988181c007475ec`:
+Read-only GitHub Actions run `29244872091` passed before the final full-page localization changes:
 
 ```text
 npm run format:check                              PASS
@@ -77,9 +77,9 @@ npm run db:verify:supplier-catalogue              PASS
 npm run db:verify:supplier-company                PASS
 ```
 
-The Supplier onboarding unit evidence covers dependency blocking, incomplete document activation, localized checklist copy, repeated checkbox normalization, optional-field normalization, founded-year parsing and export-market normalization. The existing PostgreSQL Supplier gate continues to prove verified-identity binding, membership isolation, viewer denial, seeded-catalogue enforcement, deterministic completeness and immutable profile-update audits.
+The Supplier onboarding unit evidence covers dependency blocking, incomplete document activation, localized checklist copy, repeated checkbox normalization, optional-field normalization, founded-year parsing and export-market normalization. The bilingual-copy tests require non-empty Turkish and English screen contracts and preserve activation/document boundaries in both languages. The existing PostgreSQL Supplier gate continues to prove verified-identity binding, membership isolation, viewer denial, seeded-catalogue enforcement, deterministic completeness and immutable profile-update audits.
 
-The formatted documentation head must pass one final read-only CI run before review.
+The final localized and formatted head requires one permanent read-only CI run before review or merge.
 
 ## Known issues and blockers
 
@@ -99,7 +99,7 @@ These are remote-integration or later-feature blockers. They do not invalidate t
 
 ## Next tasks
 
-1. Complete PR #36 documentation, obtain a final green read-only CI run and move the draft to review.
+1. Obtain a final green read-only CI run on the fully localized PR #36 head and squash merge it.
 2. Continue issue #7 with private company-document upload, requirement resolution, authorized retrieval and reviewer decisions.
 3. Continue issue #8 with the central Supplier activation evaluator and audited state transitions.
 4. Resolve country-code semantics in #34 and explicit multi-company selection in #35 before exposing those assumptions more broadly.
