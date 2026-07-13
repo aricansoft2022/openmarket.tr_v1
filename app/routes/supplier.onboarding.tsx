@@ -12,11 +12,12 @@ import {
   supplierChecklistProgress,
 } from "~/lib/supplier/onboarding";
 import { loadSupplierOnboardingRouteContext } from "~/lib/supplier/onboarding.server";
+import { supplierScreenCopy } from "~/lib/supplier/screen-copy";
 
 import type { Route } from "./+types/supplier.onboarding";
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Tedarikçi onboarding — OpenMarket.tr" }];
+  return [{ title: "Supplier onboarding — OpenMarket.tr" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -35,6 +36,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 }
 
 export default function SupplierOnboarding({ loaderData }: Route.ComponentProps) {
+  const screenCopy = supplierScreenCopy(loaderData.preferredLanguage);
+  const copy = screenCopy.onboarding;
+  const common = screenCopy.common;
   const checklist = buildSupplierOnboardingChecklist({
     language: loaderData.preferredLanguage,
     businessIdentityVerified: loaderData.businessIdentityVerified,
@@ -56,21 +60,18 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
         <div className="supplier-page__heading supplier-page__heading--split">
           <div>
             <p className="eyebrow">S02 · Supplier onboarding checklist</p>
-            <h1>Aktivasyon yolunu adım adım izleyin</h1>
-            <p>
-              Tamamlanan profil adımları taslak hazırlığını ilerletir. Belge incelemesi bitmeden
-              Supplier aktif olmaz.
-            </p>
+            <h1>{copy.title}</h1>
+            <p>{copy.description}</p>
           </div>
           <div className="supplier-progress-number">
             <strong>%{progress.percent}</strong>
             <span>
-              {progress.complete}/{progress.total} tamamlandı
+              {progress.complete}/{progress.total} {copy.completedSuffix}
             </span>
           </div>
         </div>
 
-        <ol className="supplier-stepper" aria-label="Tedarikçi onboarding adımları">
+        <ol className="supplier-stepper" aria-label={copy.title}>
           {checklist.map((item, index) => (
             <li
               key={item.id}
@@ -85,10 +86,10 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
               </div>
               {item.href ? (
                 <Link className="supplier-stepper__link" to={item.href}>
-                  {item.complete ? "Görüntüle" : "Devam et"}
+                  {item.complete ? common.view : common.continue}
                 </Link>
               ) : (
-                <span className="supplier-stepper__locked">Kilitli</span>
+                <span className="supplier-stepper__locked">{common.locked}</span>
               )}
             </li>
           ))}
@@ -103,15 +104,15 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
                     item.complete ? "is-complete" : item.blocked ? "is-blocked" : "is-open"
                   }
                 >
-                  {item.complete ? "Tamamlandı" : item.blocked ? "Bloke" : "Açık"}
+                  {item.complete ? common.complete : item.blocked ? common.blocked : common.open}
                 </span>
               </div>
               <h2>{item.label}</h2>
               <p>{item.description}</p>
               {item.href ? (
-                <Link to={item.href}>{item.complete ? "Kaydı incele" : "Bu adımı tamamla"}</Link>
+                <Link to={item.href}>{item.complete ? copy.inspect : copy.completeAction}</Link>
               ) : (
-                <small>Bu adım ilgili güvenli modül birleştirildiğinde açılacak.</small>
+                <small>{copy.lockedDescription}</small>
               )}
             </section>
           ))}
@@ -119,22 +120,18 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
 
         <section className="supplier-blocking-panel">
           <div>
-            <p className="eyebrow">Blocking issue panel</p>
+            <p className="eyebrow">{copy.blockerEyebrow}</p>
             <h2>
               {blockers.length === 0
-                ? "Aktivasyon engeli yok"
-                : `${blockers.length} açık engel var`}
+                ? copy.noBlockers
+                : `${blockers.length} ${copy.blockersSuffix}`}
             </h2>
           </div>
           <ul>
             {blockers.map((item) => (
               <li key={item.id}>
                 <strong>{item.label}</strong>
-                <span>
-                  {item.blocked
-                    ? "Önceki bağımlılık veya sonraki modül bekleniyor."
-                    : "Kullanıcı işlemi gerekli."}
-                </span>
+                <span>{item.blocked ? copy.dependencyBlocked : copy.userActionRequired}</span>
               </li>
             ))}
           </ul>
@@ -143,9 +140,9 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
         <div className="supplier-continue-bar">
           <div>
             <strong>
-              Supplier durumu: {loaderData.company?.company.status ?? "supplier_not_created"}
+              {common.status}: {loaderData.company?.company.status ?? copy.stateNotCreated}
             </strong>
-            <p>Checklist tamamlanması tek başına aktivasyon kararı üretmez.</p>
+            <p>{copy.activationWarning}</p>
           </div>
           {nextAction?.href ? (
             <Link className="button button--primary" to={nextAction.href}>
@@ -153,7 +150,7 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
             </Link>
           ) : (
             <button className="button button--primary" type="button" disabled>
-              Belge modülü bekleniyor
+              {copy.documentsPending}
             </button>
           )}
         </div>
