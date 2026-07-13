@@ -4,11 +4,23 @@
 
 ### Unit
 
-Pure validators, runtime configuration readiness, Google OAuth readiness/callback mapping, registration/login/recovery form validation, bilingual auth-email rendering, auth abuse-control budgets including account link/unlink, client-key construction, local bypass, remote fail-closed decisions, Turnstile action matching, email-domain normalization, workspace-intent widening, buyer-intent predicates, fixed platform role/action permissions, staff-management hierarchy and self-management denial, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
+Pure validators, runtime configuration readiness, Google OAuth readiness/callback mapping, registration/login/recovery form validation, bilingual auth-email rendering, auth abuse-control budgets including account link/unlink, client-key construction, local bypass, remote fail-closed decisions, Turnstile action matching, email-domain normalization, workspace-intent widening, buyer-intent predicates, fixed platform role/action permissions, staff-management hierarchy and self-management denial, Supplier onboarding dependency/checklist policy, account-language Supplier copy selection, Supplier form normalization, schema resolver precedence, state transitions, matching predicates, visibility policy, claim blocking, localization fallback and support-independence rules.
+
+Supplier onboarding unit evidence must include:
+
+- business identity verification blocks company-profile creation until complete;
+- capabilities remain blocked until an identity-bound Supplier company exists;
+- company documents remain an explicit incomplete activation dependency after profile and capability completion;
+- progress and first-action selection remain deterministic;
+- Turkish and English checklist/form-error copy follows the stored account preference;
+- repeated checkbox values are trimmed and deduplicated;
+- blank optional fields normalize to `null`;
+- valid and invalid founded-year input is passed deterministically into domain validation;
+- export-market codes are trimmed, uppercased and deduplicated.
 
 ### Database integration
 
-Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, verification/reset outbox atomicity, token expiry/replay, Google authorization-contract generation, explicit account-linking safeguards, business-identity and buyer-activation transitions, fixed staff assignments, effective-role authorization, audited assignment management, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
+Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, verification/reset outbox atomicity, token expiry/replay, Google authorization-contract generation, explicit account-linking safeguards, business-identity and buyer-activation transitions, fixed staff assignments, effective-role authorization, audited assignment management, Supplier launch catalogue seeding, identity-bound Supplier company persistence, Supplier profile completeness and membership permissions, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
 
 Auth integration fixtures must verify core writes through Better Auth APIs rather than inserting fixture rows directly, except when a provider-linked fixture is explicitly needed to test post-callback management without claiming a live provider callback. Required evidence includes:
 
@@ -74,6 +86,18 @@ Platform staff assignment management evidence must include:
 - immutable audit evidence records actor, effective manager role, old/new values, reason and request identifier;
 - `/admin/staff` covers permission denied, list, validation, successful grant, active, revoked and successful reactivation states.
 
+Supplier catalogue and company database evidence must include:
+
+- the exact six active launch Supplier types, stable keys, bilingual labels and deterministic ordering;
+- the reviewed narrow production-capability catalogue, repeated idempotent seeding, canonical repair and non-launch deactivation;
+- Supplier/Both intent plus matching verified business identity are required before company creation;
+- the company remains bound to the verified review and legal-name drift is rejected;
+- active membership scopes every read and mutation, with cross-company access denied;
+- owner/admin/editor can edit while viewer is denied server-side;
+- unseeded Supplier types or production capabilities are rejected;
+- Supplier type and application context are required for completeness while production capability remains optional for non-manufacturing roles;
+- profile changes preserve Supplier activation state and create immutable complete old/new audit evidence.
+
 ### Worker integration
 
 Cloudflare Vitest pool for bindings, request context, auth handler routing, session-cookie behaviour, OAuth state/callback handling, explicit link-social and unlink-account forwarding, R2 authorization, Queue retry behaviour, Turnstile Siteverify wrappers, expected-action rejection, Rate Limiting binding decisions and Worker error handling.
@@ -98,15 +122,31 @@ Staff review routes must cover unauthenticated redirect, permission-denied X04 s
 
 Staff management routes must cover unauthenticated redirect, non-manager denial, hierarchy enforcement, self-management denial, unknown-account and duplicate-active errors, successful grant, reason validation, successful revoke, revoked-row reactivation and audit outcomes.
 
+Supplier S01–S04 route tests must cover:
+
+- route registration exactly once for `/supplier`, `/supplier/onboarding`, `/supplier/company` and `/supplier/capabilities`;
+- unauthenticated and unverified-account redirects;
+- no-Supplier-intent and unverified-business-identity blocked states;
+- no-company empty state and identity-bound company creation;
+- overview activation banner, deterministic progress and disabled future-module summaries;
+- checklist complete/open/blocked states and first continuation action;
+- company form validation, save success, error recovery and export-market normalization;
+- capability selection from only the seeded catalogues and fixed application contexts;
+- preservation of capability fields during company edits and company/export fields during capability edits;
+- owner/admin/editor edit access, viewer read-only rendering and viewer mutation denial;
+- Turkish/English shell, checklist and public form-error output from account preference;
+- loading fallback, route error, empty, permission, validation, success and read-only UI states;
+- no profile or capability action changes Supplier activation status.
+
 ### End to end
 
-Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use stable seed fixtures and inspect observable audit/notification outcomes. Live Google, link-callback and remote Turnstile/rate-limit E2E remain disabled until development credentials, authorized redirect URIs and Cloudflare bindings exist. Fixture-based post-callback tests must be labeled as such and never reported as live OAuth evidence. Company-email delivery and deployed private-R2 E2E remain disabled until email and remote storage resources exist.
+Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use stable seed fixtures and inspect observable audit/notification outcomes. Live Google, link-callback and remote Turnstile/rate-limit E2E remain disabled until development credentials, authorized redirect URIs and Cloudflare bindings exist. Fixture-based post-callback tests must be labeled as such and never reported as live OAuth evidence. Company-email delivery, deployed private-R2 E2E, company-document review and commercial Supplier activation remain disabled until the required external resources and later Phase 1 slices exist.
 
 ### Non-functional
 
 - WCAG 2.2 AA automated and manual checks
 - performance budgets and Core Web Vitals for public pages
-- security tests for IDOR, upload validation, CSRF, OAuth state, silent linking, callback open redirects, stale sessions, password re-verification, last-method lockout, session fixation, account enumeration, token leakage/replay, Turnstile action reuse, rate-limit bypass, public-domain bypass, review double-decision, self-review, revoked-role access, self-role escalation, manager hierarchy bypass and claim bypass
+- security tests for IDOR, upload validation, CSRF, OAuth state, silent linking, callback open redirects, stale sessions, password re-verification, last-method lockout, session fixation, account enumeration, token leakage/replay, Turnstile action reuse, rate-limit bypass, public-domain bypass, review double-decision, self-review, revoked-role access, self-role escalation, manager hierarchy bypass, Supplier cross-company access and claim bypass
 - load tests for search, product pages, RFQ publication and queue consumers
 - backup restore and migration rollback drills
 
@@ -161,6 +201,14 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 - fixed-role staff assignment and request-time effective-role resolution
 - self-review, unrelated-role and revoked-assignment denial
 - administrator-only audited staff assignment lifecycle and hierarchy enforcement
+- exact Supplier launch catalogue and idempotent production seed verification
+- verified-identity-bound Supplier company/profile and fixed membership-role enforcement
+- deterministic minimum-profile completeness without implicit activation
+- S01–S04 Supplier overview, checklist, company and capabilities routes
+- Turkish/English Supplier shell, checklist and public validation copy
+- Supplier onboarding route, normalization and read-only-state tests
+- explicit company/workspace selection before multi-company UI exposure
+- authoritative or explicitly format-only country-code semantics
 - supplier document private access
 - role/action matrix tests from `spec.md` section 29
 - activation gating and audit records
