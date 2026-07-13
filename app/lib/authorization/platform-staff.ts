@@ -8,12 +8,23 @@ export const businessIdentityPermissions = [
 ] as const;
 export type BusinessIdentityPermission = (typeof businessIdentityPermissions)[number];
 
+export const supplierDocumentPermissions = [
+  "supplier_document.review.list",
+  "supplier_document.review.read",
+  "supplier_document.review.decide",
+  "supplier_document.file.read",
+] as const;
+export type SupplierDocumentPermission = (typeof supplierDocumentPermissions)[number];
+
+export type PlatformReviewPermission = BusinessIdentityPermission | SupplierDocumentPermission;
+
 export const businessIdentityReviewerRoles = [
   "super_admin",
   "platform_admin",
   "compliance_reviewer",
 ] as const satisfies readonly PlatformStaffRole[];
 export type BusinessIdentityReviewerRole = (typeof businessIdentityReviewerRoles)[number];
+export type PlatformReviewerRole = BusinessIdentityReviewerRole;
 
 export const staffManagementPermissions = [
   "platform_staff.assignment.list",
@@ -28,13 +39,10 @@ export const staffManagerRoles = [
 ] as const satisfies readonly PlatformStaffRole[];
 export type StaffManagerRole = (typeof staffManagerRoles)[number];
 
-const businessIdentityPermissionMatrix: Record<
-  PlatformStaffRole,
-  readonly BusinessIdentityPermission[]
-> = {
-  super_admin: businessIdentityPermissions,
-  platform_admin: businessIdentityPermissions,
-  compliance_reviewer: businessIdentityPermissions,
+const reviewPermissionMatrix: Record<PlatformStaffRole, readonly PlatformReviewPermission[]> = {
+  super_admin: [...businessIdentityPermissions, ...supplierDocumentPermissions],
+  platform_admin: [...businessIdentityPermissions, ...supplierDocumentPermissions],
+  compliance_reviewer: [...businessIdentityPermissions, ...supplierDocumentPermissions],
   catalogue_content_editor: [],
   product_rfq_moderator: [],
   privacy_support_manager: [],
@@ -61,11 +69,8 @@ const rolePriority: readonly PlatformStaffRole[] = [
   "catalogue_content_editor",
 ];
 
-export function roleAllows(
-  role: PlatformStaffRole,
-  permission: BusinessIdentityPermission,
-): boolean {
-  return businessIdentityPermissionMatrix[role].includes(permission);
+export function roleAllows(role: PlatformStaffRole, permission: PlatformReviewPermission): boolean {
+  return reviewPermissionMatrix[role].includes(permission);
 }
 
 export function staffRoleAllows(
@@ -77,11 +82,11 @@ export function staffRoleAllows(
 
 export function strongestAllowedRole(
   roles: readonly PlatformStaffRole[],
-  permission: BusinessIdentityPermission,
-): BusinessIdentityReviewerRole | null {
+  permission: PlatformReviewPermission,
+): PlatformReviewerRole | null {
   for (const role of rolePriority) {
     if (roles.includes(role) && roleAllows(role, permission)) {
-      return role as BusinessIdentityReviewerRole;
+      return role as PlatformReviewerRole;
     }
   }
   return null;

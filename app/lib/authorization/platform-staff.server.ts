@@ -5,8 +5,8 @@ import { platformStaffAssignments, type PlatformStaffRole } from "../db/schema";
 import {
   strongestAllowedRole,
   strongestStaffManagerRole,
-  type BusinessIdentityPermission,
-  type BusinessIdentityReviewerRole,
+  type PlatformReviewPermission,
+  type PlatformReviewerRole,
   type StaffManagementPermission,
   type StaffManagerRole,
 } from "./platform-staff";
@@ -38,16 +38,16 @@ async function activeRoles(database: Database, userId: string): Promise<Platform
 export async function resolveEffectiveStaffRole(
   database: Database,
   userId: string,
-  permission: BusinessIdentityPermission,
-): Promise<BusinessIdentityReviewerRole | null> {
+  permission: PlatformReviewPermission,
+): Promise<PlatformReviewerRole | null> {
   return strongestAllowedRole(await activeRoles(database, userId), permission);
 }
 
 export async function requireStaffPermission(
   database: Database,
   userId: string,
-  permission: BusinessIdentityPermission,
-): Promise<BusinessIdentityReviewerRole> {
+  permission: PlatformReviewPermission,
+): Promise<PlatformReviewerRole> {
   const role = await resolveEffectiveStaffRole(database, userId, permission);
   if (!role) {
     throw new StaffAuthorizationError(

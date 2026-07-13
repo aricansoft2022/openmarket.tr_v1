@@ -19,6 +19,23 @@ describe("platform staff authorization", () => {
     expect(roleAllows("privacy_support_manager", "business_identity.review.decide")).toBe(false);
   });
 
+  it("applies the same fixed reviewer boundary to Supplier company documents", () => {
+    for (const role of ["compliance_reviewer", "platform_admin", "super_admin"] as const) {
+      expect(roleAllows(role, "supplier_document.review.list")).toBe(true);
+      expect(roleAllows(role, "supplier_document.review.read")).toBe(true);
+      expect(roleAllows(role, "supplier_document.review.decide")).toBe(true);
+      expect(roleAllows(role, "supplier_document.file.read")).toBe(true);
+    }
+    for (const role of [
+      "product_rfq_moderator",
+      "catalogue_content_editor",
+      "privacy_support_manager",
+    ] as const) {
+      expect(roleAllows(role, "supplier_document.review.decide")).toBe(false);
+      expect(roleAllows(role, "supplier_document.file.read")).toBe(false);
+    }
+  });
+
   it("resolves the strongest active role without inventing custom roles", () => {
     expect(
       strongestAllowedRole(
@@ -29,6 +46,12 @@ describe("platform staff authorization", () => {
     expect(
       strongestAllowedRole(["product_rfq_moderator"], "business_identity.review.read"),
     ).toBeNull();
+    expect(
+      strongestAllowedRole(
+        ["compliance_reviewer", "super_admin"],
+        "supplier_document.review.decide",
+      ),
+    ).toBe("super_admin");
   });
 
   it("limits staff assignment management to administrators", () => {

@@ -57,6 +57,13 @@
       "when": 1783933380355,
       "tag": "0007_perpetual_excalibur",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783942023342,
+      "tag": "0008_far_alex_power",
+      "breakpoints": true
     }
   ]
 }
