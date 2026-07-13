@@ -61,12 +61,29 @@ jobs:
           npm run test:run
           npm run build
 
-      - name: Verify Supplier activation in PostgreSQL
+      - name: Prepare activation database
         run: |
           npm run db:migrate
           npm run db:seed:supplier-catalogue
           npm run db:seed:supplier-documents
-          npm run db:verify:supplier-activation
+
+      - name: Verify Supplier activation in PostgreSQL
+        run: |
+          set +e
+          npm run db:verify:supplier-activation > /tmp/supplier-activation.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/supplier-activation.log
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+
+      - name: Upload activation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-activation-diagnostics
+          path: /tmp/supplier-activation.log
+          if-no-files-found: warn
+          retention-days: 1
 
       - name: Commit verified activation fixture
         run: |
