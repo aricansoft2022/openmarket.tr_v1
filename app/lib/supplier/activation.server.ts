@@ -56,12 +56,7 @@ function currentRequirementState(
   rows: readonly {
     storageStatus: "uploading" | "stored_private" | "failed" | "removed";
     evidenceStatus:
-      | "uploaded"
-      | "pending_review"
-      | "approved"
-      | "rejected"
-      | "expired"
-      | "replacement_required";
+      "uploaded" | "pending_review" | "approved" | "rejected" | "expired" | "replacement_required";
     scanStatus: "pending" | "clean" | "rejected" | "failed";
     expiresAt: Date | null;
   }[],

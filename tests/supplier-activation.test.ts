@@ -58,25 +58,20 @@ describe("Supplier activation evaluator", () => {
     ["rejected", "company_documents_rejected", "mandatory_document_rejected"],
     ["replacement_required", "company_documents_rejected", "mandatory_document_rejected"],
     ["expired", "company_documents_required", "mandatory_document_expired"],
-  ] as const)(
-    "maps mandatory %s evidence to %s",
-    (state, expectedStatus, expectedBlocker) => {
-      const result = evaluateSupplierActivation(
-        input({
-          mandatoryRequirements: [
-            { documentTypeKey: "company_document.trade_registry", state },
-          ],
-        }),
-      );
+  ] as const)("maps mandatory %s evidence to %s", (state, expectedStatus, expectedBlocker) => {
+    const result = evaluateSupplierActivation(
+      input({
+        mandatoryRequirements: [{ documentTypeKey: "company_document.trade_registry", state }],
+      }),
+    );
 
-      expect(result.nextStatus).toBe(expectedStatus);
-      expect(result.blockers[0]).toMatchObject({
-        code: expectedBlocker,
-        documentTypeKey: "company_document.trade_registry",
-        documentState: state,
-      });
-    },
-  );
+    expect(result.nextStatus).toBe(expectedStatus);
+    expect(result.blockers[0]).toMatchObject({
+      code: expectedBlocker,
+      documentTypeKey: "company_document.trade_registry",
+      documentState: state,
+    });
+  });
 
   it("moves a previously active Supplier to reactivation required when evidence regresses", () => {
     const result = evaluateSupplierActivation(

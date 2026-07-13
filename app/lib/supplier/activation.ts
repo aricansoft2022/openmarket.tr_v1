@@ -83,7 +83,9 @@ function mandatoryDocumentBlocker(
   }
 }
 
-function preActivationDocumentStatus(blockers: readonly SupplierActivationBlocker[]): SupplierWorkspaceStatus {
+function preActivationDocumentStatus(
+  blockers: readonly SupplierActivationBlocker[],
+): SupplierWorkspaceStatus {
   if (blockers.some((blocker) => blocker.code === "mandatory_document_rejected")) {
     return "company_documents_rejected";
   }
@@ -145,9 +147,7 @@ export function evaluateSupplierActivation(
       blocker.code === "business_identity_unverified" || blocker.code === "profile_incomplete",
   );
   return {
-    nextStatus: identityOrProfileBlocked
-      ? "supplier_draft"
-      : preActivationDocumentStatus(blockers),
+    nextStatus: identityOrProfileBlocked ? "supplier_draft" : preActivationDocumentStatus(blockers),
     eligibleForActivation: false,
     commercialAccess: false,
     blockers,
