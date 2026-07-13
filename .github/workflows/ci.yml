@@ -13,113 +13,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  prepare:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: write
-    outputs:
-      prepared_sha: ${{ steps.prepared.outputs.sha }}
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Apply deterministic Supplier seed integration patch
-        run: node scripts/patch-supplier-foundation-for-seeds.mjs
-
-      - name: Materialize and extract production-capability evidence
-        run: |
-          npm run spec:materialize
-          mkdir -p .debug
-          python - <<'PY'
-          from pathlib import Path
-
-          source = Path('spec.full.md').read_text(encoding='utf-8').splitlines()
-          patterns = (
-              'production capabil',
-              'production line',
-              'production-line',
-              'production process',
-              'manufacturing capabil',
-              'machinery',
-              'facility information',
-              'weaving',
-              'knitting',
-              'dyeing',
-              'printing',
-              'embroidery',
-              'sewing',
-              'cutting',
-              'quilting',
-              'finishing',
-              'packaging',
-              'private-label',
-              'made-to-order',
-          )
-          matches = [
-              index
-              for index, line in enumerate(source)
-              if any(pattern in line.casefold() for pattern in patterns)
-          ]
-          if not matches:
-              raise SystemExit('No production-capability evidence found in materialized specification.')
-
-          windows = []
-          for index in matches:
-              start = max(0, index - 12)
-              end = min(len(source), index + 18)
-              if windows and start <= windows[-1][1]:
-                  windows[-1] = (windows[-1][0], max(windows[-1][1], end))
-              else:
-                  windows.append((start, end))
-
-          output = [
-              '# Extracted production-capability evidence',
-              '',
-              'Generated from the SHA-verified `spec.full.md`; temporary audit evidence only.',
-              '',
-          ]
-          for start, end in windows:
-              output.append(f'## Source lines {start + 1}-{end}')
-              output.append('')
-              output.extend(f'{line_number:05d}: {source[line_number - 1]}' for line_number in range(start + 1, end + 1))
-              output.append('')
-
-          Path('.debug/supplier-capability-source.md').write_text('\n'.join(output), encoding='utf-8')
-          PY
-
-      - name: Commit prepared source
-        id: prepared
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "feat: integrate Supplier launch catalogue"
-          git push origin HEAD:${{ github.head_ref }}
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
   verify:
-    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout prepared commit
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.prepare.outputs.prepared_sha }}
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -149,7 +48,6 @@ jobs:
         run: npm run build
 
   database:
-    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -169,10 +67,8 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - name: Checkout prepared commit
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.prepare.outputs.prepared_sha }}
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -218,6 +114,12 @@ jobs:
 
       - name: Verify audited platform staff assignment management
         run: npm run db:verify:platform-staff-management
+
+      - name: Seed Supplier launch catalogue
+        run: npm run db:seed:supplier-catalogue
+
+      - name: Verify Supplier launch catalogue
+        run: npm run db:verify:supplier-catalogue
 
       - name: Verify supplier company profile foundation
         run: npm run db:verify:supplier-company
