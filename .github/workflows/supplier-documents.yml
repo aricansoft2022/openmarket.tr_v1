@@ -157,7 +157,22 @@ jobs:
           retention-days: 1
 
       - name: Run Supplier document unit tests
-        run: npm run test:run -- app/lib/supplier/documents app/lib/authorization/platform-staff.test.ts app/routes.test.ts
+        run: |
+          set +e
+          npm run test:run -- app/lib/supplier/documents app/lib/authorization/platform-staff.test.ts app/routes.test.ts > /tmp/supplier-document-tests.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/supplier-document-tests.log
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+
+      - name: Upload unit-test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-document-test-diagnostics
+          path: /tmp/supplier-document-tests.log
+          if-no-files-found: warn
+          retention-days: 1
 
       - name: Build production bundle
         run: npm run build
