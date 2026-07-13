@@ -13,12 +13,98 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  prepare-supplier-documents:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply reviewed corrections
+        run: |
+          node scripts/patch-supplier-document-foundation.mjs
+          node scripts/patch-supplier-document-safety.mjs
+
+      - name: Regenerate Supplier document migration
+        run: |
+          rm -f drizzle/0008_*.sql drizzle/meta/0008_snapshot.json
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "drizzle/meta/_journal.json";
+          const journal = JSON.parse(readFileSync(path, "utf8"));
+          journal.entries = journal.entries.filter((entry) => entry.idx !== 8);
+          writeFileSync(path, `${JSON.stringify(journal, null, 2)}\n`);
+          NODE
+          npm run db:generate
+          migration="$(ls drizzle/0008_*.sql)"
+          cat >> "$migration" <<'SQL'
+          --> statement-breakpoint
+          CREATE OR REPLACE FUNCTION prevent_supplier_document_review_event_mutation()
+          RETURNS trigger
+          LANGUAGE plpgsql
+          AS $$
+          BEGIN
+            RAISE EXCEPTION 'supplier_document_review_events rows are immutable';
+          END;
+          $$;
+          --> statement-breakpoint
+          CREATE TRIGGER supplier_document_review_events_immutable
+          BEFORE UPDATE OR DELETE ON "supplier_document_review_events"
+          FOR EACH ROW
+          EXECUTE FUNCTION prevent_supplier_document_review_event_mutation();
+          SQL
+
+      - name: Format prepared files
+        run: npm run format
+
+      - name: Package prepared files
+        run: |
+          tar -czf /tmp/supplier-document-foundation.tar.gz \
+            app/lib/db/schema/supplier-documents.ts \
+            app/lib/supplier/documents/catalogue.ts \
+            app/lib/supplier/documents/policy.ts \
+            app/lib/supplier/documents/policy.test.ts \
+            app/lib/supplier/documents/service.server.ts \
+            package.json \
+            drizzle/0008_*.sql \
+            drizzle/meta/0008_snapshot.json \
+            drizzle/meta/_journal.json \
+            scripts/seed-supplier-document-catalogue.ts \
+            scripts/verify-supplier-document-catalogue.ts
+
+      - name: Upload prepared files
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-document-foundation
+          path: /tmp/supplier-document-foundation.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  verify:
+    needs: prepare-supplier-documents
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download prepared files
+        uses: actions/download-artifact@v4
+        with:
+          name: supplier-document-foundation
+          path: /tmp/prepared
+
+      - name: Apply prepared files
+        run: tar -xzf /tmp/prepared/supplier-document-foundation.tar.gz
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -48,6 +134,7 @@ jobs:
         run: npm run build
 
   database:
+    needs: prepare-supplier-documents
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -69,6 +156,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download prepared files
+        uses: actions/download-artifact@v4
+        with:
+          name: supplier-document-foundation
+          path: /tmp/prepared
+
+      - name: Apply prepared files
+        run: tar -xzf /tmp/prepared/supplier-document-foundation.tar.gz
 
       - name: Use Node.js
         uses: actions/setup-node@v4
