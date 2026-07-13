@@ -5,6 +5,7 @@ import {
   StaffAuthorizationError,
   requireStaffPermission,
 } from "../../authorization/platform-staff.server";
+import { reconcileSupplierActivationWithinTransaction } from "../activation.server";
 import { launchSupplierTypeKeys, type LaunchSupplierTypeKey } from "../catalogue";
 import { membershipCanEditSupplierProfile } from "../profile";
 import { validateEvidenceFile } from "../../business-identity/evidence";
@@ -519,6 +520,12 @@ export async function uploadSupplierCompanyDocument(
           : "Supplier member uploaded a private company document",
         requestId: requestId(request),
       });
+      await reconcileSupplierActivationWithinTransaction(scoped, input.companyId, {
+        actorId: session.user.id,
+        effectiveRole: `supplier_${membership.role}`,
+        reason: "Private document upload changed activation evidence",
+        requestId: requestId(request),
+      });
       return documentProjection(stored!);
     }),
   );
@@ -589,6 +596,19 @@ export async function recordSupplierDocumentScanResult(
       newValue: { scanStatus: input.result, evidenceStatus },
       reason: note ?? "Automated document scan completed",
     });
+    const [documentCompany] = await scoped
+      .select({ companyId: supplierCompanyDocuments.companyId })
+      .from(supplierCompanyDocuments)
+      .where(eq(supplierCompanyDocuments.id, input.documentId))
+      .limit(1);
+    if (documentCompany) {
+      await reconcileSupplierActivationWithinTransaction(scoped, documentCompany.companyId, {
+        actorId: null,
+        effectiveRole: "document_scanner",
+        reason: "Document scan result changed activation evidence",
+        now,
+      });
+    }
   });
 }
 
@@ -663,6 +683,13 @@ export async function submitSupplierCompanyDocumentForReview(
         newValue: { evidenceStatus: "pending_review" },
         reason: "Authorized Supplier member submitted a clean private document for review",
         requestId: requestId(request),
+      });
+      await reconcileSupplierActivationWithinTransaction(scoped, document.companyId, {
+        actorId: session.user.id,
+        effectiveRole: `supplier_${membership.role}`,
+        reason: "Document submission changed activation evidence",
+        requestId: requestId(request),
+        now,
       });
     }),
   );
@@ -772,6 +799,13 @@ export async function decideSupplierCompanyDocument(
         newValue: { evidenceStatus: nextStatus },
         reason,
         requestId: requestId(request),
+      });
+      await reconcileSupplierActivationWithinTransaction(scoped, document.companyId, {
+        actorId: session.user.id,
+        effectiveRole: actorRole,
+        reason: "Document review decision changed activation evidence",
+        requestId: requestId(request),
+        now,
       });
     }),
   );

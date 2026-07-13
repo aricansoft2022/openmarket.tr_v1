@@ -19,6 +19,7 @@ import {
   type SupplierMembershipRole,
   type SupplierWorkspaceStatus,
 } from "../db/schema";
+import { reconcileSupplierActivationWithinTransaction } from "./activation.server";
 import {
   evaluateSupplierProfileCompleteness,
   membershipCanEditSupplierProfile,
@@ -453,6 +454,13 @@ export async function createSupplierCompany(
         updatedAt: now,
       });
       await replaceProfileSelections(scoped, company!.id, profile);
+      await reconcileSupplierActivationWithinTransaction(scoped, company!.id, {
+        actorId: session.user.id,
+        effectiveRole: "supplier_owner",
+        reason: "Supplier company creation changed activation prerequisites",
+        requestId: requestId(request),
+        now,
+      });
 
       const createdState = (await companyState(scoped, session.user.id, company!.id))!;
       await scoped.insert(auditLogs).values({
@@ -555,6 +563,12 @@ export async function updateSupplierCompanyProfile(
         })
         .where(eq(supplierCompanies.id, companyId));
       await replaceProfileSelections(scoped, companyId, profile);
+      await reconcileSupplierActivationWithinTransaction(scoped, companyId, {
+        actorId: session.user.id,
+        effectiveRole: `supplier_${membership.role}`,
+        reason: "Supplier profile change triggered activation reevaluation",
+        requestId: requestId(request),
+      });
 
       const updatedState = await companyState(scoped, session.user.id, companyId);
       if (!updatedState) {
