@@ -1,12 +1,16 @@
-import { and, asc, desc, eq, inArray, max, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, max, ne, sql } from "drizzle-orm";
 
-import { requireStaffPermission, StaffAuthorizationError } from "../../authorization/platform-staff.server";
+import {
+  requireStaffPermission,
+  StaffAuthorizationError,
+} from "../../authorization/platform-staff.server";
 import { createAuth, type AuthEnvironment } from "../../auth/create-auth.server";
 import { safeDownloadFilename } from "../../business-identity/evidence";
 import type { Database } from "../../db/client.server";
 import { withDatabase } from "../../db/client.server";
 import {
   auditLogs,
+  supplierCompanies,
   supplierCompanyDocuments,
   supplierCompanyDocumentTypes,
   supplierCompanyTypes,
@@ -154,14 +158,11 @@ async function activeMembership(
     .select({
       companyId: supplierMemberships.companyId,
       role: supplierMemberships.role,
-      legalName: sql<string>`supplier_companies.legal_name`,
-      companyStatus: sql<string>`supplier_companies.status`,
+      legalName: supplierCompanies.legalName,
+      companyStatus: supplierCompanies.status,
     })
     .from(supplierMemberships)
-    .innerJoin(
-      sql`"supplier_companies"`,
-      sql`"supplier_companies"."id" = ${supplierMemberships.companyId}`,
-    )
+    .innerJoin(supplierCompanies, eq(supplierCompanies.id, supplierMemberships.companyId))
     .where(where)
     .orderBy(asc(supplierMemberships.assignedAt), asc(supplierMemberships.id))
     .limit(1);
@@ -268,10 +269,7 @@ async function companyDocuments(
         ne(supplierCompanyDocuments.storageStatus, "removed"),
       ),
     )
-    .orderBy(
-      asc(supplierCompanyDocuments.documentTypeKey),
-      desc(supplierCompanyDocuments.version),
-    );
+    .orderBy(asc(supplierCompanyDocuments.documentTypeKey), desc(supplierCompanyDocuments.version));
   return rows.map(documentProjection);
 }
 
@@ -327,7 +325,9 @@ export async function loadSupplierDocumentWorkspace(
           satisfied: requirement.level !== "mandatory" || currentState === "approved",
         } satisfies SupplierDocumentRequirementSummary;
       })
-      .filter((requirement): requirement is SupplierDocumentRequirementSummary => Boolean(requirement));
+      .filter((requirement): requirement is SupplierDocumentRequirementSummary =>
+        Boolean(requirement),
+      );
 
     return {
       company: {
@@ -625,8 +625,7 @@ export async function recordSupplierDocumentScanResult(
     .set({
       scanStatus: input.result,
       scanNote: input.result === "clean" ? null : note,
-      evidenceStatus:
-        input.result === "clean" ? "uploaded" : ("replacement_required" as const),
+      evidenceStatus: input.result === "clean" ? "uploaded" : ("replacement_required" as const),
       submittedAt: input.result === "clean" ? null : now,
       publicVisible: false,
       updatedAt: now,
@@ -691,7 +690,11 @@ export async function submitSupplierCompanyDocumentForReview(
           "Unsafe or failed document scans cannot be submitted.",
         );
       }
-      if (!inArray(["uploaded", "rejected", "replacement_required"], document.evidenceStatus)) {
+      if (
+        !(["uploaded", "rejected", "replacement_required"] as const).includes(
+          document.evidenceStatus as "uploaded" | "rejected" | "replacement_required",
+        )
+      ) {
         throw new SupplierDocumentActionError(
           "INVALID_TRANSITION",
           "Document is not eligible for review submission.",
@@ -867,7 +870,11 @@ async function authorizedDocumentForAccess(
   env: SupplierDocumentEnvironment,
   request: Request,
   documentId: string,
-): Promise<{ userId: string; role: string; document: { objectKey: string; originalFilename: string; mimeType: string } } | null> {
+): Promise<{
+  userId: string;
+  role: string;
+  document: { objectKey: string; originalFilename: string; mimeType: string };
+} | null> {
   const session = await currentSession(database, env, request);
   if (!session) return null;
   const [document] = await database
@@ -1000,20 +1007,17 @@ export async function downloadSupplierDocumentWithGrant(
 export async function loadSupplierDocumentReviewQueue(
   env: SupplierDocumentEnvironment,
   request: Request,
-): Promise<
-  | {
-      actor: { id: string; role: PlatformStaffRole };
-      documents: Array<{
-        id: string;
-        companyId: string;
-        companyName: string;
-        documentTypeKey: string;
-        originalFilename: string;
-        submittedAt: Date | null;
-      }>;
-    }
-  | null
-> {
+): Promise<{
+  actor: { id: string; role: PlatformStaffRole };
+  documents: Array<{
+    id: string;
+    companyId: string;
+    companyName: string;
+    documentTypeKey: string;
+    originalFilename: string;
+    submittedAt: Date | null;
+  }>;
+} | null> {
   return withDatabase(env, async (database) => {
     const session = await currentSession(database, env, request);
     if (!session) return null;
@@ -1026,16 +1030,13 @@ export async function loadSupplierDocumentReviewQueue(
       .select({
         id: supplierCompanyDocuments.id,
         companyId: supplierCompanyDocuments.companyId,
-        companyName: sql<string>`supplier_companies.legal_name`,
+        companyName: supplierCompanies.legalName,
         documentTypeKey: supplierCompanyDocuments.documentTypeKey,
         originalFilename: supplierCompanyDocuments.originalFilename,
         submittedAt: supplierCompanyDocuments.submittedAt,
       })
       .from(supplierCompanyDocuments)
-      .innerJoin(
-        sql`"supplier_companies"`,
-        sql`"supplier_companies"."id" = ${supplierCompanyDocuments.companyId}`,
-      )
+      .innerJoin(supplierCompanies, eq(supplierCompanies.id, supplierCompanyDocuments.companyId))
       .where(
         and(
           eq(supplierCompanyDocuments.evidenceStatus, "pending_review"),
@@ -1065,7 +1066,7 @@ export async function loadSupplierDocumentReviewDetail(
       .select({
         id: supplierCompanyDocuments.id,
         companyId: supplierCompanyDocuments.companyId,
-        companyName: sql<string>`supplier_companies.legal_name`,
+        companyName: supplierCompanies.legalName,
         documentTypeKey: supplierCompanyDocuments.documentTypeKey,
         originalFilename: supplierCompanyDocuments.originalFilename,
         mimeType: supplierCompanyDocuments.mimeType,
@@ -1078,10 +1079,7 @@ export async function loadSupplierDocumentReviewDetail(
         submittedAt: supplierCompanyDocuments.submittedAt,
       })
       .from(supplierCompanyDocuments)
-      .innerJoin(
-        sql`"supplier_companies"`,
-        sql`"supplier_companies"."id" = ${supplierCompanyDocuments.companyId}`,
-      )
+      .innerJoin(supplierCompanies, eq(supplierCompanies.id, supplierCompanyDocuments.companyId))
       .where(eq(supplierCompanyDocuments.id, documentId))
       .limit(1);
     if (!document) return { actor: { id: session.user.id, role }, document: null, timeline: [] };

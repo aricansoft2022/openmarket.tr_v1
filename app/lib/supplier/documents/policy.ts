@@ -75,9 +75,16 @@ export function resolveSupplierDocumentRequirements(
   }
 
   return [...resolved.values()].sort((left, right) => {
-    const leftType = supplierCompanyDocumentTypes.find((entry) => entry.key === left.documentTypeKey)!;
-    const rightType = supplierCompanyDocumentTypes.find((entry) => entry.key === right.documentTypeKey)!;
-    return leftType.sortOrder - rightType.sortOrder || left.documentTypeKey.localeCompare(right.documentTypeKey);
+    const leftType = supplierCompanyDocumentTypes.find(
+      (entry) => entry.key === left.documentTypeKey,
+    )!;
+    const rightType = supplierCompanyDocumentTypes.find(
+      (entry) => entry.key === right.documentTypeKey,
+    )!;
+    return (
+      leftType.sortOrder - rightType.sortOrder ||
+      left.documentTypeKey.localeCompare(right.documentTypeKey)
+    );
   });
 }
 
@@ -163,16 +170,28 @@ export type SupplierDocumentDerivedState =
 
 export function deriveSupplierDocumentState(input: {
   storageStatus?: "uploading" | "stored_private" | "failed" | "removed" | null;
-  evidenceStatus?: "uploaded" | "pending_review" | "approved" | "rejected" | "expired" | "replacement_required" | null;
+  evidenceStatus?:
+    | "uploaded"
+    | "pending_review"
+    | "approved"
+    | "rejected"
+    | "expired"
+    | "replacement_required"
+    | null;
   scanStatus?: "pending" | "clean" | "rejected" | "failed" | null;
   expiresAt?: Date | null;
   now?: Date;
 }): SupplierDocumentDerivedState {
-  if (!input.storageStatus || input.storageStatus === "failed" || input.storageStatus === "removed") {
+  if (
+    !input.storageStatus ||
+    input.storageStatus === "failed" ||
+    input.storageStatus === "removed"
+  ) {
     return "missing";
   }
   if (input.expiresAt && input.expiresAt <= (input.now ?? new Date())) return "expired";
-  if (input.scanStatus === "rejected" || input.scanStatus === "failed") return "replacement_required";
+  if (input.scanStatus === "rejected" || input.scanStatus === "failed")
+    return "replacement_required";
   return input.evidenceStatus ?? "uploaded";
 }
 

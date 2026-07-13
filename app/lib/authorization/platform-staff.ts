@@ -69,10 +69,7 @@ const rolePriority: readonly PlatformStaffRole[] = [
   "catalogue_content_editor",
 ];
 
-export function roleAllows(
-  role: PlatformStaffRole,
-  permission: PlatformReviewPermission,
-): boolean {
+export function roleAllows(role: PlatformStaffRole, permission: PlatformReviewPermission): boolean {
   return reviewPermissionMatrix[role].includes(permission);
 }
 

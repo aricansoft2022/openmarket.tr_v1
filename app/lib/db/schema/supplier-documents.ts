@@ -18,8 +18,7 @@ import { platformStaffRoles, type PlatformStaffRole } from "./platform-staff";
 import { supplierCompanies, supplierTypes } from "./supplier";
 
 export const supplierDocumentRequirementLevels = ["mandatory", "conditional", "optional"] as const;
-export type SupplierDocumentRequirementLevel =
-  (typeof supplierDocumentRequirementLevels)[number];
+export type SupplierDocumentRequirementLevel = (typeof supplierDocumentRequirementLevels)[number];
 
 export const supplierDocumentStorageStatuses = [
   "uploading",
@@ -168,7 +167,10 @@ export const supplierCompanyDocuments = pgTable(
       .$type<SupplierDocumentEvidenceStatus>()
       .default("uploaded")
       .notNull(),
-    scanStatus: text("scan_status").$type<SupplierDocumentScanStatus>().default("pending").notNull(),
+    scanStatus: text("scan_status")
+      .$type<SupplierDocumentScanStatus>()
+      .default("pending")
+      .notNull(),
     scanNote: text("scan_note"),
     issueDate: timestamp("issue_date", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),

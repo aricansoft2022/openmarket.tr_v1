@@ -103,7 +103,10 @@ patch("app/lib/supplier/documents/policy.ts", [
 ]);
 
 patch("app/lib/supplier/documents/policy.test.ts", [
-  [`      "company_document.company_address",\n      "company_document.company_profile",`, `      "company_document.company_address",`],
+  [
+    `      "company_document.company_address",\n      "company_document.company_profile",`,
+    `      "company_document.company_address",`,
+  ],
   [
     `    expect(keys).toContain("company_document.exporter_information");`,
     `    expect(keys).toContain("company_document.exporter_information");

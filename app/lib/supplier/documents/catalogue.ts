@@ -17,7 +17,8 @@ export const supplierCompanyDocumentTypes = [
     labelTr: "Oda kayıt veya faaliyet belgesi",
     labelEn: "Chamber registration or activity document",
     descriptionTr: "Şirketin ilgili oda veya meslek kuruluşundaki güncel kaydını gösterir.",
-    descriptionEn: "Shows the company’s current registration with the relevant chamber or trade body.",
+    descriptionEn:
+      "Shows the company’s current registration with the relevant chamber or trade body.",
     publicEligible: false,
     expiryExpected: true,
     sortOrder: 10,
@@ -77,7 +78,8 @@ export const supplierCompanyDocumentTypes = [
     labelTr: "Şirket tanıtım dosyası",
     labelEn: "Company profile",
     descriptionTr: "Şirketin ürün aileleri, pazarları, tesisleri ve çalışma modelini açıklar.",
-    descriptionEn: "Describes the company’s product families, markets, facilities and operating model.",
+    descriptionEn:
+      "Describes the company’s product families, markets, facilities and operating model.",
     publicEligible: true,
     expiryExpected: false,
     sortOrder: 70,
@@ -144,8 +146,7 @@ export const supplierCompanyDocumentTypes = [
   },
 ] as const satisfies readonly SupplierDocumentTypeEntry[];
 
-export type SupplierCompanyDocumentTypeKey =
-  (typeof supplierCompanyDocumentTypes)[number]["key"];
+export type SupplierCompanyDocumentTypeKey = (typeof supplierCompanyDocumentTypes)[number]["key"];
 
 export type SupplierDocumentRequirementLevel = "mandatory" | "conditional" | "optional";
 
@@ -202,37 +203,38 @@ export const supplierDocumentRequirementRules: readonly SupplierDocumentRequirem
     sortOrder: 31,
   },
   ...manufacturerSupplierTypes.flatMap((supplierTypeKey, supplierIndex) =>
-    ([
-      "company_document.facility_information",
-      "company_document.machinery_production_line_summary",
-      "company_document.production_photos",
-    ] as const satisfies readonly SupplierCompanyDocumentTypeKey[]).map(
-      (documentTypeKey, documentIndex) => ({
-        key: `company_document_rule.manufacturer.${supplierTypeKey.split(".").at(-1)}.${documentTypeKey.split(".").at(-1)}`,
-        documentTypeKey,
-        supplierTypeKey,
-        level: "mandatory" as const,
-        noteTr: "Üretici türünün beyan ettiği üretim faaliyetini destekler.",
-        noteEn: "Supports the production activity declared by the manufacturer type.",
-        sortOrder: 40 + supplierIndex * 10 + documentIndex,
-      }),
-    ),
+    (
+      [
+        "company_document.facility_information",
+        "company_document.machinery_production_line_summary",
+        "company_document.production_photos",
+      ] as const satisfies readonly SupplierCompanyDocumentTypeKey[]
+    ).map((documentTypeKey, documentIndex) => ({
+      key: `company_document_rule.manufacturer.${supplierTypeKey.split(".").at(-1)}.${documentTypeKey.split(".").at(-1)}`,
+      documentTypeKey,
+      supplierTypeKey,
+      level: "mandatory" as const,
+      noteTr: "Üretici türünün beyan ettiği üretim faaliyetini destekler.",
+      noteEn: "Supports the production activity declared by the manufacturer type.",
+      sortOrder: 40 + supplierIndex * 10 + documentIndex,
+    })),
   ),
   ...manufacturerSupplierTypes.flatMap((supplierTypeKey, supplierIndex) =>
-    ([
-      "company_document.capacity_report",
-      "company_document.industrial_registry",
-    ] as const satisfies readonly SupplierCompanyDocumentTypeKey[]).map(
-      (documentTypeKey, documentIndex) => ({
-        key: `company_document_rule.conditional.${supplierTypeKey.split(".").at(-1)}.${documentTypeKey.split(".").at(-1)}`,
-        documentTypeKey,
-        supplierTypeKey,
-        level: "conditional" as const,
-        noteTr: "Mevcut veya uygulanabilir olduğu durumda istenir; yokluğu tek başına aktivasyonu engellemez.",
-        noteEn: "Requested where available or applicable; absence alone does not block activation.",
-        sortOrder: 70 + supplierIndex * 10 + documentIndex,
-      }),
-    ),
+    (
+      [
+        "company_document.capacity_report",
+        "company_document.industrial_registry",
+      ] as const satisfies readonly SupplierCompanyDocumentTypeKey[]
+    ).map((documentTypeKey, documentIndex) => ({
+      key: `company_document_rule.conditional.${supplierTypeKey.split(".").at(-1)}.${documentTypeKey.split(".").at(-1)}`,
+      documentTypeKey,
+      supplierTypeKey,
+      level: "conditional" as const,
+      noteTr:
+        "Mevcut veya uygulanabilir olduğu durumda istenir; yokluğu tek başına aktivasyonu engellemez.",
+      noteEn: "Requested where available or applicable; absence alone does not block activation.",
+      sortOrder: 70 + supplierIndex * 10 + documentIndex,
+    })),
   ),
   {
     key: "company_document_rule.optional.quality_management",

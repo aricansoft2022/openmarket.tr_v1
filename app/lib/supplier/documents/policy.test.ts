@@ -123,8 +123,6 @@ describe("Supplier company-document policy", () => {
     expect(validatedSupplierDocumentReason("  Registry details confirmed  ")).toBe(
       "Registry details confirmed",
     );
-    expect(() => validatedSupplierDocumentReason("x")).toThrow(
-      SupplierDocumentValidationError,
-    );
+    expect(() => validatedSupplierDocumentReason("x")).toThrow(SupplierDocumentValidationError);
   });
 });
