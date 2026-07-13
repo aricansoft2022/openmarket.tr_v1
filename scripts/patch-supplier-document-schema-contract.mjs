@@ -64,7 +64,7 @@ source = source.replace(/\n\s*requestId: requestId\(request\),\n\s*createdAt: no
 
 replace(
   `  const staff = await requireStaffPermission(database, env, request, "supplier_document.file.read");\n  return { session, document, effectiveRole: staff.actor.role };`,
-  `  const staffRole = await requireStaffPermission(\n    database,\n    session.user.id,\n    "supplier_document.file.read",\n  );\n  return { session, document, effectiveRole: staffRole };`,
+  `  try {\n    const staffRole = await requireStaffPermission(\n      database,\n      session.user.id,\n      "supplier_document.file.read",\n    );\n    return { session, document, effectiveRole: staffRole };\n  } catch (error) {\n    if (error instanceof StaffAuthorizationError && error.code === "FORBIDDEN") {\n      throw new SupplierDocumentActionError("DOCUMENT_NOT_FOUND", "Document was not found.");\n    }\n    throw error;\n  }`,
 );
 
 source = source.replaceAll("grantedTo: session.user.id,", "issuedTo: session.user.id,");
