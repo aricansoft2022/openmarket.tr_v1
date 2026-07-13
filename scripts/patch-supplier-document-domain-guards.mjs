@@ -72,40 +72,6 @@ patch("app/lib/supplier/documents/service.server.ts", [
       const version = latestVersion + 1;
       const typeSegment`,
   ],
-  [
-    `      if (
-        !(["uploaded", "rejected", "replacement_required"] as const).includes(
-          document.evidenceStatus as "uploaded" | "rejected" | "replacement_required",
-        )
-      ) {`,
-    `      if (document.evidenceStatus !== "uploaded") {`,
-  ],
-  [
-    `          uploadedBy: supplierCompanyDocuments.uploadedBy,
-          evidenceStatus: supplierCompanyDocuments.evidenceStatus,`,
-    `          companyId: supplierCompanyDocuments.companyId,
-          uploadedBy: supplierCompanyDocuments.uploadedBy,
-          evidenceStatus: supplierCompanyDocuments.evidenceStatus,`,
-  ],
-  [
-    `      if (document.uploadedBy === session.user.id) {
-        throw new StaffAuthorizationError(
-          "SELF_REVIEW",
-          "Staff cannot decide a company document they uploaded.",
-        );
-      }`,
-    `      const conflictedMembership = await activeMembership(
-        scoped,
-        session.user.id,
-        document.companyId,
-      );
-      if (document.uploadedBy === session.user.id || conflictedMembership) {
-        throw new StaffAuthorizationError(
-          "SELF_REVIEW",
-          "Staff cannot decide a company document they uploaded or a company they belong to.",
-        );
-      }`,
-  ],
 ]);
 
 patch("app/routes/supplier.documents.$documentId.tsx", [
