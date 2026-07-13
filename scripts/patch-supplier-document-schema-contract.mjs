@@ -39,6 +39,14 @@ replace(
 source = source.replaceAll("validatedFile.originalFilename", "validatedFile.filename");
 source = source.replaceAll(`storageStatus: "reserved"`, `storageStatus: "uploading"`);
 replace(
+  `          sha256,\n          objectKey,`,
+  `          sha256: null,\n          objectKey,`,
+);
+replace(
+  `.set({ storageStatus: "stored_private", storedAt, updatedAt: storedAt })`,
+  `.set({ storageStatus: "stored_private", sha256, storedAt, updatedAt: storedAt })`,
+);
+replace(
   `.set({ storageStatus: "failed", scanStatus: "failed", updatedAt: new Date() })`,
   `.set({\n            storageStatus: "failed",\n            scanStatus: "failed",\n            scanNote: "Private object storage failed",\n            failureReason: "Private object storage failed",\n            updatedAt: new Date(),\n          })`,
 );
