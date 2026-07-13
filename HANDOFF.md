@@ -44,14 +44,13 @@ Supplier onboarding screens, documents, review and activation are not merged. Re
 
 ## Exact next tasks
 
-1. Run Prettier and restore a completely green permanent read-only CI result on PR #33.
-2. Squash merge PR #33 only after both application and PostgreSQL jobs pass on the final head.
-3. Update issue #32: close the production-seed finding, and split country-code semantics plus future multi-company selection into explicit follow-ups if they are not fixed in the same slice.
-4. Continue issue #6 with S01–S04 as a separate route/UI PR using the merged Supplier domain and catalogue.
-5. Keep company-document upload/review in #7 and Supplier activation in #8; do not fold them into onboarding UI.
-6. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
-7. Keep issue #4 open for external delivery and remote auth evidence.
-8. Do not infer business identity from account verification alone; public email domains never grant automatic business identity.
+1. Squash merge PR #33 after the final documentation commit passes permanent read-only CI.
+2. Update issue #32: close the production-seed finding, and split country-code semantics plus future multi-company selection into explicit follow-ups if they are not fixed in the same slice.
+3. Continue issue #6 with S01–S04 as a separate route/UI PR using the merged Supplier domain and catalogue.
+4. Keep company-document upload/review in #7 and Supplier activation in #8; do not fold them into onboarding UI.
+5. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
+6. Keep issue #4 open for external delivery and remote auth evidence.
+7. Do not infer business identity from account verification alone; public email domains never grant automatic business identity.
 
 ## Verification commands
 
@@ -109,7 +108,7 @@ npm run db:local:down
 - production capabilities are optional for non-manufacturing Supplier types;
 - immutable update audits contain complete old/new profile values.
 
-GitHub Actions run `29243192413` passed the complete PostgreSQL chain including the seed and Supplier gates. Its application job stopped at formatting, so it is not final merge evidence.
+Permanent read-only GitHub Actions run `29243586323` passed formatting, documentation, runtime configuration, typecheck, unit tests, production build and the complete PostgreSQL chain on PR #33 head `9a41586d0c39016300bff599bfc6d15500e1083a`. The final documentation commit requires one last read-only CI run before merge.
 
 ## Known blockers
 
