@@ -22,36 +22,37 @@ npm run verify
 npm run db:check
 ```
 
-Node must satisfy the repository engine requirement. Do not replace `npm ci` with `npm install` in CI or documented verification flows unless the lockfile is intentionally regenerated in a dedicated dependency PR.
+Node must satisfy the repository engine requirement. Keep `npm ci` in CI and documented verification flows unless the lockfile is intentionally regenerated in a dedicated dependency PR.
 
 ## Current state
 
-`main` currently ends at `6ca28b706b4eabe1b03d90835366a46f863c6e04`, the squash merge of PR #33. Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, verification/password recovery, guarded Google OAuth, auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding, private manual-exception evidence, Reviewer/Admin business-identity authorization, audited platform staff assignment management, the audited Supplier company/profile foundation and the launch Supplier catalogue/seeds are merged.
+`main` includes the Phase 0 foundation and the Phase 1 identity, Buyer and Supplier work through merged PR #37:
 
-Draft PR #36 on `agent/supplier-onboarding-screens` adds the user-facing Supplier onboarding slice S01–S04:
+- Better Auth persistence, registration, verification, recovery and guarded Google OAuth;
+- abuse controls and explicit Google link/unlink safeguards;
+- business identity, Buyer activation, A08–A10 onboarding and private exception evidence;
+- fixed platform staff authorization and audited staff assignment management;
+- the verified-identity-bound Supplier company/profile and launch catalogue;
+- Supplier onboarding screens S01–S04 with bilingual copy and server-side membership permissions;
+- private Supplier company documents with deterministic requirements, S05–S07, D17–D18, private object storage, scan gates, review/replacement states, short-lived access grants, immutable review history and effective-role audit evidence.
 
-- S01 `/supplier`: Supplier overview, activation boundary, deterministic progress and disabled future-module summaries;
-- S02 `/supplier/onboarding`: stepper, checklist, blocking issues and continuation actions;
-- S03 `/supplier/company`: verified-identity-bound company create/update and export-market code capture;
-- S04 `/supplier/capabilities`: seeded Supplier types, fixed application contexts and reviewed production capabilities;
-- owner/admin/editor mutation permission, viewer read-only behaviour and cross-membership isolation through the existing Supplier service;
-- complete Turkish/English shell, page, form, checklist, catalogue-order and public form-error copy selected from the persisted account language preference;
-- route, loading, empty, blocked, error, validation, success and read-only states;
-- unit coverage for checklist dependencies, language contracts and form normalization;
-- route-registration coverage and continued PostgreSQL Supplier-foundation verification.
+Draft PR #38 on `agent/supplier-documents-post-merge-hardening` replaces the merged preparation/patch machinery with the verified normal source. Clean head `d4b602c45cdd920d89d65ebe89f50ef974999e5d` passed permanent Supplier-document run `29255026975` and full CI run `29255027068`.
 
-The PR deliberately does not activate Supplier. Company-document upload/review remains #7; the activation evaluator and audited state transitions remain #8. Product creation, RFQ response and invitation UI are later slices.
+No Supplier activation transition is implemented yet. Approved mandatory documents are evidence for issue #8; they do not independently enable publication, RFQ response, enquiries, contact reveal or other commercial capabilities.
 
 ## Exact next tasks
 
-1. Run permanent read-only CI once more after this final handoff commit, then move PR #36 to review and squash merge it.
-2. Implement issue #7 as a separate private company-document lifecycle: requirement resolution, upload metadata, authorized retrieval, review decisions, replacement and expiry handling.
-3. Implement issue #8 as a central activation evaluator over verified identity, complete profile, Supplier types and approved mandatory documents.
-4. Resolve issue #34 by choosing either an authoritative committed country catalogue or explicitly retaining format-only two-letter semantics across validation, database constraints and UI copy.
-5. Resolve issue #35 before exposing multi-company membership: require an explicit validated Supplier company/workspace selection instead of silently taking the earliest active membership.
-6. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
-7. Keep issue #4 open for external email delivery and remote auth evidence.
-8. Do not infer business identity from account verification alone; public email domains never grant automatic business identity.
+1. Merge PR #38 after its documentation-only head passes CI, then close issue #7.
+2. Implement issue #8 as a central activation evaluator over:
+   - verified business identity bound to the Supplier company;
+   - complete minimum company profile;
+   - at least one allowed Supplier type and required application context;
+   - every mandatory company-document requirement satisfied by non-expired approved evidence.
+3. Persist audited state transitions for `company_documents_required`, `company_documents_pending`, `company_documents_rejected`, `active_supplier`, `reactivation_required` and `suspended_supplier`.
+4. Keep transition rules out of route actions; routes must call one domain service and commercial guards must consume its result.
+5. Resolve issue #34 by choosing an authoritative country catalogue or explicitly retaining format-only two-letter semantics.
+6. Resolve issue #35 before exposing multi-company membership; require explicit validated company/workspace selection.
+7. Keep issues #2–#4 open for real Neon/Hyperdrive, email delivery and external-provider evidence.
 
 ## Verification commands
 
@@ -86,41 +87,24 @@ npm run db:verify:platform-staff-management
 npm run db:seed:supplier-catalogue
 npm run db:verify:supplier-catalogue
 npm run db:verify:supplier-company
+npm run db:seed:supplier-documents
+npm run db:verify:supplier-documents
+npm run db:verify:supplier-document-lifecycle
 npm run db:local:down
 ```
 
-`db:verify:supplier-catalogue` must prove:
+`db:verify:supplier-document-lifecycle` must prove:
 
-- the exact active launch inventories and deterministic ordering;
-- Turkish and English labels for every value;
-- repeated idempotent seeding;
-- repair of changed canonical labels, ordering and active flags;
-- deactivation rather than deletion of non-launch values.
-
-`db:verify:supplier-company` must prove:
-
-- Supplier/Both intent and matching verified identity evidence are required;
-- the company persists the bound review ID;
-- legal-name drift is rejected;
-- malformed `supplier_typeX...` and `production_capabilityX...` keys fail database constraints;
-- owner creation, membership isolation and viewer denial work;
-- unseeded custom selections are rejected;
-- profile completeness is deterministic and never activates Supplier;
-- production capabilities are optional for non-manufacturing Supplier types;
-- immutable update audits contain complete old/new profile values.
-
-Supplier onboarding unit and route evidence must prove:
-
-- identity verification blocks company creation until complete;
-- capabilities remain blocked until a company exists;
-- company documents remain an explicit incomplete activation dependency;
-- account language selects shell, page, checklist, catalogue ordering and public form-error copy;
-- repeated checkbox values, optional fields, founded year and export-market values normalize deterministically;
-- S01–S04 routes remain registered exactly once and the Supplier stylesheet is loaded exactly once;
-- company and capability mutations preserve fields owned by the other screen and never activate Supplier;
-- viewer memberships render read-only and server-side mutations remain denied.
-
-Permanent read-only GitHub Actions run `29245409518` passed formatting, documentation, runtime configuration, typecheck, unit tests, production build and the complete PostgreSQL chain on fully localized PR #36 head `8142b81c5a081024b963e421a673b934a3b32696`.
+- upload authorization is scoped to active owner/admin/editor memberships;
+- server-generated private object keys and stored SHA-256 values are used;
+- uploading, stored, scan, submission, review, expiry and replacement transitions obey database invariants;
+- outsiders receive a non-disclosing not-found result and cross-company access is denied;
+- only active fixed-role reviewers may list, read and decide documents;
+- a reviewer cannot decide evidence for a company they belong to;
+- short-lived access grants are user-bound, single-use and rejected after expiry or revocation;
+- review decisions persist effective-role audit evidence;
+- replacement versions preserve prior approved evidence and immutable review history;
+- UPDATE and DELETE against review-history rows are rejected by PostgreSQL.
 
 ## Known blockers
 
@@ -130,8 +114,8 @@ Permanent read-only GitHub Actions run `29245409518` passed formatting, document
 - Real Google development credentials and authorized redirect URIs are not configured; live callback completion remains unverified.
 - Real Turnstile and Cloudflare Rate Limiting resources are not provisioned.
 - Initial Super Admin bootstrap requires controlled provisioning.
-- Evidence malware/content inspection, quarantine and retention cleanup are not implemented.
-- Company-document review and Supplier activation are not implemented.
+- A real malware/content scanner and retention cleanup worker are not connected; only the application hooks and safe state transitions exist.
+- Supplier activation and commercial capability grants remain issue #8.
 - Country-code membership semantics and explicit multi-company selection remain open in #34 and #35.
 - Cloudflare Images remains an account-level dependency for later company/product media work.
 
