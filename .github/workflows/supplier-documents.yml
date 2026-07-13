@@ -139,7 +139,22 @@ jobs:
         run: npm run format:check
 
       - name: Check types
-        run: npm run typecheck
+        run: |
+          set +e
+          npm run typecheck > /tmp/supplier-document-typecheck.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/supplier-document-typecheck.log
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+
+      - name: Upload typecheck diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-document-typecheck-diagnostics
+          path: /tmp/supplier-document-typecheck.log
+          if-no-files-found: warn
+          retention-days: 1
 
       - name: Run Supplier document unit tests
         run: npm run test:run -- app/lib/supplier/documents app/lib/authorization/platform-staff.test.ts app/routes.test.ts
