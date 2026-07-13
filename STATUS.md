@@ -79,7 +79,7 @@ npm run db:verify:supplier-company                PASS
 
 The Supplier onboarding unit evidence covers dependency blocking, incomplete document activation, localized checklist copy, repeated checkbox normalization, optional-field normalization, founded-year parsing and export-market normalization. The bilingual-copy tests require non-empty Turkish and English screen contracts and preserve activation/document boundaries in both languages. The existing PostgreSQL Supplier gate continues to prove verified-identity binding, membership isolation, viewer denial, seeded-catalogue enforcement, deterministic completeness and immutable profile-update audits.
 
-The final localized and formatted head requires one permanent read-only CI run before review or merge.
+The final localized and formatted head requires one permanent read-only CI run before the draft moves to review.
 
 ## Known issues and blockers
 
@@ -99,7 +99,7 @@ These are remote-integration or later-feature blockers. They do not invalidate t
 
 ## Next tasks
 
-1. Obtain a final green read-only CI run on the fully localized PR #36 head and squash merge it.
+1. Obtain a final green read-only CI run on the fully localized PR #36 head and move the draft to review.
 2. Continue issue #7 with private company-document upload, requirement resolution, authorized retrieval and reviewer decisions.
 3. Continue issue #8 with the central Supplier activation evaluator and audited state transitions.
 4. Resolve country-code semantics in #34 and explicit multi-company selection in #35 before exposing those assumptions more broadly.
