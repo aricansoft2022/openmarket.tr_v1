@@ -1,4 +1,4 @@
-name: Prepare Supplier screen contract
+name: Prepare Supplier onboarding branch
 
 on:
   push:
@@ -8,11 +8,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: prepare-supplier-screen-contract
+  group: prepare-supplier-onboarding-branch
   cancel-in-progress: true
 
 jobs:
-  extract:
+  prepare:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -31,45 +31,21 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Materialize and extract S01-S04
+      - name: Apply deterministic integration patch
+        run: node scripts/patch-supplier-onboarding-structure.mjs
+
+      - name: Remove temporary specification evidence and workflow
         run: |
-          npm run spec:materialize
-          mkdir -p .debug
-          python - <<'PY'
-          from pathlib import Path
+          rm -rf .debug
+          rm .github/workflows/prepare-supplier-screen-contract.yml
 
-          lines = Path('spec.full.md').read_text(encoding='utf-8').splitlines()
-          needles = ('S01', 'S02', 'S03', 'S04', 'Supplier onboarding', 'Supplier type selection', 'ProductionCapabilityForm')
-          matches = [
-              index for index, line in enumerate(lines)
-              if any(needle.casefold() in line.casefold() for needle in needles)
-          ]
-          if not matches:
-              raise SystemExit('No S01-S04 contract found.')
+      - name: Format repository
+        run: npm run format
 
-          windows = []
-          for index in matches:
-              start = max(0, index - 40)
-              end = min(len(lines), index + 100)
-              if windows and start <= windows[-1][1]:
-                  windows[-1] = (windows[-1][0], max(windows[-1][1], end))
-              else:
-                  windows.append((start, end))
-
-          output = ['# Supplier S01-S04 source contract', '']
-          for start, end in windows:
-              output.append(f'## Source lines {start + 1}-{end}')
-              output.append('')
-              output.extend(f'{number:05d}: {lines[number - 1]}' for number in range(start + 1, end + 1))
-              output.append('')
-
-          Path('.debug/supplier-s01-s04.md').write_text('\n'.join(output), encoding='utf-8')
-          PY
-
-      - name: Commit extracted contract
+      - name: Commit prepared branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .debug/supplier-s01-s04.md
-          git diff --cached --quiet || git commit -m "chore: capture Supplier S01-S04 contract"
+          git add -A
+          git diff --cached --quiet || git commit -m "feat: integrate Supplier onboarding S01-S04"
           git push origin HEAD:agent/supplier-onboarding-screens
