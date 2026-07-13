@@ -16,7 +16,16 @@ export const supplierDocumentPermissions = [
 ] as const;
 export type SupplierDocumentPermission = (typeof supplierDocumentPermissions)[number];
 
-export type PlatformReviewPermission = BusinessIdentityPermission | SupplierDocumentPermission;
+export const supplierActivationPermissions = [
+  "supplier_activation.suspend",
+  "supplier_activation.reactivate",
+] as const;
+export type SupplierActivationPermission = (typeof supplierActivationPermissions)[number];
+
+export type PlatformReviewPermission =
+  | BusinessIdentityPermission
+  | SupplierDocumentPermission
+  | SupplierActivationPermission;
 
 export const businessIdentityReviewerRoles = [
   "super_admin",
@@ -40,8 +49,16 @@ export const staffManagerRoles = [
 export type StaffManagerRole = (typeof staffManagerRoles)[number];
 
 const reviewPermissionMatrix: Record<PlatformStaffRole, readonly PlatformReviewPermission[]> = {
-  super_admin: [...businessIdentityPermissions, ...supplierDocumentPermissions],
-  platform_admin: [...businessIdentityPermissions, ...supplierDocumentPermissions],
+  super_admin: [
+    ...businessIdentityPermissions,
+    ...supplierDocumentPermissions,
+    ...supplierActivationPermissions,
+  ],
+  platform_admin: [
+    ...businessIdentityPermissions,
+    ...supplierDocumentPermissions,
+    ...supplierActivationPermissions,
+  ],
   compliance_reviewer: [...businessIdentityPermissions, ...supplierDocumentPermissions],
   catalogue_content_editor: [],
   product_rfq_moderator: [],
