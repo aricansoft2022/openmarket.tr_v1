@@ -79,7 +79,7 @@ npm run db:verify:supplier-company                PASS
 
 The Supplier onboarding unit evidence covers dependency blocking, incomplete document activation, localized checklist copy, repeated checkbox normalization, optional-field normalization, founded-year parsing and export-market normalization. The existing PostgreSQL Supplier gate continues to prove verified-identity binding, membership isolation, viewer denial, seeded-catalogue enforcement, deterministic completeness and immutable profile-update audits.
 
-A final read-only CI run is still required after the documentation-only completion commits.
+The formatted documentation head must pass one final read-only CI run before review.
 
 ## Known issues and blockers
 
