@@ -38,10 +38,6 @@ patch("app/lib/db/schema/supplier-documents.ts", [
 
 patch("app/lib/supplier/documents/service.server.ts", [
   [
-    `import { and, asc, desc, eq, inArray, max, ne, or, sql } from "drizzle-orm";`,
-    `import { and, asc, desc, eq, max, ne, sql } from "drizzle-orm";`,
-  ],
-  [
     `export async function recordSupplierDocumentScanResult(
   database: Database,
   input: {
@@ -73,8 +69,7 @@ patch("app/lib/supplier/documents/service.server.ts", [
     .set({
       scanStatus: input.result,
       scanNote: input.result === "clean" ? null : note,
-      evidenceStatus:
-        input.result === "clean" ? "uploaded" : ("replacement_required" as const),
+      evidenceStatus: input.result === "clean" ? "uploaded" : ("replacement_required" as const),
       submittedAt: input.result === "clean" ? null : now,
       publicVisible: false,
       updatedAt: now,
@@ -160,7 +155,11 @@ patch("app/lib/supplier/documents/service.server.ts", [
 }`,
   ],
   [
-    `      if (!inArray(["uploaded", "rejected", "replacement_required"], document.evidenceStatus)) {`,
+    `      if (
+        !(["uploaded", "rejected", "replacement_required"] as const).includes(
+          document.evidenceStatus as "uploaded" | "rejected" | "replacement_required",
+        )
+      ) {`,
     `      if (document.evidenceStatus !== "uploaded") {`,
   ],
   [
