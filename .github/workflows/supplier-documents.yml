@@ -159,7 +159,7 @@ jobs:
       - name: Run Supplier document unit tests
         run: |
           set +e
-          npm run test:run -- app/lib/supplier/documents app/lib/authorization/platform-staff.test.ts app/routes.test.ts > /tmp/supplier-document-tests.log 2>&1
+          npm run test:run > /tmp/supplier-document-tests.log 2>&1
           status=$?
           set -e
           cat /tmp/supplier-document-tests.log
