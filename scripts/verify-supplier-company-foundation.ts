@@ -186,7 +186,7 @@ try {
 
   const created = await createSupplierCompany(environment, ownerRequest, completeProfile);
   createdCompanyIds.push(created.company.id);
-  assert.equal(created.company.status, "supplier_draft");
+  assert.equal(created.company.status, "company_documents_required");
   assert.equal(created.company.businessIdentityReviewId, identity.reviewId);
   assert.equal(created.membershipRole, "owner");
   assert.deepEqual(created.completeness, { complete: true, missing: [] });
@@ -201,7 +201,7 @@ try {
   const loaded = await loadSupplierCompanyState(environment, ownerRequest, created.company.id);
   assert.equal(loaded?.company.id, created.company.id);
   assert.equal(loaded?.company.businessIdentityReviewId, identity.reviewId);
-  assert.equal(loaded?.company.status, "supplier_draft");
+  assert.equal(loaded?.company.status, "company_documents_required");
 
   const outsider = await loadSupplierCompanyState(
     environment,
@@ -282,7 +282,7 @@ try {
     created.company.id,
     completeProfile,
   );
-  assert.equal(completeAgain.company.status, "supplier_draft");
+  assert.equal(completeAgain.company.status, "company_documents_required");
   assert.equal(completeAgain.completeness.complete, true);
 
   const evidence = await client.query(
@@ -307,7 +307,7 @@ try {
     [created.company.id, owner.id],
   );
   assert.deepEqual(evidence.rows[0], {
-    status: "supplier_draft",
+    status: "company_documents_required",
     business_identity_review_id: identity.reviewId,
     role: "owner",
     supplier_types: 1,
@@ -329,6 +329,35 @@ try {
   const createAudit = auditEvidence.rows.find((row) => row.action === "supplier.company.created");
   assert.equal(createAudit?.new_value.businessIdentityReviewId, identity.reviewId);
 
+  const activationTransitions = auditEvidence.rows.filter(
+    (row) => row.action === "supplier.activation.status_changed",
+  );
+  assert.deepEqual(
+    activationTransitions.map((row) => [row.old_value.status, row.new_value.status]),
+    [
+      ["supplier_draft", "company_documents_required"],
+      ["company_documents_required", "supplier_draft"],
+      ["supplier_draft", "company_documents_required"],
+    ],
+  );
+
+  const activationOutbox = await client.query(
+    `
+      select event_type, payload
+      from outbox_events
+      where aggregate_type = 'supplier_company'
+        and aggregate_id = $1
+        and event_type = 'supplier.activation.status_changed'
+      order by created_at, id
+    `,
+    [created.company.id],
+  );
+  assert.equal(activationOutbox.rowCount, 3);
+  assert.deepEqual(
+    activationOutbox.rows.map((row) => row.payload.nextStatus),
+    ["company_documents_required", "supplier_draft", "company_documents_required"],
+  );
+
   const editorAudit = auditEvidence.rows.find(
     (row) =>
       row.action === "supplier.company.profile_updated" &&
@@ -344,7 +373,7 @@ try {
   assert.equal(editorAudit.new_value.businessIdentityReviewId, identity.reviewId);
 
   console.log(
-    "Supplier company foundation verified: literal taxonomy constraints, supplier intent and identity-bound evidence gates, owner creation, membership isolation, viewer denial, legal-name drift denial, editor update, seeded taxonomy enforcement, deterministic completeness, draft-state preservation and reconstructable immutable audit evidence passed.",
+    "Supplier company foundation verified: literal taxonomy constraints, supplier intent and identity-bound evidence gates, owner creation, membership isolation, viewer denial, legal-name drift denial, editor update, seeded taxonomy enforcement, deterministic completeness, activation prerequisite transitions, transactional outbox events and reconstructable immutable audit evidence passed.",
   );
 } finally {
   if (createdCompanyIds.length > 0) {
