@@ -24,10 +24,7 @@ export type SupplierActivationAdminEnvironment = AuthEnvironment;
 export class SupplierActivationActionError extends Error {
   constructor(
     public readonly code:
-      | "UNAUTHENTICATED"
-      | "COMPANY_NOT_FOUND"
-      | "INVALID_TRANSITION"
-      | "REASON_REQUIRED",
+      "UNAUTHENTICATED" | "COMPANY_NOT_FOUND" | "INVALID_TRANSITION" | "REASON_REQUIRED",
     message: string,
   ) {
     super(message);
@@ -140,7 +137,10 @@ export async function suspendSupplierCompany(
         .limit(1)
         .for("update");
       if (!company) {
-        throw new SupplierActivationActionError("COMPANY_NOT_FOUND", "Supplier company was not found.");
+        throw new SupplierActivationActionError(
+          "COMPANY_NOT_FOUND",
+          "Supplier company was not found.",
+        );
       }
       if (company.status === "suspended_supplier") return company.status;
 
@@ -186,7 +186,10 @@ export async function reactivateSupplierCompany(
         .limit(1)
         .for("update");
       if (!company) {
-        throw new SupplierActivationActionError("COMPANY_NOT_FOUND", "Supplier company was not found.");
+        throw new SupplierActivationActionError(
+          "COMPANY_NOT_FOUND",
+          "Supplier company was not found.",
+        );
       }
       if (company.status !== "suspended_supplier") {
         throw new SupplierActivationActionError(
@@ -198,7 +201,10 @@ export async function reactivateSupplierCompany(
       const now = new Date();
       const evidence = await loadSupplierActivationEvidence(scoped, companyId, now);
       if (!evidence) {
-        throw new SupplierActivationActionError("COMPANY_NOT_FOUND", "Supplier company was not found.");
+        throw new SupplierActivationActionError(
+          "COMPANY_NOT_FOUND",
+          "Supplier company was not found.",
+        );
       }
       const evaluation = evaluateSupplierActivation({
         ...evidence,

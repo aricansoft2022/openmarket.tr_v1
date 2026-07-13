@@ -23,9 +23,7 @@ export const supplierActivationPermissions = [
 export type SupplierActivationPermission = (typeof supplierActivationPermissions)[number];
 
 export type PlatformReviewPermission =
-  | BusinessIdentityPermission
-  | SupplierDocumentPermission
-  | SupplierActivationPermission;
+  BusinessIdentityPermission | SupplierDocumentPermission | SupplierActivationPermission;
 
 export const businessIdentityReviewerRoles = [
   "super_admin",
