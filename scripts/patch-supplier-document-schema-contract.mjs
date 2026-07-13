@@ -83,14 +83,12 @@ replace(
   `    const result = await requireStaffPermission(database, env, request, "supplier_document.review.list");`,
   `    const session = await currentSession(database, env, request);\n    if (!session) return null;\n    const actorRole = await requireStaffPermission(\n      database,\n      session.user.id,\n      "supplier_document.review.list",\n    );`,
 );
-source = source.replaceAll(
-  `actor: { id: result.actor.id, role: result.actor.role as PlatformStaffRole },`,
-  `actor: { id: session.user.id, role: actorRole as PlatformStaffRole },`,
-);
 replace(
   `    const result = await requireStaffPermission(database, env, request, "supplier_document.review.read");`,
   `    const session = await currentSession(database, env, request);\n    if (!session) return null;\n    const actorRole = await requireStaffPermission(\n      database,\n      session.user.id,\n      "supplier_document.review.read",\n    );`,
 );
+source = source.replaceAll("result.actor.id", "session.user.id");
+source = source.replaceAll("result.actor.role", "actorRole");
 
 source = source.replaceAll(
   "reviewedBy: supplierDocumentReviewEvents.reviewedBy,",
