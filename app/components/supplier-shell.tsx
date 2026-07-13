@@ -1,49 +1,45 @@
 import type { ReactNode } from "react";
 import { Link, isRouteErrorResponse } from "react-router";
 
-import type { SupplierMembershipRole, SupplierWorkspaceStatus } from "~/lib/db/schema";
+import type {
+  PreferredLanguage,
+  SupplierMembershipRole,
+  SupplierWorkspaceStatus,
+} from "~/lib/db/schema";
+import { supplierCopy } from "~/lib/supplier/copy";
 
 const navigation = [
-  { id: "S01", label: "Genel bakış", href: "/supplier" },
-  { id: "S02", label: "Onboarding", href: "/supplier/onboarding" },
-  { id: "S03", label: "Şirket profili", href: "/supplier/company" },
-  { id: "S04", label: "Türler ve kabiliyetler", href: "/supplier/capabilities" },
+  { id: "S01", key: "overview", href: "/supplier" },
+  { id: "S02", key: "onboarding", href: "/supplier/onboarding" },
+  { id: "S03", key: "company", href: "/supplier/company" },
+  { id: "S04", key: "capabilities", href: "/supplier/capabilities" },
 ] as const;
-
-const statusLabels: Record<SupplierWorkspaceStatus, string> = {
-  supplier_draft: "Tedarikçi taslağı",
-  company_documents_required: "Şirket belgeleri gerekli",
-  company_documents_pending: "Şirket belgeleri inceleniyor",
-  company_documents_rejected: "Şirket belgeleri reddedildi",
-  active_supplier: "Aktif tedarikçi",
-  reactivation_required: "Yeniden aktivasyon gerekli",
-  suspended_supplier: "Tedarikçi askıya alındı",
-};
-
-const roleLabels: Record<SupplierMembershipRole, string> = {
-  owner: "Sahip",
-  admin: "Yönetici",
-  editor: "Editör",
-  viewer: "Görüntüleyici",
-};
 
 export function SupplierShell({
   current,
+  language = "tr",
   companyName,
   status,
   membershipRole,
   children,
 }: {
   current: "S01" | "S02" | "S03" | "S04";
+  language?: PreferredLanguage;
   companyName?: string | null;
   status?: SupplierWorkspaceStatus | null;
   membershipRole?: SupplierMembershipRole | null;
   children: ReactNode;
 }) {
+  const copy = supplierCopy(language).shell;
+
   return (
-    <main className="supplier-layout">
+    <main className="supplier-layout" lang={language}>
       <header className="supplier-header">
-        <Link className="brand" to="/" aria-label="OpenMarket.tr ana sayfa">
+        <Link
+          className="brand"
+          to="/"
+          aria-label={language === "tr" ? "OpenMarket.tr ana sayfa" : "OpenMarket.tr home"}
+        >
           <span className="woven-mark" aria-hidden="true">
             <i />
             <i />
@@ -54,8 +50,8 @@ export function SupplierShell({
           OpenMarket<span className="brand__dot">.tr</span>
         </Link>
         <div className="supplier-header__identity">
-          <span>{companyName || "Tedarikçi çalışma alanı"}</span>
-          {membershipRole ? <small>{roleLabels[membershipRole]}</small> : null}
+          <span>{companyName || copy.workspace}</span>
+          {membershipRole ? <small>{copy.roles[membershipRole]}</small> : null}
         </div>
       </header>
 
@@ -63,9 +59,9 @@ export function SupplierShell({
         <aside className="supplier-sidebar">
           <div className="supplier-sidebar__title">
             <p className="eyebrow">Supplier workspace</p>
-            <strong>{status ? statusLabels[status] : "Kurulum bekleniyor"}</strong>
+            <strong>{status ? copy.statuses[status] : copy.statuses.notCreated}</strong>
           </div>
-          <nav aria-label="Tedarikçi çalışma alanı">
+          <nav aria-label={copy.workspace}>
             <ul>
               {navigation.map((item) => (
                 <li key={item.id}>
@@ -75,18 +71,15 @@ export function SupplierShell({
                     to={item.href}
                   >
                     <span>{item.id}</span>
-                    {item.label}
+                    {copy[item.key]}
                   </Link>
                 </li>
               ))}
             </ul>
           </nav>
           <div className="supplier-sidebar__notice">
-            <strong>Aktivasyon sınırı</strong>
-            <p>
-              Profil hazırlığı ticari yetki vermez. Belge onayı tamamlanmadan ürün yayınlama ve RFQ
-              yanıtlama kapalıdır.
-            </p>
+            <strong>{copy.activationBoundary}</strong>
+            <p>{copy.activationNotice}</p>
           </div>
         </aside>
         <section className="supplier-main">{children}</section>
@@ -95,14 +88,22 @@ export function SupplierShell({
   );
 }
 
-export function SupplierRouteFallback({ current }: { current: "S01" | "S02" | "S03" | "S04" }) {
+export function SupplierRouteFallback({
+  current,
+  language = "tr",
+}: {
+  current: "S01" | "S02" | "S03" | "S04";
+  language?: PreferredLanguage;
+}) {
+  const copy = supplierCopy(language).shell;
+
   return (
-    <SupplierShell current={current}>
+    <SupplierShell current={current} language={language}>
       <section className="supplier-page" aria-busy="true">
         <div className="supplier-page__heading">
-          <p className="eyebrow">Yükleniyor</p>
-          <h1>Tedarikçi çalışma alanı hazırlanıyor</h1>
-          <p>Şirket, üyelik ve katalog bilgileri güvenli biçimde yükleniyor.</p>
+          <p className="eyebrow">{copy.loadingEyebrow}</p>
+          <h1>{copy.loadingTitle}</h1>
+          <p>{copy.loadingDescription}</p>
         </div>
         <div className="supplier-skeleton" aria-hidden="true">
           <i />
@@ -116,28 +117,31 @@ export function SupplierRouteFallback({ current }: { current: "S01" | "S02" | "S
 
 export function SupplierRouteError({
   current,
+  language = "tr",
   error,
 }: {
   current: "S01" | "S02" | "S03" | "S04";
+  language?: PreferredLanguage;
   error: unknown;
 }) {
+  const copy = supplierCopy(language).shell;
   const message = isRouteErrorResponse(error)
-    ? error.statusText || "İstek tamamlanamadı."
-    : "Tedarikçi çalışma alanı yüklenemedi. Lütfen yeniden deneyin.";
+    ? error.statusText || copy.errorDescription
+    : copy.errorDescription;
 
   return (
-    <SupplierShell current={current}>
+    <SupplierShell current={current} language={language}>
       <section className="supplier-page">
         <div className="supplier-state supplier-state--error" role="alert">
-          <p className="eyebrow">Hata durumu</p>
-          <h1>Bu ekran şu anda açılamıyor</h1>
+          <p className="eyebrow">{copy.errorEyebrow}</p>
+          <h1>{copy.errorTitle}</h1>
           <p>{message}</p>
           <div className="supplier-actions">
             <Link className="button button--primary" to="/supplier">
-              Genel bakışa dön
+              {copy.overviewAction}
             </Link>
             <Link className="button button--secondary" to="/account/security">
-              Hesap güvenliği
+              {copy.securityAction}
             </Link>
           </div>
         </div>
