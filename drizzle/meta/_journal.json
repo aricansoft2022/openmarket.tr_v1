@@ -50,6 +50,13 @@
       "when": 1783893503981,
       "tag": "0006_massive_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783933380355,
+      "tag": "0007_perpetual_excalibur",
+      "breakpoints": true
     }
   ]
 }

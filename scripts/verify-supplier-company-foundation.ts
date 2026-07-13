@@ -335,9 +335,7 @@ try {
     `,
     [created.company.id],
   );
-  const createAudit = auditEvidence.rows.find(
-    (row) => row.action === "supplier.company.created",
-  );
+  const createAudit = auditEvidence.rows.find((row) => row.action === "supplier.company.created");
   assert.equal(createAudit?.new_value.businessIdentityReviewId, identity.reviewId);
 
   const editorAudit = auditEvidence.rows.find(
