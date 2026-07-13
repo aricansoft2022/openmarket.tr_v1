@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { createAuth, type AuthEnvironment } from "../auth/create-auth.server";
 import type { Database } from "../db/client.server";
@@ -33,6 +33,7 @@ export type SupplierCompanyState = {
   company: {
     id: string;
     status: SupplierWorkspaceStatus;
+    businessIdentityReviewId: string;
     legalName: string;
     tradingName: string | null;
     countryCode: string;
@@ -55,6 +56,7 @@ export class SupplierProfileActionError extends Error {
       | "UNAUTHENTICATED"
       | "SUPPLIER_INTENT_REQUIRED"
       | "BUSINESS_IDENTITY_REQUIRED"
+      | "BUSINESS_IDENTITY_MISMATCH"
       | "SUPPLIER_COMPANY_EXISTS"
       | "SUPPLIER_COMPANY_NOT_FOUND"
       | "FORBIDDEN"
@@ -71,6 +73,10 @@ function requestId(request: Request): string | undefined {
   return request.headers.get("cf-ray") ?? request.headers.get("x-request-id") ?? undefined;
 }
 
+function comparableCompanyName(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+}
+
 async function currentSession(
   database: Database,
   env: SupplierProfileEnvironment,
@@ -80,7 +86,11 @@ async function currentSession(
   return auth.api.getSession({ headers: request.headers });
 }
 
-async function requireSupplierEligibility(database: Database, userId: string): Promise<void> {
+async function requireSupplierEligibility(
+  database: Database,
+  userId: string,
+  legalName: string,
+): Promise<{ id: string; companyName: string }> {
   const [preferences] = await database
     .select({ intendedUse: userPreferences.intendedUse })
     .from(userPreferences)
@@ -97,8 +107,11 @@ async function requireSupplierEligibility(database: Database, userId: string): P
     );
   }
 
-  const [verifiedIdentity] = await database
-    .select({ id: businessIdentityReviews.id })
+  const verifiedIdentities = await database
+    .select({
+      id: businessIdentityReviews.id,
+      companyName: businessIdentityReviews.companyName,
+    })
     .from(businessIdentityReviews)
     .where(
       and(
@@ -106,12 +119,53 @@ async function requireSupplierEligibility(database: Database, userId: string): P
         eq(businessIdentityReviews.status, "verified"),
       ),
     )
-    .limit(1);
+    .orderBy(desc(businessIdentityReviews.reviewedAt), desc(businessIdentityReviews.id));
 
-  if (!verifiedIdentity) {
+  if (verifiedIdentities.length === 0) {
     throw new SupplierProfileActionError(
       "BUSINESS_IDENTITY_REQUIRED",
       "Verified business identity is required before creating a supplier company.",
+    );
+  }
+
+  const expectedName = comparableCompanyName(legalName);
+  const matchingIdentity = verifiedIdentities.find(
+    (identity) => comparableCompanyName(identity.companyName) === expectedName,
+  );
+  if (!matchingIdentity) {
+    throw new SupplierProfileActionError(
+      "BUSINESS_IDENTITY_MISMATCH",
+      "Supplier legal name must match a verified business identity.",
+    );
+  }
+
+  return matchingIdentity;
+}
+
+async function requireBoundIdentityName(
+  database: Database,
+  reviewId: string,
+  legalName: string,
+): Promise<void> {
+  const [identity] = await database
+    .select({
+      status: businessIdentityReviews.status,
+      companyName: businessIdentityReviews.companyName,
+    })
+    .from(businessIdentityReviews)
+    .where(eq(businessIdentityReviews.id, reviewId))
+    .limit(1);
+
+  if (!identity || identity.status !== "verified") {
+    throw new SupplierProfileActionError(
+      "BUSINESS_IDENTITY_REQUIRED",
+      "The Supplier company must remain linked to verified business identity evidence.",
+    );
+  }
+  if (comparableCompanyName(identity.companyName) !== comparableCompanyName(legalName)) {
+    throw new SupplierProfileActionError(
+      "BUSINESS_IDENTITY_MISMATCH",
+      "Changing the Supplier legal name requires a matching verified business identity.",
     );
   }
 }
@@ -212,6 +266,7 @@ async function companyState(
     .select({
       id: supplierCompanies.id,
       status: supplierCompanies.status,
+      businessIdentityReviewId: supplierCompanies.businessIdentityReviewId,
       legalName: supplierCompanies.legalName,
       tradingName: supplierCompanies.tradingName,
       countryCode: supplierCompanies.countryCode,
@@ -274,6 +329,7 @@ async function companyState(
     company: {
       id: row.id,
       status: row.status,
+      businessIdentityReviewId: row.businessIdentityReviewId,
       legalName: row.legalName,
       tradingName: row.tradingName,
       countryCode: row.countryCode,
@@ -288,6 +344,25 @@ async function companyState(
     productionCapabilityKeys,
     exportMarketCountryCodes,
     completeness: evaluateSupplierProfileCompleteness(profile),
+  };
+}
+
+function supplierProfileAuditValue(state: SupplierCompanyState) {
+  return {
+    status: state.company.status,
+    businessIdentityReviewId: state.company.businessIdentityReviewId,
+    legalName: state.company.legalName,
+    tradingName: state.company.tradingName,
+    countryCode: state.company.countryCode,
+    city: state.company.city,
+    website: state.company.website,
+    description: state.company.description,
+    foundedYear: state.company.foundedYear,
+    supplierTypeKeys: state.supplierTypeKeys,
+    applicationContextKeys: state.applicationContextKeys,
+    productionCapabilityKeys: state.productionCapabilityKeys,
+    exportMarketCountryCodes: state.exportMarketCountryCodes,
+    completeness: state.completeness,
   };
 }
 
@@ -321,7 +396,11 @@ export async function createSupplierCompany(
       await scoped.execute(
         sql`select ${user.id} from ${user} where ${user.id} = ${session.user.id} for update`,
       );
-      await requireSupplierEligibility(scoped, session.user.id);
+      const verifiedIdentity = await requireSupplierEligibility(
+        scoped,
+        session.user.id,
+        profile.legalName,
+      );
       await requireSeededSelections(
         scoped,
         profile.supplierTypeKeys,
@@ -350,6 +429,7 @@ export async function createSupplierCompany(
       const [company] = await scoped
         .insert(supplierCompanies)
         .values({
+          businessIdentityReviewId: verifiedIdentity.id,
           legalName: profile.legalName,
           tradingName: profile.tradingName,
           countryCode: profile.countryCode,
@@ -374,27 +454,19 @@ export async function createSupplierCompany(
       });
       await replaceProfileSelections(scoped, company!.id, profile);
 
+      const createdState = (await companyState(scoped, session.user.id, company!.id))!;
       await scoped.insert(auditLogs).values({
         actorId: session.user.id,
         effectiveRole: "supplier_owner",
         resourceType: "supplier_company",
         resourceId: company!.id,
         action: "supplier.company.created",
-        newValue: {
-          status: "supplier_draft",
-          legalName: profile.legalName,
-          countryCode: profile.countryCode,
-          supplierTypeKeys: profile.supplierTypeKeys,
-          applicationContextKeys: profile.applicationContextKeys,
-          productionCapabilityKeys: profile.productionCapabilityKeys,
-          exportMarketCountryCodes: profile.exportMarketCountryCodes,
-          completeness: evaluateSupplierProfileCompleteness(profile),
-        },
-        reason: "Verified business account created a supplier company draft",
+        newValue: supplierProfileAuditValue(createdState),
+        reason: "Verified business account created an identity-bound supplier company draft",
         requestId: requestId(request),
       });
 
-      return (await companyState(scoped, session.user.id, company!.id))!;
+      return createdState;
     }),
   );
 }
@@ -445,7 +517,10 @@ export async function updateSupplierCompanyProfile(
         profile.productionCapabilityKeys,
       );
       const [company] = await scoped
-        .select({ status: supplierCompanies.status })
+        .select({
+          status: supplierCompanies.status,
+          businessIdentityReviewId: supplierCompanies.businessIdentityReviewId,
+        })
         .from(supplierCompanies)
         .where(eq(supplierCompanies.id, companyId))
         .limit(1)
@@ -454,6 +529,15 @@ export async function updateSupplierCompanyProfile(
         throw new SupplierProfileActionError(
           "SUPPLIER_COMPANY_NOT_FOUND",
           "Supplier company was not found.",
+        );
+      }
+
+      await requireBoundIdentityName(scoped, company.businessIdentityReviewId, profile.legalName);
+      const oldState = await companyState(scoped, session.user.id, companyId);
+      if (!oldState) {
+        throw new SupplierProfileActionError(
+          "SUPPLIER_COMPANY_NOT_FOUND",
+          "Supplier company was not found for the current account.",
         );
       }
 
@@ -472,26 +556,26 @@ export async function updateSupplierCompanyProfile(
         .where(eq(supplierCompanies.id, companyId));
       await replaceProfileSelections(scoped, companyId, profile);
 
-      const completeness = evaluateSupplierProfileCompleteness(profile);
+      const updatedState = await companyState(scoped, session.user.id, companyId);
+      if (!updatedState) {
+        throw new SupplierProfileActionError(
+          "SUPPLIER_COMPANY_NOT_FOUND",
+          "Supplier company was not found after the profile update.",
+        );
+      }
       await scoped.insert(auditLogs).values({
         actorId: session.user.id,
         effectiveRole: `supplier_${membership.role}`,
         resourceType: "supplier_company",
         resourceId: companyId,
         action: "supplier.company.profile_updated",
-        newValue: {
-          status: company.status,
-          supplierTypeKeys: profile.supplierTypeKeys,
-          applicationContextKeys: profile.applicationContextKeys,
-          productionCapabilityKeys: profile.productionCapabilityKeys,
-          exportMarketCountryCodes: profile.exportMarketCountryCodes,
-          completeness,
-        },
-        reason: "Authorized supplier member updated the company profile",
+        oldValue: supplierProfileAuditValue(oldState),
+        newValue: supplierProfileAuditValue(updatedState),
+        reason: "Authorized supplier member updated the identity-bound company profile",
         requestId: requestId(request),
       });
 
-      return (await companyState(scoped, session.user.id, companyId))!;
+      return updatedState;
     }),
   );
 }
