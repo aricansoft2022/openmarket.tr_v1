@@ -43,7 +43,7 @@
   flex-direction: column;
   padding: 2rem 1rem;
   border-right: 1px solid var(--color-line);
-  background: var(--color-paper-soft);
+  background: var(--color-paper-alt);
 }
 
 .supplier-sidebar__title {
@@ -166,7 +166,7 @@
 }
 
 .supplier-state--error {
-  border-left: 0.35rem solid var(--color-danger);
+  border-left: 0.35rem solid var(--color-clay-dark);
 }
 
 .supplier-state--empty {
@@ -520,7 +520,7 @@
 }
 
 .supplier-field em {
-  color: var(--color-danger);
+  color: var(--color-clay-dark);
   font-size: 0.82rem;
   font-style: normal;
 }
@@ -659,7 +659,7 @@
   display: block;
   height: 7rem;
   border: 1px solid var(--color-line);
-  background: var(--color-paper-soft);
+  background: var(--color-paper-alt);
 }
 
 @media (max-width: 960px) {

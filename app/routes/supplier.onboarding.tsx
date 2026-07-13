@@ -36,6 +36,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
 export default function SupplierOnboarding({ loaderData }: Route.ComponentProps) {
   const checklist = buildSupplierOnboardingChecklist({
+    language: loaderData.preferredLanguage,
     businessIdentityVerified: loaderData.businessIdentityVerified,
     company: loaderData.company,
   });
@@ -46,6 +47,7 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
   return (
     <SupplierShell
       current="S02"
+      language={loaderData.preferredLanguage}
       companyName={loaderData.company?.company.legalName ?? loaderData.verifiedCompanyName}
       status={loaderData.company?.company.status}
       membershipRole={loaderData.company?.membershipRole}
@@ -62,7 +64,9 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
           </div>
           <div className="supplier-progress-number">
             <strong>%{progress.percent}</strong>
-            <span>{progress.complete}/{progress.total} tamamlandı</span>
+            <span>
+              {progress.complete}/{progress.total} tamamlandı
+            </span>
           </div>
         </div>
 
@@ -94,7 +98,11 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
           {checklist.map((item) => (
             <section className="supplier-checklist-card" key={item.id}>
               <div className="supplier-checklist-card__status">
-                <span className={item.complete ? "is-complete" : item.blocked ? "is-blocked" : "is-open"}>
+                <span
+                  className={
+                    item.complete ? "is-complete" : item.blocked ? "is-blocked" : "is-open"
+                  }
+                >
                   {item.complete ? "Tamamlandı" : item.blocked ? "Bloke" : "Açık"}
                 </span>
               </div>
@@ -112,13 +120,21 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
         <section className="supplier-blocking-panel">
           <div>
             <p className="eyebrow">Blocking issue panel</p>
-            <h2>{blockers.length === 0 ? "Aktivasyon engeli yok" : `${blockers.length} açık engel var`}</h2>
+            <h2>
+              {blockers.length === 0
+                ? "Aktivasyon engeli yok"
+                : `${blockers.length} açık engel var`}
+            </h2>
           </div>
           <ul>
             {blockers.map((item) => (
               <li key={item.id}>
                 <strong>{item.label}</strong>
-                <span>{item.blocked ? "Önceki bağımlılık veya sonraki modül bekleniyor." : "Kullanıcı işlemi gerekli."}</span>
+                <span>
+                  {item.blocked
+                    ? "Önceki bağımlılık veya sonraki modül bekleniyor."
+                    : "Kullanıcı işlemi gerekli."}
+                </span>
               </li>
             ))}
           </ul>
@@ -126,7 +142,9 @@ export default function SupplierOnboarding({ loaderData }: Route.ComponentProps)
 
         <div className="supplier-continue-bar">
           <div>
-            <strong>Supplier durumu: {loaderData.company?.company.status ?? "supplier_not_created"}</strong>
+            <strong>
+              Supplier durumu: {loaderData.company?.company.status ?? "supplier_not_created"}
+            </strong>
             <p>Checklist tamamlanması tek başına aktivasyon kararı üretmez.</p>
           </div>
           {nextAction?.href ? (

@@ -1,4 +1,5 @@
 import type { AuthEnvironment } from "../auth/create-auth.server";
+import type { PreferredLanguage } from "../db/schema";
 import { loadOnboardingState } from "../business-identity/onboarding.server";
 import { membershipCanEditSupplierProfile } from "./profile";
 import { loadSupplierCompanyState } from "./profile.server";
@@ -13,6 +14,7 @@ export type SupplierOnboardingRouteContext = {
     emailVerified: boolean;
   };
   intendedUse: "buyer" | "supplier" | "both";
+  preferredLanguage: PreferredLanguage;
   hasSupplierIntent: boolean;
   businessIdentityVerified: boolean;
   verifiedCompanyName: string | null;
@@ -40,9 +42,12 @@ export async function loadSupplierOnboardingRouteContext(
   return {
     account: onboarding.user,
     intendedUse: onboarding.intendedUse,
+    preferredLanguage: onboarding.preferredLanguage,
     hasSupplierIntent,
     businessIdentityVerified,
-    verifiedCompanyName: businessIdentityVerified ? onboarding.latestReview?.companyName ?? null : null,
+    verifiedCompanyName: businessIdentityVerified
+      ? (onboarding.latestReview?.companyName ?? null)
+      : null,
     company,
     canEditCompany: company
       ? membershipCanEditSupplierProfile(company.membershipRole)

@@ -43,8 +43,8 @@ export function buildSupplierOnboardingChecklist(input: {
   const hasCompany = Boolean(input.company);
   const hasSelections = Boolean(
     input.company &&
-      input.company.supplierTypeKeys.length > 0 &&
-      input.company.applicationContextKeys.length > 0,
+    input.company.supplierTypeKeys.length > 0 &&
+    input.company.applicationContextKeys.length > 0,
   );
 
   return [
@@ -73,9 +73,7 @@ export function buildSupplierOnboardingChecklist(input: {
     {
       id: "capabilities",
       label: copy.capabilities.label,
-      description: hasSelections
-        ? copy.capabilities.complete
-        : copy.capabilities.incomplete,
+      description: hasSelections ? copy.capabilities.complete : copy.capabilities.incomplete,
       complete: hasSelections,
       blocked: !hasCompany,
       href: hasCompany ? "/supplier/capabilities" : null,

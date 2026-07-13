@@ -36,7 +36,9 @@ describe("supplier onboarding policy", () => {
       company: null,
     });
 
-    expect(checklist.map(({ id, complete, blocked, href }) => ({ id, complete, blocked, href }))).toEqual([
+    expect(
+      checklist.map(({ id, complete, blocked, href }) => ({ id, complete, blocked, href })),
+    ).toEqual([
       {
         id: "identity",
         complete: false,

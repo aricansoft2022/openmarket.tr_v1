@@ -35,6 +35,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
 export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
   const checklist = buildSupplierOnboardingChecklist({
+    language: loaderData.preferredLanguage,
     businessIdentityVerified: loaderData.businessIdentityVerified,
     company: loaderData.company,
   });
@@ -43,6 +44,7 @@ export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
   return (
     <SupplierShell
       current="S01"
+      language={loaderData.preferredLanguage}
       companyName={loaderData.company?.company.legalName ?? loaderData.verifiedCompanyName}
       status={loaderData.company?.company.status}
       membershipRole={loaderData.company?.membershipRole}
@@ -79,8 +81,7 @@ export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
             <p className="eyebrow">Aktivasyon engeli</p>
             <h2>İş kimliği doğrulaması tamamlanmadı</h2>
             <p>
-              Supplier şirketi, yalnızca doğrulanmış iş kimliği kanıtına bağlanarak
-              oluşturulabilir.
+              Supplier şirketi, yalnızca doğrulanmış iş kimliği kanıtına bağlanarak oluşturulabilir.
             </p>
             <Link className="button button--primary" to="/onboarding/business-identity/status">
               İş kimliği durumunu görüntüle
@@ -123,11 +124,16 @@ export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
           <div className="supplier-progress-panel__header">
             <div>
               <p className="eyebrow">Onboarding progress</p>
-              <h2>{progress.complete} / {progress.total} adım tamamlandı</h2>
+              <h2>
+                {progress.complete} / {progress.total} adım tamamlandı
+              </h2>
             </div>
             <strong>%{progress.percent}</strong>
           </div>
-          <div className="supplier-progress-track" aria-label={`Onboarding ilerlemesi yüzde ${progress.percent}`}>
+          <div
+            className="supplier-progress-track"
+            aria-label={`Onboarding ilerlemesi yüzde ${progress.percent}`}
+          >
             <i style={{ width: `${progress.percent}%` }} />
           </div>
           <ol className="supplier-progress-list">
@@ -165,7 +171,9 @@ export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
           <section className="supplier-dashboard-card">
             <p className="eyebrow">Document expiry panel</p>
             <h2>Belge takibi henüz başlamadı</h2>
-            <p>Şirket belgesi yükleme, inceleme ve son-kullanma tarihi takibi issue #7’de açılacak.</p>
+            <p>
+              Şirket belgesi yükleme, inceleme ve son-kullanma tarihi takibi issue #7’de açılacak.
+            </p>
           </section>
         </div>
       </section>

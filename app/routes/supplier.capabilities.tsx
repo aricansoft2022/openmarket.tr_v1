@@ -44,7 +44,8 @@ export async function action({ request }: Route.ActionArgs) {
 
   const formData = await request.formData();
   const values = capabilityFormValues(formData);
-  const reject = (errors: SupplierFormErrors, status: number) => data({ errors, values }, { status });
+  const reject = (errors: SupplierFormErrors, status: number) =>
+    data({ errors, values }, { status });
 
   if (!context.company) {
     return reject({ form: "Önce Supplier şirket profilini oluşturun." }, 409);
@@ -71,9 +72,12 @@ export async function action({ request }: Route.ActionArgs) {
     await updateSupplierCompanyProfile(env, request, context.company.company.id, input);
     return redirect("/supplier/capabilities?saved=1");
   } catch (error) {
-    const errors = supplierFormErrors(error);
+    const errors = supplierFormErrors(error, context.preferredLanguage);
     if (errors) return reject(errors, 400);
-    return reject({ form: "Tür ve kabiliyet seçimleri kaydedilemedi. Lütfen yeniden deneyin." }, 503);
+    return reject(
+      { form: "Tür ve kabiliyet seçimleri kaydedilemedi. Lütfen yeniden deneyin." },
+      503,
+    );
   }
 }
 
@@ -100,6 +104,7 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
   return (
     <SupplierShell
       current="S04"
+      language={loaderData.preferredLanguage}
       companyName={company?.company.legalName ?? loaderData.verifiedCompanyName}
       status={company?.company.status}
       membershipRole={company?.membershipRole}
@@ -172,7 +177,11 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                       </label>
                     ))}
                   </div>
-                  {errors?.supplierTypeKeys ? <p className="field-error" role="alert">{errors.supplierTypeKeys}</p> : null}
+                  {errors?.supplierTypeKeys ? (
+                    <p className="field-error" role="alert">
+                      {errors.supplierTypeKeys}
+                    </p>
+                  ) : null}
                 </section>
 
                 <section className="supplier-form-section">
@@ -201,7 +210,9 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                     ))}
                   </div>
                   {errors?.applicationContextKeys ? (
-                    <p className="field-error" role="alert">{errors.applicationContextKeys}</p>
+                    <p className="field-error" role="alert">
+                      {errors.applicationContextKeys}
+                    </p>
                   ) : null}
                 </section>
 
@@ -234,7 +245,9 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                     ))}
                   </div>
                   {errors?.productionCapabilityKeys ? (
-                    <p className="field-error" role="alert">{errors.productionCapabilityKeys}</p>
+                    <p className="field-error" role="alert">
+                      {errors.productionCapabilityKeys}
+                    </p>
                   ) : null}
                 </section>
 

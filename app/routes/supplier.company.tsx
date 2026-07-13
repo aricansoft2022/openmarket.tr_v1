@@ -14,10 +14,7 @@ import {
   parseExportMarketCodes,
 } from "~/lib/supplier/onboarding";
 import { loadSupplierOnboardingRouteContext } from "~/lib/supplier/onboarding.server";
-import {
-  createSupplierCompany,
-  updateSupplierCompanyProfile,
-} from "~/lib/supplier/profile.server";
+import { createSupplierCompany, updateSupplierCompanyProfile } from "~/lib/supplier/profile.server";
 
 import type { Route } from "./+types/supplier.company";
 
@@ -62,7 +59,8 @@ export async function action({ request }: Route.ActionArgs) {
 
   const formData = await request.formData();
   const values = companyFormValues(formData);
-  const reject = (errors: SupplierFormErrors, status: number) => data({ errors, values }, { status });
+  const reject = (errors: SupplierFormErrors, status: number) =>
+    data({ errors, values }, { status });
 
   if (!context.hasSupplierIntent) {
     return reject({ form: "Önce Tedarikçi veya Her ikisi çalışma alanını seçin." }, 403);
@@ -96,7 +94,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
     return redirect("/supplier/company?saved=1");
   } catch (error) {
-    const errors = supplierFormErrors(error);
+    const errors = supplierFormErrors(error, context.preferredLanguage);
     if (errors) return reject(errors, 400);
     return reject({ form: "Şirket profili kaydedilemedi. Lütfen yeniden deneyin." }, 503);
   }
@@ -131,6 +129,7 @@ export default function SupplierCompanyProfile({ loaderData, actionData }: Route
   return (
     <SupplierShell
       current="S03"
+      language={loaderData.preferredLanguage}
       companyName={company?.company.legalName ?? loaderData.verifiedCompanyName}
       status={company?.company.status}
       membershipRole={company?.membershipRole}
@@ -189,8 +188,14 @@ export default function SupplierCompanyProfile({ loaderData, actionData }: Route
             <div className="supplier-form-grid">
               <label className="supplier-field supplier-field--wide">
                 <span>Yasal şirket adı</span>
-                <input name="legalName" defaultValue={values.legalName} autoComplete="organization" />
-                <small>Doğrulanmış şirket adı: {loaderData.verifiedCompanyName ?? "henüz yok"}</small>
+                <input
+                  name="legalName"
+                  defaultValue={values.legalName}
+                  autoComplete="organization"
+                />
+                <small>
+                  Doğrulanmış şirket adı: {loaderData.verifiedCompanyName ?? "henüz yok"}
+                </small>
                 {errors?.legalName ? <em role="alert">{errors.legalName}</em> : null}
               </label>
 
@@ -221,14 +226,22 @@ export default function SupplierCompanyProfile({ loaderData, actionData }: Route
 
               <label className="supplier-field supplier-field--wide">
                 <span>Web sitesi</span>
-                <input name="website" type="url" placeholder="https://" defaultValue={values.website} />
+                <input
+                  name="website"
+                  type="url"
+                  placeholder="https://"
+                  defaultValue={values.website}
+                />
                 {errors?.website ? <em role="alert">{errors.website}</em> : null}
               </label>
 
               <label className="supplier-field supplier-field--wide">
                 <span>Şirket açıklaması</span>
                 <textarea name="description" rows={6} defaultValue={values.description} />
-                <small>Ürün aileleri, hedef sektörler ve şirketin çalışma biçimini en az 20 karakterle açıklayın.</small>
+                <small>
+                  Ürün aileleri, hedef sektörler ve şirketin çalışma biçimini en az 20 karakterle
+                  açıklayın.
+                </small>
                 {errors?.description ? <em role="alert">{errors.description}</em> : null}
               </label>
 
@@ -260,7 +273,13 @@ export default function SupplierCompanyProfile({ loaderData, actionData }: Route
 
             <div className="supplier-save-bar">
               <div>
-                <strong>{readOnly ? "Salt okunur" : company ? "Mevcut şirket kaydı" : "Yeni Supplier şirketi"}</strong>
+                <strong>
+                  {readOnly
+                    ? "Salt okunur"
+                    : company
+                      ? "Mevcut şirket kaydı"
+                      : "Yeni Supplier şirketi"}
+                </strong>
                 <p>Kaydetme işlemi Supplier durumunu otomatik olarak aktifleştirmez.</p>
               </div>
               <button className="button button--primary" type="submit">

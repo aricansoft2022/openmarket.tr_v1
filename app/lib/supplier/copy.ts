@@ -121,7 +121,8 @@ const copy = {
       identity: {
         label: "Verify business identity",
         complete: "The verified company identity can be bound to the Supplier record.",
-        incomplete: "Business identity verification must finish before creating the company profile.",
+        incomplete:
+          "Business identity verification must finish before creating the company profile.",
       },
       profile: {
         label: "Complete the minimum company profile",
@@ -160,7 +161,8 @@ const copy = {
       notFound: "The Supplier company was not found or is not accessible to this account.",
       forbidden: "This membership cannot edit the Supplier profile.",
       unknownType: "One of the selected Supplier types is not in the active catalogue.",
-      unknownCapability: "One of the selected production capabilities is not in the active catalogue.",
+      unknownCapability:
+        "One of the selected production capabilities is not in the active catalogue.",
     },
   },
 } as const;
