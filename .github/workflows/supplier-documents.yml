@@ -1,26 +1,62 @@
-name: Format Supplier activation source
+name: Supplier document lifecycle
 
 on:
   pull_request:
     paths:
+      - "app/lib/authorization/**"
       - "app/lib/db/schema/**"
-      - "app/lib/supplier/**"
-      - "tests/supplier-activation.test.ts"
+      - "app/lib/supplier/documents/**"
+      - "app/routes/*supplier-document*"
+      - "app/routes/supplier.documents*"
+      - "app/styles/supplier-documents.css"
+      - "drizzle/**"
+      - "scripts/*supplier-document*"
+      - "package.json"
+      - ".github/workflows/supplier-documents.yml"
+  push:
+    branches: [main]
+    paths:
+      - "app/lib/authorization/**"
+      - "app/lib/db/schema/**"
+      - "app/lib/supplier/documents/**"
+      - "app/routes/*supplier-document*"
+      - "app/routes/supplier.documents*"
+      - "app/styles/supplier-documents.css"
+      - "drizzle/**"
+      - "scripts/*supplier-document*"
+      - "package.json"
       - ".github/workflows/supplier-documents.yml"
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: supplier-documents-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  format:
-    if: github.head_ref == 'agent/supplier-activation-state-machine'
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: openmarket
+          POSTGRES_USER: openmarket
+          POSTGRES_PASSWORD: openmarket
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openmarket -d openmarket"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
-      - name: Checkout PR head
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -31,22 +67,35 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Format activation source
-        run: >-
-          npx prettier --write
-          app/lib/db/schema/outbox.ts
-          app/lib/supplier/activation.ts
-          app/lib/supplier/activation.server.ts
-          tests/supplier-activation.test.ts
+      - name: Check formatting
+        run: npm run format:check
 
-      - name: Commit formatted source
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/lib/db/schema/outbox.ts app/lib/supplier/activation.ts app/lib/supplier/activation.server.ts tests/supplier-activation.test.ts
-          git diff --cached --quiet && {
-            echo "Expected formatting changes were not produced." >&2
-            exit 1
-          }
-          git commit -m "style: format Supplier activation source"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+      - name: Check types
+        run: npm run typecheck
+
+      - name: Run unit tests
+        run: npm run test:run
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Check migration metadata
+        run: npm run db:check
+
+      - name: Apply migrations
+        run: npm run db:migrate
+
+      - name: Seed Supplier launch catalogue
+        run: npm run db:seed:supplier-catalogue
+
+      - name: Verify Supplier launch catalogue
+        run: npm run db:verify:supplier-catalogue
+
+      - name: Seed Supplier document catalogue
+        run: npm run db:seed:supplier-documents
+
+      - name: Verify Supplier document catalogue
+        run: npm run db:verify:supplier-documents
+
+      - name: Verify private Supplier document lifecycle
+        run: npm run db:verify:supplier-document-lifecycle
