@@ -29,37 +29,29 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged route registration, A10 evidence entry and permanent evidence CI repair through PR #26 as `68db58fac2b3a2e4f725ea44a47edad7629d9e64`.
 - Merged fixed Reviewer/Admin business-identity authorization, self-review denial and private staff evidence access through PR #27 as `f3854595929089bbcb71289014c9e34aa5b93cf6`.
 - Merged audited platform staff assignment management through PR #30 as `b85bcdd87c71c6c744ff11bc46d7405cefecb504`.
+- Merged the audited Supplier company/profile foundation through PR #31 as `2a44a6b81ed3079071987a58620133632347e7f9`.
 - Kept fake Cloudflare resource IDs, public object URLs and credentials out of source control.
 
 ## In progress
 
-Draft PR #31 on `agent/supplier-company-foundation` adds the first Supplier company/profile domain slice:
+Draft PR #33 on `agent/supplier-launch-seeds` adds the launch Supplier catalogue and closes the production-seed gap found by retrospective audit #32:
 
-- relational Supplier company, membership, type, application-context, production-capability and export-market records;
-- `supplier_draft` as the only creation outcome in this slice;
-- Supplier/Both intent plus verified business-identity eligibility;
-- one identity-bound Supplier company per verified business-identity review;
-- legal-name drift denial unless matching verified identity evidence exists;
-- owner/admin/editor/viewer membership authorization and cross-company isolation;
-- seeded-key enforcement for Supplier type and production capability selections;
-- deterministic minimum-profile completeness;
-- reconstructable immutable create/update audits with old/new values;
-- literal taxonomy namespace checks in PostgreSQL;
-- unit and PostgreSQL integration coverage.
+- the six Supplier types defined verbatim by specification section 5.3, with stable keys and Turkish/English labels;
+- a deliberately narrow textile production-capability set derived only from explicitly named launch processes and services;
+- a code-owned idempotent seed operation that repairs canonical rows and deactivates non-launch values without deleting history;
+- an exact PostgreSQL production-inventory gate separate from fixture data;
+- Supplier company integration tests that consume the real launch catalogue;
+- profile completeness aligned with the specification: Supplier type and application context are required, while production capabilities remain optional for exporters and distributors.
 
-Retrospective audit findings and remediation evidence are tracked in issue #32. Supplier onboarding screens, company-document storage/review and Supplier activation are not present on `main` and must not be reported as merged.
+The production-capability list is a reviewed catalogue decision, not a claim that the specification supplied a standalone verbatim enumeration. Expanding it requires another reviewed seed change.
+
+Supplier onboarding screens, company-document storage/review and Supplier activation are not yet present on `main`.
 
 ## Verification
 
-GitHub Actions run `29237714237` passed both permanent read-only jobs on PR #31 head `5e62a7873f10f13c551fadd14e9286651b328de1`:
+GitHub Actions run `29243192413` proved the database side of PR #33 before final formatting:
 
 ```text
-npm run format:check                              PASS
-npm run docs:check                                PASS
-npm run config:check                              PASS
-npm run typecheck                                 PASS
-npm run test:run                                  PASS
-npm run build                                     PASS
 npm run db:check                                  PASS
 npm run db:verify                                 PASS
 npm run db:verify:auth                            PASS
@@ -72,14 +64,15 @@ npm run db:verify:business-identity-onboarding    PASS
 npm run db:verify:business-identity-evidence      PASS
 npm run db:verify:business-identity-review        PASS
 npm run db:verify:platform-staff-management       PASS
+npm run db:seed:supplier-catalogue                PASS
+npm run db:verify:supplier-catalogue              PASS
 npm run db:verify:supplier-company                PASS
 ```
 
-The Supplier gate proves identity-bound creation, malformed namespace rejection, legal-name drift denial, membership isolation, viewer denial, seeded-selection enforcement, deterministic completeness, draft-state preservation and reconstructable immutable audit evidence.
+The application job in that run stopped only at `format:check`; permanent read-only application and database CI must pass together on the final PR #33 head before merge.
 
 ## Known issues and blockers
 
-- The authoritative launch Supplier type and production-capability seed inventory is not yet committed. PR #31 uses isolated fixtures and must remain draft until production seed coverage is added or explicitly split into a blocking prerequisite.
 - A Neon development database and deployed Hyperdrive configuration are not yet provisioned.
 - Hyperdrive pooling, caching and remote Worker connectivity cannot be verified until that remote configuration exists.
 - `outbox_events` records delivery intent; an external email dispatcher and sender-domain authorization are not yet configured.
@@ -90,12 +83,12 @@ The Supplier gate proves identity-bound creation, malformed namespace rejection,
 - Supplier onboarding screens, company-document review and activation remain future work in #6–#8.
 - Cloudflare Images account configuration remains an external dashboard task.
 
-These are remote-integration, seed or later-feature blockers. They do not invalidate the current local authorization, migration, CI or PostgreSQL evidence, but they prevent claiming user-facing Supplier onboarding or production readiness.
+These are remote-integration or later-feature blockers. They do not invalidate the current local authorization, migration, seed, CI or PostgreSQL evidence, but they prevent claiming user-facing Supplier onboarding or production readiness.
 
 ## Next tasks
 
-1. Commit and verify the authoritative Turkish/English launch Supplier type and production-capability seed inventory.
-2. Re-run permanent read-only CI on the final PR #31 head and keep the PR draft until the seed blocker is resolved.
-3. Continue issue #6 with S01–S04 only after the foundation and seed contract are merged.
+1. Format and pass permanent read-only CI on final PR #33, then squash merge it.
+2. Close or split the resolved seed finding in audit issue #32; keep explicit follow-ups for country-code semantics and future multi-company selection.
+3. Continue issue #6 with S01–S04 as a separate Supplier onboarding route/UI slice using the merged domain and catalogue services.
 4. Continue company-document and activation work separately through #7–#8.
 5. Keep remote Neon/Hyperdrive/R2, email delivery, Google OAuth and abuse-control evidence explicitly unverified until real resources exist.
