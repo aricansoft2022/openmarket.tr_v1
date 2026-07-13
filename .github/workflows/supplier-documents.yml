@@ -118,7 +118,22 @@ jobs:
           rm -f scripts/patch-supplier-document-domain-guards.mjs
 
       - name: Format prepared repository
-        run: npm run format
+        run: |
+          set +e
+          npm run format > /tmp/supplier-document-format.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/supplier-document-format.log
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+
+      - name: Upload formatting diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplier-document-format-diagnostics
+          path: /tmp/supplier-document-format.log
+          if-no-files-found: warn
+          retention-days: 1
 
       - name: Check formatting
         run: npm run format:check
