@@ -29,40 +29,42 @@ jobs:
 
           const databaseMarker =
             "- profile changes preserve Supplier activation state and create immutable complete old/new audit evidence.\n";
-          const databaseSection = `
-
-Supplier company-document database evidence must include:
-
-- the canonical document-type catalogue and Supplier-type requirement rules seed idempotently and repair canonical values;
-- mandatory requirements resolve deterministically without allowing user-defined document types;
-- object keys are server-generated and private, file metadata is constrained and SHA-256 is stored only after private storage succeeds;
-- upload, scan, submission, review, expiry and replacement transitions obey database constraints;
-- active membership scopes Supplier reads and writes, while outsiders receive a non-disclosing not-found result;
-- only active fixed-role reviewers may list, read and decide documents;
-- reviewers cannot decide evidence for a company they belong to;
-- short-lived grants are user-bound, single-use and rejected after expiry or revocation;
-- replacement versions preserve prior evidence and mandatory-requirement continuity;
-- review decisions write effective-role audit evidence and review-history UPDATE/DELETE is rejected by PostgreSQL.
-`;
+          const databaseSection = [
+            "",
+            "Supplier company-document database evidence must include:",
+            "",
+            "- the canonical document-type catalogue and Supplier-type requirement rules seed idempotently and repair canonical values;",
+            "- mandatory requirements resolve deterministically without allowing user-defined document types;",
+            "- object keys are server-generated and private, file metadata is constrained and SHA-256 is stored only after private storage succeeds;",
+            "- upload, scan, submission, review, expiry and replacement transitions obey database constraints;",
+            "- active membership scopes Supplier reads and writes, while outsiders receive a non-disclosing not-found result;",
+            "- only active fixed-role reviewers may list, read and decide documents;",
+            "- reviewers cannot decide evidence for a company they belong to;",
+            "- short-lived grants are user-bound, single-use and rejected after expiry or revocation;",
+            "- replacement versions preserve prior evidence and mandatory-requirement continuity;",
+            "- review decisions write effective-role audit evidence and review-history UPDATE/DELETE is rejected by PostgreSQL.",
+            "",
+          ].join("\n");
           if (!source.includes("Supplier company-document database evidence must include:")) {
             if (!source.includes(databaseMarker)) throw new Error("Database test-plan marker not found.");
             source = source.replace(databaseMarker, databaseMarker + databaseSection);
           }
 
           const routeMarker = "- no profile or capability action changes Supplier activation status.\n";
-          const routeSection = `
-
-Supplier S05–S07 and Admin D17–D18 route tests must cover:
-
-- route registration exactly once for list, upload, detail, access-grant, review queue and review detail routes;
-- unauthenticated, cross-company, viewer mutation and unrelated staff-role denial;
-- missing, uploaded, scan-pending, pending-review, approved, rejected, expired and replacement-required states;
-- Turkish/English copy, loading, empty, recoverable error, permission, validation, success and read-only states;
-- file-type, size, issue/expiry metadata and replacement-target validation;
-- private download headers, expiring single-use grants and no object-key disclosure;
-- reviewer-company conflict denial, mandatory rejection/replacement reasons and immutable timelines;
-- document approval never directly changes Supplier activation state.
-`;
+          const routeSection = [
+            "",
+            "Supplier S05–S07 and Admin D17–D18 route tests must cover:",
+            "",
+            "- route registration exactly once for list, upload, detail, access-grant, review queue and review detail routes;",
+            "- unauthenticated, cross-company, viewer mutation and unrelated staff-role denial;",
+            "- missing, uploaded, scan-pending, pending-review, approved, rejected, expired and replacement-required states;",
+            "- Turkish/English copy, loading, empty, recoverable error, permission, validation, success and read-only states;",
+            "- file-type, size, issue/expiry metadata and replacement-target validation;",
+            "- private download headers, expiring single-use grants and no object-key disclosure;",
+            "- reviewer-company conflict denial, mandatory rejection/replacement reasons and immutable timelines;",
+            "- document approval never directly changes Supplier activation state.",
+            "",
+          ].join("\n");
           if (!source.includes("Supplier S05–S07 and Admin D17–D18 route tests must cover:")) {
             if (!source.includes(routeMarker)) throw new Error("Route test-plan marker not found.");
             source = source.replace(routeMarker, routeMarker + routeSection);
@@ -75,11 +77,13 @@ Supplier S05–S07 and Admin D17–D18 route tests must cover:
 
           source = source.replace(
             "- supplier document private access\n",
-            `- private Supplier document catalogue, upload, scan, review, access-grant and replacement lifecycle
-- cross-company non-disclosure and reviewer-company conflict denial
-- immutable Supplier document review history and effective-role audit records
-- deployed private-R2 integration evidence before remote readiness
-`,
+            [
+              "- private Supplier document catalogue, upload, scan, review, access-grant and replacement lifecycle",
+              "- cross-company non-disclosure and reviewer-company conflict denial",
+              "- immutable Supplier document review history and effective-role audit records",
+              "- deployed private-R2 integration evidence before remote readiness",
+              "",
+            ].join("\n"),
           );
 
           source = source.replace(
