@@ -1,0 +1,82 @@
+name: Prepare Supplier company-document contract
+
+on:
+  push:
+    branches: [agent/supplier-company-documents]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prepare-supplier-document-contract
+  cancel-in-progress: true
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/supplier-company-documents
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Materialize and extract document lifecycle source
+        run: |
+          npm run spec:materialize
+          mkdir -p .debug
+          python - <<'PY'
+          from pathlib import Path
+
+          lines = Path('spec.full.md').read_text(encoding='utf-8').splitlines()
+          needles = (
+              'S05', 'S06', 'S07', 'D17', 'D18',
+              'company document', 'company-document',
+              'document requirement', 'document type',
+              'replacement required', 'pending review',
+              'private R2', 'signed URL', 'presigned',
+              'retention', 'malware', 'virus scan',
+          )
+          matches = [
+              index for index, line in enumerate(lines)
+              if any(needle.casefold() in line.casefold() for needle in needles)
+          ]
+          if not matches:
+              raise SystemExit('No Supplier company-document contract found.')
+
+          windows = []
+          for index in matches:
+              start = max(0, index - 45)
+              end = min(len(lines), index + 115)
+              if windows and start <= windows[-1][1]:
+                  windows[-1] = (windows[-1][0], max(windows[-1][1], end))
+              else:
+                  windows.append((start, end))
+
+          output = ['# Supplier company-document source contract', '']
+          for start, end in windows:
+              output.append(f'## Source lines {start + 1}-{end}')
+              output.append('')
+              output.extend(f'{number:05d}: {lines[number - 1]}' for number in range(start + 1, end + 1))
+              output.append('')
+
+          Path('.debug/supplier-company-documents.md').write_text('\n'.join(output), encoding='utf-8')
+          PY
+
+      - name: Commit extracted contract
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .debug/supplier-company-documents.md
+          git diff --cached --quiet || git commit -m "chore: capture Supplier company-document contract"
+          git push origin HEAD:agent/supplier-company-documents
