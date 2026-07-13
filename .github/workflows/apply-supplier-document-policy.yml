@@ -1,4 +1,4 @@
-name: Apply Supplier document corrections
+name: Finalize Supplier document foundation
 
 on:
   push:
@@ -8,11 +8,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: apply-supplier-document-corrections
+  group: finalize-supplier-document-foundation
   cancel-in-progress: true
 
 jobs:
-  apply:
+  finalize:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -31,22 +31,53 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Apply reviewed policy corrections
-        run: node scripts/patch-supplier-document-foundation.mjs
+      - name: Apply reviewed policy and safety corrections
+        run: |
+          node scripts/patch-supplier-document-foundation.mjs
+          node scripts/patch-supplier-document-safety.mjs
 
-      - name: Apply transaction and access-grant safety corrections
-        run: node scripts/patch-supplier-document-safety.mjs
-
-      - name: Remove temporary workflow
-        run: rm .github/workflows/apply-supplier-document-policy.yml
+      - name: Regenerate Supplier document migration
+        run: |
+          rm -f drizzle/0008_*.sql drizzle/meta/0008_snapshot.json
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const path = "drizzle/meta/_journal.json";
+          const journal = JSON.parse(readFileSync(path, "utf8"));
+          journal.entries = journal.entries.filter((entry) => entry.idx !== 8);
+          writeFileSync(path, `${JSON.stringify(journal, null, 2)}\n`);
+          NODE
+          npm run db:generate
+          migration="$(ls drizzle/0008_*.sql)"
+          cat >> "$migration" <<'SQL'
+          --> statement-breakpoint
+          CREATE OR REPLACE FUNCTION prevent_supplier_document_review_event_mutation()
+          RETURNS trigger
+          LANGUAGE plpgsql
+          AS $$
+          BEGIN
+            RAISE EXCEPTION 'supplier_document_review_events rows are immutable';
+          END;
+          $$;
+          --> statement-breakpoint
+          CREATE TRIGGER supplier_document_review_events_immutable
+          BEFORE UPDATE OR DELETE ON "supplier_document_review_events"
+          FOR EACH ROW
+          EXECUTE FUNCTION prevent_supplier_document_review_event_mutation();
+          SQL
 
       - name: Format repository
         run: npm run format
 
-      - name: Commit prepared branch
+      - name: Remove temporary preparation files
+        run: |
+          rm .github/workflows/apply-supplier-document-policy.yml
+          rm scripts/patch-supplier-document-foundation.mjs
+          rm scripts/patch-supplier-document-safety.mjs
+
+      - name: Commit finalized foundation
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || git commit -m "fix: harden Supplier document policy and transactions"
+          git diff --cached --quiet || git commit -m "feat: finalize Supplier document foundation"
           git push origin HEAD:agent/supplier-company-documents
