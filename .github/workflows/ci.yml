@@ -115,5 +115,11 @@ jobs:
       - name: Verify audited platform staff assignment management
         run: npm run db:verify:platform-staff-management
 
+      - name: Seed Supplier launch catalogue
+        run: npm run db:seed:supplier-catalogue
+
+      - name: Verify Supplier launch catalogue
+        run: npm run db:verify:supplier-catalogue
+
       - name: Verify supplier company profile foundation
         run: npm run db:verify:supplier-company

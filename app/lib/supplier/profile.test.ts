@@ -30,7 +30,7 @@ describe("supplier profile", () => {
     });
   });
 
-  it("reports deterministic minimum-profile reasons without activating Supplier", () => {
+  it("reports only specification-backed minimum-profile reasons", () => {
     expect(
       evaluateSupplierProfileCompleteness({
         ...completeProfile,
@@ -41,12 +41,22 @@ describe("supplier profile", () => {
       }),
     ).toEqual({
       complete: false,
-      missing: ["description", "supplier_type", "application_context", "production_capability"],
+      missing: ["description", "supplier_type", "application_context"],
     });
     expect(evaluateSupplierProfileCompleteness(completeProfile)).toEqual({
       complete: true,
       missing: [],
     });
+  });
+
+  it("keeps production capabilities optional for non-manufacturing Supplier types", () => {
+    expect(
+      evaluateSupplierProfileCompleteness({
+        ...completeProfile,
+        supplierTypeKeys: ["supplier_type.exporter_trading_company"],
+        productionCapabilityKeys: [],
+      }),
+    ).toEqual({ complete: true, missing: [] });
   });
 
   it("rejects custom supplier types and application contexts", () => {

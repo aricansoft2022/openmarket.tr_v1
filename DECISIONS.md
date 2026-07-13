@@ -151,3 +151,15 @@ Decisions are append-only. Superseded decisions remain for history and link to t
 **Security boundary:** The target must already have an account identified by normalized exact email. Every mutation requires a reason, writes immutable audit evidence with the effective manager role and preserves one unique user/role row by reactivating revoked assignments. Reviewer, Moderator, Buyer and Supplier state never grants assignment-management authority.
 
 **Rejected:** Self-service escalation; Platform Admin management of administrator roles; free-form custom roles; arbitrary permission JSON; silent duplicate rows; unaudited database-only role changes as the normal operational workflow.
+
+## 2026-07-13 — Supplier launch catalogue is code-owned, bilingual and idempotent
+
+**Decision:** Seed the six Supplier types listed verbatim in specification section 5.3 with stable namespaced keys and Turkish/English labels. Maintain a separate, deliberately narrow production-capability catalogue derived only from textile processes and services explicitly named in the launch specification. Seeding restores canonical rows, keeps ordering deterministic and deactivates non-launch rows instead of deleting historical references.
+
+**Reason:** The Supplier foundation requires active catalogue keys, but fixture rows are not production configuration. The specification provides a complete Supplier type list while referring to production capabilities through process, option-set, product-form and dashboard requirements rather than one standalone enumeration. A reviewed code-owned list is safer than arbitrary user-defined values or an invented broad factory taxonomy.
+
+**Completeness boundary:** Supplier type and application context participate in minimum-profile completeness. Production capabilities do not: exporters, trading companies and authorized distributors must not be forced to claim manufacturing processes they do not perform.
+
+**Change boundary:** Adding, renaming, reordering or deactivating launch catalogue values requires a reviewed seed change, bilingual labels and exact-inventory regression updates. Historical values are archived by deactivation.
+
+**Rejected:** Treating test fixtures as launch data; accepting free-form capabilities; requiring production capability for every Supplier type; deleting non-launch values that may be referenced by historical records; claiming the production-capability list is verbatim specification text.

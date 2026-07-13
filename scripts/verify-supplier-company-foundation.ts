@@ -10,6 +10,8 @@ import { createAuth, type AuthEnvironment } from "../app/lib/auth/create-auth.se
 import { authRequest, registerWithPreferences } from "../app/lib/auth/registration.server";
 import { submitOnboardingIdentity } from "../app/lib/business-identity/onboarding.server";
 import * as schema from "../app/lib/db/schema";
+import { launchProductionCapabilities, launchSupplierTypes } from "../app/lib/supplier/catalogue";
+import { seedSupplierLaunchCatalogue } from "../app/lib/supplier/catalogue.server";
 import {
   createSupplierCompany,
   loadSupplierCompanyState,
@@ -50,8 +52,8 @@ const database = drizzle(client, { schema });
 const suffix = randomUUID();
 const createdUserIds: string[] = [];
 const createdCompanyIds: string[] = [];
-const fixtureSupplierTypeKey = `supplier_type.fixture_${suffix.replaceAll("-", "_")}`;
-const fixtureCapabilityKey = `production_capability.fixture_${suffix.replaceAll("-", "_")}`;
+const launchSupplierTypeKey = launchSupplierTypes[0].key;
+const launchCapabilityKey = launchProductionCapabilities[0].key;
 
 const environment: AuthEnvironment = {
   HYPERDRIVE: { connectionString } as AuthEnvironment["HYPERDRIVE"],
@@ -100,16 +102,18 @@ const completeProfile = {
   description:
     "Vertically integrated textile production for hospitality and institutional accommodation.",
   foundedYear: 1998,
-  supplierTypeKeys: [fixtureSupplierTypeKey],
+  supplierTypeKeys: [launchSupplierTypeKey],
   applicationContextKeys: [
     "context.hotel_hospitality",
     "context.dormitory_institutional_accommodation",
   ],
-  productionCapabilityKeys: [fixtureCapabilityKey],
+  productionCapabilityKeys: [launchCapabilityKey],
   exportMarketCountryCodes: ["de", "gb", "DE"],
 } as const;
 
 try {
+  await seedSupplierLaunchCatalogue(database);
+
   await assert.rejects(
     client.query(
       `insert into supplier_types (key, label_tr, label_en) values ($1, 'Hatalı', 'Invalid')`,
@@ -124,19 +128,6 @@ try {
     ),
     /production_capabilities_key_check/,
   );
-
-  await database.insert(schema.supplierTypes).values({
-    key: fixtureSupplierTypeKey,
-    labelTr: "Doğrulama tedarikçi tipi",
-    labelEn: "Verification supplier type",
-    sortOrder: 999,
-  });
-  await database.insert(schema.productionCapabilities).values({
-    key: fixtureCapabilityKey,
-    labelTr: "Doğrulama üretim kabiliyeti",
-    labelEn: "Verification production capability",
-    sortOrder: 999,
-  });
 
   const owner = await registerFixture("Supplier Owner Fixture", "supplier-owner", "supplier");
   const editor = await registerFixture("Supplier Editor Fixture", "supplier-editor", "supplier");
@@ -268,7 +259,7 @@ try {
   assert.equal(incomplete.company.status, "supplier_draft");
   assert.deepEqual(incomplete.completeness, {
     complete: false,
-    missing: ["description", "supplier_type", "production_capability"],
+    missing: ["description", "supplier_type"],
   });
 
   await assert.rejects(
@@ -347,7 +338,7 @@ try {
   );
   assert(editorAudit, "Editor profile update audit must exist.");
   assert.equal(editorAudit.old_value.description, completeProfile.description);
-  assert.deepEqual(editorAudit.old_value.supplierTypeKeys, [fixtureSupplierTypeKey]);
+  assert.deepEqual(editorAudit.old_value.supplierTypeKeys, [launchSupplierTypeKey]);
   assert.equal(editorAudit.new_value.description, null);
   assert.deepEqual(editorAudit.new_value.supplierTypeKeys, []);
   assert.equal(editorAudit.new_value.businessIdentityReviewId, identity.reviewId);
@@ -364,11 +355,5 @@ try {
   if (createdUserIds.length > 0) {
     await client.query('delete from "user" where id = any($1::uuid[])', [createdUserIds]);
   }
-  await database
-    .delete(schema.supplierTypes)
-    .where(eq(schema.supplierTypes.key, fixtureSupplierTypeKey));
-  await database
-    .delete(schema.productionCapabilities)
-    .where(eq(schema.productionCapabilities.key, fixtureCapabilityKey));
   await client.end();
 }

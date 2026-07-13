@@ -26,33 +26,31 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-`main` currently ends at `b85bcdd87c71c6c744ff11bc46d7405cefecb504`, the squash merge of PR #30. Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, verification/password recovery, guarded Google OAuth, auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding, private manual-exception evidence, Reviewer/Admin business-identity authorization and audited platform staff assignment management are merged.
+`main` currently ends at `2a44a6b81ed3079071987a58620133632347e7f9`, the squash merge of PR #31. Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, verification/password recovery, guarded Google OAuth, auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding, private manual-exception evidence, Reviewer/Admin business-identity authorization, audited platform staff assignment management and the audited Supplier company/profile foundation are merged.
 
-Draft PR #31 on `agent/supplier-company-foundation` contains the only Supplier company foundation implementation currently present in GitHub. It adds:
+Draft PR #33 on `agent/supplier-launch-seeds` adds:
 
-- identity-bound Supplier company records linked to a verified `business_identity_reviews` row;
-- legal-name drift denial unless verified identity evidence matches;
-- `supplier_draft` creation without Supplier activation;
-- owner/admin/editor/viewer memberships and cross-company isolation;
-- Supplier type, application-context, production-capability and export-market relations;
-- active seeded-key enforcement for Supplier types and production capabilities;
-- deterministic profile completeness;
-- reconstructable immutable create/update audits with normalized old/new values;
-- PostgreSQL checks that require literal taxonomy namespace separators;
-- a permanent `db:verify:supplier-company` CI gate.
+- the specification-defined six Supplier types with stable keys and Turkish/English labels;
+- a narrow reviewed production-capability catalogue based only on explicitly named textile launch processes and services;
+- idempotent seeding that restores canonical labels, ordering and active state;
+- archival by deactivation for non-launch values instead of destructive deletion;
+- exact production inventory verification independent of fixtures;
+- Supplier foundation verification against the real launch catalogue;
+- specification-aligned completeness that does not force exporters or distributors to claim production capabilities.
 
-Retrospective findings and disposition are tracked in issue #32. Earlier descriptions of merged Supplier onboarding, documents, review or activation work are not supported by the repository commit graph and must not be repeated.
+The specification provides a verbatim Supplier type list but not a standalone production-capability enumeration. Do not silently broaden the capability catalogue. New values require a reviewed decision, bilingual labels, stable keys and updated exact-inventory tests.
+
+Supplier onboarding screens, documents, review and activation are not merged. Retrospective findings and disposition remain tracked in issue #32.
 
 ## Exact next tasks
 
-1. Add the authoritative launch Supplier type and production-capability seed inventory with stable keys and Turkish/English labels.
-2. Verify exact production seed contents independently from fixture-only integration data.
-3. Keep PR #31 draft until the seed blocker is resolved and permanent read-only CI passes on its final head.
-4. After merge, implement S01–S04 as a separate route/UI slice using the existing domain service.
-5. Keep company-document upload/review in #7 and Supplier activation in #8; do not fold them into the foundation PR.
-6. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
-7. Keep issue #4 open for external delivery and remote auth evidence.
-8. Do not infer business identity from account verification alone; public email domains never grant automatic business identity.
+1. Squash merge PR #33 after the final documentation commit passes permanent read-only CI.
+2. Update issue #32: close the production-seed finding, and split country-code semantics plus future multi-company selection into explicit follow-ups if they are not fixed in the same slice.
+3. Continue issue #6 with S01–S04 as a separate route/UI PR using the merged Supplier domain and catalogue.
+4. Keep company-document upload/review in #7 and Supplier activation in #8; do not fold them into onboarding UI.
+5. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
+6. Keep issue #4 open for external delivery and remote auth evidence.
+7. Do not infer business identity from account verification alone; public email domains never grant automatic business identity.
 
 ## Verification commands
 
@@ -84,9 +82,19 @@ npm run db:verify:business-identity-onboarding
 npm run db:verify:business-identity-evidence
 npm run db:verify:business-identity-review
 npm run db:verify:platform-staff-management
+npm run db:seed:supplier-catalogue
+npm run db:verify:supplier-catalogue
 npm run db:verify:supplier-company
 npm run db:local:down
 ```
+
+`db:verify:supplier-catalogue` must prove:
+
+- the exact active launch inventories and deterministic ordering;
+- Turkish and English labels for every value;
+- repeated idempotent seeding;
+- repair of changed canonical labels, ordering and active flags;
+- deactivation rather than deletion of non-launch values.
 
 `db:verify:supplier-company` must prove:
 
@@ -97,13 +105,13 @@ npm run db:local:down
 - owner creation, membership isolation and viewer denial work;
 - unseeded custom selections are rejected;
 - profile completeness is deterministic and never activates Supplier;
+- production capabilities are optional for non-manufacturing Supplier types;
 - immutable update audits contain complete old/new profile values.
 
-GitHub Actions run `29237714237` passed the application and complete PostgreSQL chain on audited PR #31 head `5e62a7873f10f13c551fadd14e9286651b328de1`. Documentation commits made afterward require one final permanent read-only CI run before the evidence is considered current.
+Permanent read-only GitHub Actions run `29243586323` passed formatting, documentation, runtime configuration, typecheck, unit tests, production build and the complete PostgreSQL chain on PR #33 head `9a41586d0c39016300bff599bfc6d15500e1083a`. The final documentation commit requires one last read-only CI run before merge.
 
 ## Known blockers
 
-- Authoritative launch Supplier type and production-capability seed rows are not committed; current integration rows are fixtures only.
 - No Neon development database or deployed Hyperdrive configuration has been provisioned.
 - Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
 - Outbox records are produced, but Cloudflare Email Sending authorization and the dispatcher are not configured.
@@ -113,4 +121,4 @@ GitHub Actions run `29237714237` passed the application and complete PostgreSQL 
 - Evidence malware/content inspection, quarantine and retention cleanup are not implemented.
 - Cloudflare Images remains an account-level dependency for later media work.
 
-These blockers do not invalidate local migration, authorization, audit or PostgreSQL verification. They do prevent claiming production seed readiness, user-facing Supplier onboarding, remote auth readiness or production-ready document review operations.
+These blockers do not invalidate local migration, authorization, audit, seed or PostgreSQL verification. They do prevent claiming user-facing Supplier onboarding, remote auth readiness or production-ready document review operations.
