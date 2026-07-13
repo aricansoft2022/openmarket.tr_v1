@@ -1,27 +1,15 @@
-import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { readFileSync, writeFileSync } from "node:fs";
 
-function patch(path, edits) {
-  let source = readFileSync(path, "utf8");
-  for (const [search, replacement] of edits) {
-    if (!source.includes(search)) {
-      throw new Error(`Patch target not found in ${path}:\n${search}`);
-    }
-    source = source.replace(search, replacement);
-  }
-  writeFileSync(path, source);
+function edit(path, transform) {
+  const source = readFileSync(path, "utf8");
+  const result = transform(source);
+  if (result === source) throw new Error(`No change was applied to ${path}`);
+  writeFileSync(path, result);
 }
 
-patch("app/lib/supplier/documents/catalogue.ts", [
-  [
-    `const baseMandatoryDocumentKeys = [
-  "company_document.chamber_activity",
-  "company_document.trade_registry",
-  "company_document.tax_company_registration",
-  "company_document.authorized_representative",
-  "company_document.company_address",
-  "company_document.company_profile",
-] as const satisfies readonly SupplierCompanyDocumentTypeKey[];`,
+edit("app/lib/supplier/documents/catalogue.ts", (source) => {
+  let result = source.replace(
+    /const baseMandatoryDocumentKeys = \[[\s\S]*?\] as const satisfies readonly SupplierCompanyDocumentTypeKey\[\];/,
     `// The specification enumerates document types but does not label every seeded
 // value as mandatory. This reviewed launch decision keeps only core legal and
 // representation evidence mandatory for every Supplier. A company-profile PDF
@@ -33,24 +21,20 @@ const baseMandatoryDocumentKeys = [
   "company_document.authorized_representative",
   "company_document.company_address",
 ] as const satisfies readonly SupplierCompanyDocumentTypeKey[];`,
-  ],
-  [
-    `    level: "mandatory",
-    noteTr: "Üretici-ihracatçı türü için ihracatçı bilgisini destekler.",
-    noteEn: "Supports exporter information for the Manufacturer-exporter type.",`,
-    `    level: "conditional",
+  );
+  result = result.replace(
+    /(key: "company_document_rule\.exporter\.manufacturer_exporter",[\s\S]*?supplierTypeKey: "supplier_type\.manufacturer_exporter",[\s\S]*?)level: "mandatory",[\s\S]*?noteEn: "Supports exporter information for the Manufacturer-exporter type\.",/,
+    `$1level: "conditional",
     noteTr: "İhracatçı bilgisi mevcut veya uygulanabilir olduğu durumda istenir.",
     noteEn: "Requested when exporter information exists or is applicable.",`,
-  ],
-  [
-    `    level: "mandatory",
-    noteTr: "İhracatçı veya dış ticaret şirketi türü için zorunludur.",
-    noteEn: "Mandatory for the Exporter or trading company type.",`,
-    `    level: "conditional",
+  );
+  result = result.replace(
+    /(key: "company_document_rule\.exporter\.trading_company",[\s\S]*?supplierTypeKey: "supplier_type\.exporter_trading_company",[\s\S]*?)level: "mandatory",[\s\S]*?noteEn: "Mandatory for the Exporter or trading company type\.",/,
+    `$1level: "conditional",
     noteTr: "İhracatçı bilgisi mevcut veya uygulanabilir olduğu durumda istenir.",
     noteEn: "Requested when exporter information exists or is applicable.",`,
-  ],
-  [
+  );
+  result = result.replace(
     `  {
     key: "company_document_rule.optional.quality_management",`,
     `  {
@@ -64,29 +48,23 @@ const baseMandatoryDocumentKeys = [
   },
   {
     key: "company_document_rule.optional.quality_management",`,
-  ],
-]);
+  );
+  return result;
+});
 
-patch("app/lib/supplier/documents/policy.ts", [
-  [`      | "EXPIRY_REQUIRED"\n`, ""],
-  [
-    `  if (type.expiryExpected && !expiresAt) {
-    throw new SupplierDocumentValidationError(
-      "EXPIRY_REQUIRED",
-      "Bu belge türü için son geçerlilik tarihi gereklidir.",
-    );
-  }
-`,
-    "",
-  ],
-  [
-    `  if (!input.storageStatus || input.storageStatus === "failed" || input.storageStatus === "removed") {
-    return "missing";
-  }
-  if (input.expiresAt && input.expiresAt <= (input.now ?? new Date())) return "expired";
-  if (input.scanStatus === "rejected" || input.scanStatus === "failed") return "replacement_required";
-  return input.evidenceStatus ?? "uploaded";`,
-    `  if (!input.storageStatus || input.storageStatus === "failed" || input.storageStatus === "removed") {
+edit("app/lib/supplier/documents/policy.ts", (source) => {
+  let result = source.replace(`      | "EXPIRY_REQUIRED"\n`, "");
+  result = result.replace(
+    /  if \(type\.expiryExpected && !expiresAt\) \{[\s\S]*?\n  \}\n  if \(issueDate && expiresAt/,
+    `  if (issueDate && expiresAt`,
+  );
+  result = result.replace(
+    /  if \(\n    !input\.storageStatus \|\|[\s\S]*?  return input\.evidenceStatus \?\? "uploaded";/,
+    `  if (
+    !input.storageStatus ||
+    input.storageStatus === "failed" ||
+    input.storageStatus === "removed"
+  ) {
     return "missing";
   }
   if (input.scanStatus === "rejected") return "replacement_required";
@@ -100,16 +78,13 @@ patch("app/lib/supplier/documents/policy.ts", [
     return "expired";
   }
   return state;`,
-  ],
-]);
+  );
+  return result;
+});
 
-patch("app/lib/supplier/documents/policy.test.ts", [
-  [
-    `      "company_document.company_address",
-      "company_document.company_profile",`,
-    `      "company_document.company_address",`,
-  ],
-  [
+edit("app/lib/supplier/documents/policy.test.ts", (source) => {
+  let result = source.replace(`      "company_document.company_profile",\n`, "");
+  result = result.replace(
     `    expect(keys).toContain("company_document.exporter_information");`,
     `    expect(keys).toContain("company_document.exporter_information");
     expect(
@@ -117,25 +92,9 @@ patch("app/lib/supplier/documents/policy.test.ts", [
         (requirement) => requirement.documentTypeKey === "company_document.exporter_information",
       )?.level,
     ).toBe("conditional");`,
-  ],
-  [
-    `  it("requires expiry metadata only for expiry-expected document types", () => {
-    expect(() =>
-      validateSupplierDocumentMetadata({
-        documentTypeKey: "company_document.chamber_activity",
-      }),
-    ).toThrow(SupplierDocumentValidationError);
-
-    expect(
-      validateSupplierDocumentMetadata({
-        documentTypeKey: "company_document.company_profile",
-      }),
-    ).toEqual({
-      documentTypeKey: "company_document.company_profile",
-      issueDate: null,
-      expiresAt: null,
-    });
-  });`,
+  );
+  result = result.replace(
+    /  it\("requires expiry metadata only for expiry-expected document types", \(\) => \{[\s\S]*?\n  \}\);/,
     `  it("keeps expiry metadata optional while validating supplied date order", () => {
     expect(
       validateSupplierDocumentMetadata({
@@ -155,24 +114,11 @@ patch("app/lib/supplier/documents/policy.test.ts", [
       }),
     ).toThrow(SupplierDocumentValidationError);
   });`,
-  ],
-  [
-    `    expect(
-      deriveSupplierDocumentState({
-        storageStatus: "stored_private",
-        evidenceStatus: "uploaded",
-        scanStatus: "rejected",
-        now,
-      }),
-    ).toBe("replacement_required");`,
-    `    expect(
-      deriveSupplierDocumentState({
-        storageStatus: "stored_private",
-        evidenceStatus: "uploaded",
-        scanStatus: "rejected",
-        now,
-      }),
-    ).toBe("replacement_required");
+  );
+  result = result.replace(
+    `    ).toBe("replacement_required");
+  });`,
+    `    ).toBe("replacement_required");
     expect(
       deriveSupplierDocumentState({
         storageStatus: "stored_private",
@@ -180,8 +126,21 @@ patch("app/lib/supplier/documents/policy.test.ts", [
         scanStatus: "failed",
         now,
       }),
-    ).toBe("uploaded");`,
-  ],
-]);
+    ).toBe("uploaded");
+  });`,
+  );
+  return result;
+});
 
-unlinkSync(fileURLToPath(import.meta.url));
+edit("app/lib/db/schema/supplier-documents.ts", (source) => {
+  let result = source.replace(`    reason: text("reason").notNull(),`, `    reason: text("reason"),`);
+  result = result.replace(
+    /    check\(\n      "supplier_document_review_events_reason_check",\n      sql`char_length\(trim\(\$\{table\.reason\}\)\) between 3 and 2000`,\n    \),/,
+    `    check(
+      "supplier_document_review_events_reason_check",
+      sql\`(\${table.decision} = 'approved' and (\${table.reason} is null or char_length(trim(\${table.reason})) between 3 and 2000))
+        or (\${table.decision} in ('rejected', 'replacement_required') and char_length(trim(\${table.reason})) between 3 and 2000)\`,
+    ),`,
+  );
+  return result;
+});
