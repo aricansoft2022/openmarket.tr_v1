@@ -107,15 +107,8 @@ jobs:
           EXECUTE FUNCTION prevent_supplier_document_review_event_mutation();
           SQL
 
-      - name: Remove temporary machinery
+      - name: Remove temporary non-workflow machinery
         run: |
-          rm -f .github/workflows/finalize-supplier-documents-complete.yml
-          rm -f .github/workflows/finalize-supplier-documents-reviewed.yml
-          rm -f .github/workflows/apply-supplier-document-policy.yml
-          rm -f .github/workflows/prepare-supplier-documents-final.yml
-          rm -f .github/workflows/prepare-supplier-document-contract.yml
-          rm -f .github/workflows/finalize-supplier-document-foundation.yml
-          rm -f .github/workflows/finalize-supplier-document-ui.yml
           rm -f scripts/patch-supplier-document-checklist.mjs
           rm -f scripts/patch-supplier-document-foundation.mjs
           rm -f scripts/patch-supplier-document-safety.mjs
@@ -129,112 +122,6 @@ jobs:
           rm -f app/lib/supplier/documents/.hardening-trigger
           rm -f app/lib/supplier/documents/POST_MERGE_HARDENING.md
           rm -f docs/supplier-document-hardening-plan.md
-
-      - name: Install permanent read-only verification workflow
-        run: |
-          cat > .github/workflows/supplier-documents.yml <<'YAML'
-          name: Supplier document lifecycle
-
-          on:
-            pull_request:
-              paths:
-                - "app/lib/authorization/**"
-                - "app/lib/db/schema/**"
-                - "app/lib/supplier/documents/**"
-                - "app/routes/*supplier-document*"
-                - "app/routes/supplier.documents*"
-                - "app/styles/supplier-documents.css"
-                - "drizzle/**"
-                - "scripts/*supplier-document*"
-                - "package.json"
-                - ".github/workflows/supplier-documents.yml"
-            push:
-              branches: [main]
-              paths:
-                - "app/lib/authorization/**"
-                - "app/lib/db/schema/**"
-                - "app/lib/supplier/documents/**"
-                - "app/routes/*supplier-document*"
-                - "app/routes/supplier.documents*"
-                - "app/styles/supplier-documents.css"
-                - "drizzle/**"
-                - "scripts/*supplier-document*"
-                - "package.json"
-                - ".github/workflows/supplier-documents.yml"
-
-          permissions:
-            contents: read
-
-          concurrency:
-            group: supplier-documents-${{ github.workflow }}-${{ github.ref }}
-            cancel-in-progress: true
-
-          jobs:
-            verify:
-              runs-on: ubuntu-latest
-              timeout-minutes: 30
-              env:
-                DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
-              services:
-                postgres:
-                  image: postgres:17-alpine
-                  env:
-                    POSTGRES_DB: openmarket
-                    POSTGRES_USER: openmarket
-                    POSTGRES_PASSWORD: openmarket
-                  ports:
-                    - 5432:5432
-                  options: >-
-                    --health-cmd "pg_isready -U openmarket -d openmarket"
-                    --health-interval 5s
-                    --health-timeout 5s
-                    --health-retries 10
-              steps:
-                - name: Checkout
-                  uses: actions/checkout@v4
-
-                - name: Use Node.js
-                  uses: actions/setup-node@v4
-                  with:
-                    node-version: 24
-                    cache: npm
-
-                - name: Install dependencies
-                  run: npm ci --ignore-scripts
-
-                - name: Check formatting
-                  run: npm run format:check
-
-                - name: Check types
-                  run: npm run typecheck
-
-                - name: Run unit tests
-                  run: npm run test:run
-
-                - name: Build production bundle
-                  run: npm run build
-
-                - name: Check migration metadata
-                  run: npm run db:check
-
-                - name: Apply migrations
-                  run: npm run db:migrate
-
-                - name: Seed Supplier launch catalogue
-                  run: npm run db:seed:supplier-catalogue
-
-                - name: Verify Supplier launch catalogue
-                  run: npm run db:verify:supplier-catalogue
-
-                - name: Seed Supplier document catalogue
-                  run: npm run db:seed:supplier-documents
-
-                - name: Verify Supplier document catalogue
-                  run: npm run db:verify:supplier-documents
-
-                - name: Verify private Supplier document lifecycle
-                  run: npm run db:verify:supplier-document-lifecycle
-          YAML
 
       - name: Format materialized repository
         run: npm run format
@@ -276,9 +163,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -A -- ':!.github/workflows'
           git diff --cached --quiet && {
-            echo "Expected materialized changes were not produced." >&2
+            echo "Expected materialized source changes were not produced." >&2
             exit 1
           }
           git commit -m "fix: materialize verified Supplier document source"
