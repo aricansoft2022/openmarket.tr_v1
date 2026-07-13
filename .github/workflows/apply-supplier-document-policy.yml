@@ -1,0 +1,49 @@
+name: Apply Supplier document policy corrections
+
+on:
+  push:
+    branches: [agent/supplier-company-documents]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-supplier-document-policy
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/supplier-company-documents
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply reviewed policy corrections
+        run: node scripts/patch-supplier-document-foundation.mjs
+
+      - name: Remove temporary workflow
+        run: rm .github/workflows/apply-supplier-document-policy.yml
+
+      - name: Format repository
+        run: npm run format
+
+      - name: Commit prepared branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "fix: align Supplier document policy with specification"
+          git push origin HEAD:agent/supplier-company-documents
