@@ -35,16 +35,16 @@ Draft PR #36 on `agent/supplier-onboarding-screens` adds the user-facing Supplie
 - S03 `/supplier/company`: verified-identity-bound company create/update and export-market code capture;
 - S04 `/supplier/capabilities`: seeded Supplier types, fixed application contexts and reviewed production capabilities;
 - owner/admin/editor mutation permission, viewer read-only behaviour and cross-membership isolation through the existing Supplier service;
-- Turkish/English Supplier shell, checklist and form-error copy based on account preference;
+- complete Turkish/English shell, page, form, checklist, catalogue-order and public form-error copy selected from the persisted account language preference;
 - route, loading, empty, blocked, error, validation, success and read-only states;
-- unit coverage for checklist dependencies, localization and form normalization;
+- unit coverage for checklist dependencies, language contracts and form normalization;
 - route-registration coverage and continued PostgreSQL Supplier-foundation verification.
 
 The PR deliberately does not activate Supplier. Company-document upload/review remains #7; the activation evaluator and audited state transitions remain #8. Product creation, RFQ response and invitation UI are later slices.
 
 ## Exact next tasks
 
-1. Obtain a final green read-only CI run for PR #36 after the documentation-only commits, then move the draft to review.
+1. Run permanent read-only CI once more after this final handoff commit, then move PR #36 to review and squash merge it.
 2. Implement issue #7 as a separate private company-document lifecycle: requirement resolution, upload metadata, authorized retrieval, review decisions, replacement and expiry handling.
 3. Implement issue #8 as a central activation evaluator over verified identity, complete profile, Supplier types and approved mandatory documents.
 4. Resolve issue #34 by choosing either an authoritative committed country catalogue or explicitly retaining format-only two-letter semantics across validation, database constraints and UI copy.
@@ -114,13 +114,13 @@ Supplier onboarding unit and route evidence must prove:
 - identity verification blocks company creation until complete;
 - capabilities remain blocked until a company exists;
 - company documents remain an explicit incomplete activation dependency;
-- account language selects the Supplier shell, checklist and public form-error copy;
+- account language selects shell, page, checklist, catalogue ordering and public form-error copy;
 - repeated checkbox values, optional fields, founded year and export-market values normalize deterministically;
 - S01–S04 routes remain registered exactly once and the Supplier stylesheet is loaded exactly once;
 - company and capability mutations preserve fields owned by the other screen and never activate Supplier;
 - viewer memberships render read-only and server-side mutations remain denied.
 
-GitHub Actions run `29244872091` passed formatting, documentation, runtime configuration, typecheck, unit tests, production build and the complete PostgreSQL chain on PR #36 application head `da82d2f3893974612b7f4a8a3988181c007475ec`. A final documentation-head run is required before review.
+Permanent read-only GitHub Actions run `29245409518` passed formatting, documentation, runtime configuration, typecheck, unit tests, production build and the complete PostgreSQL chain on fully localized PR #36 head `8142b81c5a081024b963e421a673b934a3b32696`.
 
 ## Known blockers
 
