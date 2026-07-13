@@ -18,13 +18,13 @@ const messages = {
     FORBIDDEN: "Bu işlem için yetkiniz yok.",
     DOCUMENT_NOT_FOUND: "Belge bulunamadı veya erişiminiz yok.",
     REPLACEMENT_INVALID: "Yenileme aynı şirket ve belge türünün önceki sürümüne bağlanmalıdır.",
-    STORAGE_FAILED: "Özel belge depolaması tamamlanamadı.",
     SCAN_PENDING: "Güvenlik taraması tamamlanmadan incelemeye gönderilemez.",
     SCAN_FAILED: "Tarama başarısız veya güvensiz; belge incelemeye gönderilemez.",
     INVALID_TRANSITION: "Belge bu durumdan istenen işleme geçirilemez.",
-    PUBLIC_VISIBILITY_FORBIDDEN: "Yalnız onaylı ve herkese açık gösterime uygun belgeler yayınlanabilir.",
+    PUBLIC_VISIBILITY_FORBIDDEN:
+      "Yalnız onaylı ve herkese açık gösterime uygun belgeler yayınlanabilir.",
     ACCESS_GRANT_INVALID: "Özel erişim bağlantısı geçersiz veya süresi dolmuş.",
-    SELF_REVIEW: "Kendi yüklediğiniz belge için inceleme kararı veremezsiniz.",
+    SELF_REVIEW: "Kendi şirketinize ait belge için inceleme kararı veremezsiniz.",
   },
   en: {
     FILE_REQUIRED: "Select a company document.",
@@ -40,13 +40,13 @@ const messages = {
     FORBIDDEN: "You do not have permission for this action.",
     DOCUMENT_NOT_FOUND: "The document was not found or is not accessible.",
     REPLACEMENT_INVALID: "A replacement must link to a prior version of the same company and type.",
-    STORAGE_FAILED: "Private document storage could not be completed.",
     SCAN_PENDING: "The document cannot be submitted before the security scan finishes.",
     SCAN_FAILED: "The scan failed or was unsafe; the document cannot be submitted.",
     INVALID_TRANSITION: "The document cannot move from its current state to the requested action.",
-    PUBLIC_VISIBILITY_FORBIDDEN: "Only approved, publicly eligible documents can be published.",
+    PUBLIC_VISIBILITY_FORBIDDEN:
+      "Only approved, publicly eligible documents can be published.",
     ACCESS_GRANT_INVALID: "The private access link is invalid or expired.",
-    SELF_REVIEW: "You cannot decide a document that you uploaded.",
+    SELF_REVIEW: "You cannot decide a document for a company you belong to.",
   },
 } as const;
 
@@ -54,16 +54,44 @@ export function supplierDocumentErrorMessage(
   error: unknown,
   language: PreferredLanguage,
 ): string | null {
+  const copy = messages[language];
+
   if (error instanceof SupplierDocumentValidationError) {
-    return messages[language][error.code];
+    return copy[error.code];
   }
+
   if (error instanceof SupplierDocumentActionError) {
-    return messages[language][error.code];
+    switch (error.code) {
+      case "UNAUTHENTICATED":
+        return copy.UNAUTHENTICATED;
+      case "COMPANY_NOT_FOUND":
+        return copy.SUPPLIER_COMPANY_NOT_FOUND;
+      case "FORBIDDEN":
+        return copy.FORBIDDEN;
+      case "DOCUMENT_TYPE_NOT_FOUND":
+        return copy.DOCUMENT_TYPE_UNKNOWN;
+      case "DOCUMENT_NOT_FOUND":
+        return copy.DOCUMENT_NOT_FOUND;
+      case "REPLACEMENT_INVALID":
+        return copy.REPLACEMENT_INVALID;
+      case "SCAN_PENDING":
+        return copy.SCAN_PENDING;
+      case "SCAN_FAILED":
+        return copy.SCAN_FAILED;
+      case "INVALID_TRANSITION":
+        return copy.INVALID_TRANSITION;
+      case "PUBLIC_VISIBILITY_FORBIDDEN":
+        return copy.PUBLIC_VISIBILITY_FORBIDDEN;
+      case "ACCESS_GRANT_INVALID":
+        return copy.ACCESS_GRANT_INVALID;
+    }
   }
+
   if (error instanceof StaffAuthorizationError) {
-    if (error.code === "SELF_REVIEW") return messages[language].SELF_REVIEW;
-    if (error.code === "UNAUTHENTICATED") return messages[language].UNAUTHENTICATED;
-    return messages[language].FORBIDDEN;
+    if (error.code === "SELF_REVIEW") return copy.SELF_REVIEW;
+    if (error.code === "UNAUTHENTICATED") return copy.UNAUTHENTICATED;
+    return copy.FORBIDDEN;
   }
+
   return null;
 }
