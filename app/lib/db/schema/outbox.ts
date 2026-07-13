@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import type { PreferredLanguage } from "./preferences";
+import type { SupplierWorkspaceStatus } from "./supplier";
 
 export const outboxStatuses = ["pending", "processing", "sent", "failed"] as const;
 export type OutboxStatus = (typeof outboxStatuses)[number];
@@ -16,6 +17,16 @@ export type AuthEmailOutboxPayload = {
   actionUrl: string;
 };
 
+export type SupplierActivationOutboxPayload = {
+  companyId: string;
+  previousStatus: SupplierWorkspaceStatus;
+  nextStatus: SupplierWorkspaceStatus;
+  blockerCodes: string[];
+  recipientUserIds: string[];
+};
+
+export type OutboxEventPayload = AuthEmailOutboxPayload | SupplierActivationOutboxPayload;
+
 export const outboxEvents = pgTable(
   "outbox_events",
   {
@@ -23,7 +34,7 @@ export const outboxEvents = pgTable(
     aggregateType: text("aggregate_type").notNull(),
     aggregateId: uuid("aggregate_id").notNull(),
     eventType: text("event_type").notNull(),
-    payload: jsonb("payload").$type<AuthEmailOutboxPayload>().notNull(),
+    payload: jsonb("payload").$type<OutboxEventPayload>().notNull(),
     status: text("status").$type<OutboxStatus>().default("pending").notNull(),
     attempts: integer("attempts").default(0).notNull(),
     availableAt: timestamp("available_at", { withTimezone: true }).defaultNow().notNull(),
