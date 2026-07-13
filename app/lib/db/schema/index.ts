@@ -6,3 +6,4 @@ export * from "./outbox";
 export * from "./platform-staff";
 export * from "./preferences";
 export * from "./supplier";
+export * from "./supplier-documents";
