@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildSupplierOnboardingChecklist,
   firstSupplierChecklistAction,
+  formFoundedYear,
+  formOptionalString,
+  formStringList,
   parseExportMarketCodes,
   supplierChecklistProgress,
 } from "./onboarding";
@@ -83,5 +86,28 @@ describe("supplier onboarding policy", () => {
 
   it("normalizes export-market input deterministically", () => {
     expect(parseExportMarketCodes("de, GB; de  nl\nTR")).toEqual(["DE", "GB", "NL", "TR"]);
+  });
+
+  it("normalizes repeated checkbox values and optional fields", () => {
+    const formData = new FormData();
+    formData.append("supplierTypeKeys", " supplier_type.manufacturer ");
+    formData.append("supplierTypeKeys", "supplier_type.manufacturer");
+    formData.append("supplierTypeKeys", "supplier_type.private_label_supplier");
+    formData.set("tradingName", "   ");
+    formData.set("foundedYear", "1998");
+
+    expect(formStringList(formData, "supplierTypeKeys")).toEqual([
+      "supplier_type.manufacturer",
+      "supplier_type.private_label_supplier",
+    ]);
+    expect(formOptionalString(formData, "tradingName")).toBeNull();
+    expect(formFoundedYear(formData)).toBe(1998);
+  });
+
+  it("passes invalid founded-year text into domain validation as NaN", () => {
+    const formData = new FormData();
+    formData.set("foundedYear", "nineteen ninety-eight");
+
+    expect(Number.isNaN(formFoundedYear(formData))).toBe(true);
   });
 });
