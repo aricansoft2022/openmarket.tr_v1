@@ -110,8 +110,7 @@ export const launchProductionCapabilities = [
   },
 ] as const satisfies readonly SupplierCatalogueEntry[];
 
-export type LaunchProductionCapabilityKey =
-  (typeof launchProductionCapabilities)[number]["key"];
+export type LaunchProductionCapabilityKey = (typeof launchProductionCapabilities)[number]["key"];
 
 export const launchSupplierTypeKeys = launchSupplierTypes.map((entry) => entry.key);
 export const launchProductionCapabilityKeys = launchProductionCapabilities.map(

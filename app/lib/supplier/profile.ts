@@ -23,12 +23,7 @@ export type SupplierProfileInput = {
 };
 
 export type SupplierProfileMissingReason =
-  | "legal_name"
-  | "country"
-  | "city"
-  | "description"
-  | "supplier_type"
-  | "application_context";
+  "legal_name" | "country" | "city" | "description" | "supplier_type" | "application_context";
 
 export type SupplierProfileCompleteness = {
   complete: boolean;

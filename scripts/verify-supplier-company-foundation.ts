@@ -10,10 +10,7 @@ import { createAuth, type AuthEnvironment } from "../app/lib/auth/create-auth.se
 import { authRequest, registerWithPreferences } from "../app/lib/auth/registration.server";
 import { submitOnboardingIdentity } from "../app/lib/business-identity/onboarding.server";
 import * as schema from "../app/lib/db/schema";
-import {
-  launchProductionCapabilities,
-  launchSupplierTypes,
-} from "../app/lib/supplier/catalogue";
+import { launchProductionCapabilities, launchSupplierTypes } from "../app/lib/supplier/catalogue";
 import { seedSupplierLaunchCatalogue } from "../app/lib/supplier/catalogue.server";
 import {
   createSupplierCompany,

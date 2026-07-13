@@ -75,10 +75,7 @@ try {
     })
     .from(schema.productionCapabilities)
     .where(eq(schema.productionCapabilities.active, true))
-    .orderBy(
-      asc(schema.productionCapabilities.sortOrder),
-      asc(schema.productionCapabilities.key),
-    );
+    .orderBy(asc(schema.productionCapabilities.sortOrder), asc(schema.productionCapabilities.key));
   assert.deepEqual(activeCapabilities, expectedRows(launchProductionCapabilities));
 
   const [archivedType] = await database
