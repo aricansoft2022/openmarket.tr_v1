@@ -269,7 +269,9 @@ export default function SupplierCompanyProfile({ loaderData, actionData }: Route
 
             <div className="supplier-save-bar">
               <div>
-                <strong>{readOnly ? common.readOnly : company ? copy.existing : copy.newCompany}</strong>
+                <strong>
+                  {readOnly ? common.readOnly : company ? copy.existing : copy.newCompany}
+                </strong>
                 <p>{common.draftBoundary}</p>
               </div>
               <button className="button button--primary" type="submit">

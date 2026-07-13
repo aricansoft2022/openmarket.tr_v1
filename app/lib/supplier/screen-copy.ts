@@ -32,7 +32,8 @@ const screens = {
       identityAction: "İş kimliği durumunu görüntüle",
       emptyEyebrow: "Boş durum",
       emptyTitle: "Henüz Supplier şirketi oluşturulmadı",
-      emptyDescription: "Doğrulanmış şirket kimliğiyle minimum şirket profilini oluşturarak başlayın.",
+      emptyDescription:
+        "Doğrulanmış şirket kimliğiyle minimum şirket profilini oluşturarak başlayın.",
       createCompany: "Şirket profilini oluştur",
       activationEyebrow: "Aktivasyon durumu",
       activeTitle: "Tedarikçi aktif",
@@ -51,7 +52,8 @@ const screens = {
       rfqDescription: "RFQ eşleştirme ve yanıtlama yalnızca aktif Supplier şirketlerine açılır.",
       enquiryEyebrow: "Talep akışı",
       enquiryTitle: "Doğrudan talep kapalı",
-      enquiryDescription: "İletişim bilgileri ve ticari talepler aktivasyon tamamlanmadan görünmez.",
+      enquiryDescription:
+        "İletişim bilgileri ve ticari talepler aktivasyon tamamlanmadan görünmez.",
       documentsEyebrow: "Belge süre paneli",
       documentsTitle: "Belge takibi henüz başlamadı",
       documentsDescription:
@@ -83,7 +85,8 @@ const screens = {
       intentTitle: "Tedarikçi çalışma alanı izni yok",
       intentDescription: "Bu ekranı düzenlemek için çalışma alanı tercihini genişletin.",
       identityTitle: "Doğrulanmış iş kimliği gerekli",
-      identityDescription: "Yasal şirket adı ancak doğrulanmış bir iş kimliği kaydına bağlanabilir.",
+      identityDescription:
+        "Yasal şirket adı ancak doğrulanmış bir iş kimliği kaydına bağlanabilir.",
       identityAction: "Doğrulama durumunu aç",
       legalName: "Yasal şirket adı",
       verifiedName: "Doğrulanmış şirket adı",
@@ -120,7 +123,8 @@ const screens = {
         "Birden fazla tedarikçi türü seçilebilir. Üretim kabiliyetleri yalnızca gerçekten yürüttüğünüz süreçler için işaretlenmelidir.",
       prerequisiteEyebrow: "Ön koşul",
       prerequisiteTitle: "Önce şirket profilini oluşturun",
-      prerequisiteDescription: "Tür ve kabiliyet seçimleri identity-bound Supplier şirketine bağlanır.",
+      prerequisiteDescription:
+        "Tür ve kabiliyet seçimleri identity-bound Supplier şirketine bağlanır.",
       prerequisiteAction: "Şirket profiline git",
       saved: "Tedarikçi türleri ve kabiliyetler kaydedildi. Supplier taslak durumu korunuyor.",
       typesEyebrow: "Tedarikçi türü kartları",
@@ -174,7 +178,8 @@ const screens = {
       identityAction: "View business identity status",
       emptyEyebrow: "Empty state",
       emptyTitle: "No Supplier company has been created",
-      emptyDescription: "Start by creating the minimum company profile with the verified company identity.",
+      emptyDescription:
+        "Start by creating the minimum company profile with the verified company identity.",
       createCompany: "Create company profile",
       activationEyebrow: "Activation status",
       activeTitle: "Supplier is active",
@@ -193,10 +198,12 @@ const screens = {
       rfqDescription: "RFQ matching and responses are available only to active Supplier companies.",
       enquiryEyebrow: "Enquiry feed",
       enquiryTitle: "Direct enquiries disabled",
-      enquiryDescription: "Contact details and commercial enquiries remain hidden until activation.",
+      enquiryDescription:
+        "Contact details and commercial enquiries remain hidden until activation.",
       documentsEyebrow: "Document expiry panel",
       documentsTitle: "Document tracking has not started",
-      documentsDescription: "Company-document upload, review and expiry tracking will open in issue #7.",
+      documentsDescription:
+        "Company-document upload, review and expiry tracking will open in issue #7.",
     },
     onboarding: {
       title: "Follow the activation path step by step",
@@ -224,7 +231,8 @@ const screens = {
       intentTitle: "Supplier workspace permission is missing",
       intentDescription: "Expand the workspace preference to edit this screen.",
       identityTitle: "Verified business identity required",
-      identityDescription: "The legal company name can only be bound to a verified business-identity record.",
+      identityDescription:
+        "The legal company name can only be bound to a verified business-identity record.",
       identityAction: "Open verification status",
       legalName: "Legal company name",
       verifiedName: "Verified company name",
@@ -261,7 +269,8 @@ const screens = {
         "Multiple Supplier types may be selected. Mark only the production capabilities the company actually performs.",
       prerequisiteEyebrow: "Prerequisite",
       prerequisiteTitle: "Create the company profile first",
-      prerequisiteDescription: "Type and capability selections are bound to the identity-linked Supplier company.",
+      prerequisiteDescription:
+        "Type and capability selections are bound to the identity-linked Supplier company.",
       prerequisiteAction: "Go to company profile",
       saved: "Supplier types and capabilities saved. The Supplier draft status was preserved.",
       typesEyebrow: "Supplier type cards",
