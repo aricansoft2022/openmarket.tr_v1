@@ -31,6 +31,8 @@ describe("Supplier bilingual screen copy", () => {
     expect(supplierScreenCopy("tr").overview.inactiveDescription).toContain("belge onayından");
     expect(supplierScreenCopy("en").overview.inactiveDescription).toContain("document approval");
     expect(supplierScreenCopy("tr").common.draftBoundary).toContain("aktifleştirmez");
-    expect(supplierScreenCopy("en").common.draftBoundary).toContain("does not automatically activate");
+    expect(supplierScreenCopy("en").common.draftBoundary).toContain(
+      "does not automatically activate",
+    );
   });
 });
