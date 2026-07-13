@@ -26,30 +26,32 @@ Phase 1 — Identity and supplier activation foundation.
 - Merged the business-identity domain policy, review and Buyer activation state machine through PR #23.
 - Merged A08–A10 workspace, submission, status and resubmission routes through PR #24.
 - Merged private manual-exception evidence metadata, R2 lifecycle and owner-only handlers through PR #25.
-- Merged route registration, A10 evidence entry and permanent evidence CI repair through PR #26 as `68db58fac2b3a2e4f725ea44a47edad7629d9e64`.
-- Merged fixed Reviewer/Admin business-identity authorization, self-review denial and private staff evidence access through PR #27 as `f3854595929089bbcb71289014c9e34aa5b93cf6`.
-- Merged audited platform staff assignment management through PR #30 as `b85bcdd87c71c6c744ff11bc46d7405cefecb504`.
-- Merged the audited Supplier company/profile foundation through PR #31 as `2a44a6b81ed3079071987a58620133632347e7f9`.
+- Merged route registration, A10 evidence entry and permanent evidence CI repair through PR #26.
+- Merged fixed Reviewer/Admin business-identity authorization, self-review denial and private staff evidence access through PR #27.
+- Merged audited platform staff assignment management through PR #30.
+- Merged the audited Supplier company/profile foundation through PR #31.
+- Merged the Supplier launch catalogue, idempotent production seeds and exact PostgreSQL seed verification through PR #33 as `6ca28b706b4eabe1b03d90835366a46f863c6e04`.
 - Kept fake Cloudflare resource IDs, public object URLs and credentials out of source control.
 
 ## In progress
 
-Draft PR #33 on `agent/supplier-launch-seeds` adds the launch Supplier catalogue and closes the production-seed gap found by retrospective audit #32:
+Draft PR #36 on `agent/supplier-onboarding-screens` implements the specification-defined Supplier onboarding screens S01–S04 using the merged Supplier domain and launch catalogue:
 
-- the six Supplier types defined verbatim by specification section 5.3, with stable keys and Turkish/English labels;
-- a deliberately narrow textile production-capability set derived only from explicitly named launch processes and services;
-- a code-owned idempotent seed operation that repairs canonical rows and deactivates non-launch values without deleting history;
-- an exact PostgreSQL production-inventory gate separate from fixture data;
-- Supplier company integration tests that consume the real launch catalogue;
-- profile completeness aligned with the specification: Supplier type and application context are required, while production capabilities remain optional for exporters and distributors.
+- `/supplier` overview with activation boundary, deterministic onboarding progress and intentionally disabled product/RFQ/enquiry/document placeholders;
+- `/supplier/onboarding` stepper, checklist cards, blocking issues and the first available continuation action;
+- `/supplier/company` creation and update for the verified-identity-bound Supplier company, including company details and export-market code capture;
+- `/supplier/capabilities` for seeded Supplier types, fixed application contexts and reviewed production capabilities;
+- server-side owner/admin/editor edit permissions and viewer read-only behaviour;
+- Turkish/English shell, checklist and form-error copy derived from the account preference;
+- loading, empty, blocked, error, validation, success and read-only states;
+- explicit preservation of Supplier draft/activation state: profile completion never grants commercial access;
+- route-registration regression coverage and deterministic onboarding/form-normalization unit tests.
 
-The production-capability list is a reviewed catalogue decision, not a claim that the specification supplied a standalone verbatim enumeration. Expanding it requires another reviewed seed change.
-
-Supplier onboarding screens, company-document storage/review and Supplier activation are not yet present on `main`.
+Company-document upload/review and Supplier activation remain separate work in issues #7 and #8. Product creation, RFQ response and team invitations are not part of PR #36.
 
 ## Verification
 
-Permanent read-only GitHub Actions run `29243586323` passed on PR #33 head `9a41586d0c39016300bff599bfc6d15500e1083a`:
+GitHub Actions run `29244872091` passed on PR #36 application head `da82d2f3893974612b7f4a8a3988181c007475ec`:
 
 ```text
 npm run format:check                              PASS
@@ -75,7 +77,9 @@ npm run db:verify:supplier-catalogue              PASS
 npm run db:verify:supplier-company                PASS
 ```
 
-The seed gate proves the exact active catalogue, bilingual labels, deterministic ordering, repeated idempotency, canonical-row repair and non-launch archival. The Supplier gate proves that the production catalogue is consumed without forcing non-manufacturing Supplier types to claim production capabilities.
+The Supplier onboarding unit evidence covers dependency blocking, incomplete document activation, localized checklist copy, repeated checkbox normalization, optional-field normalization, founded-year parsing and export-market normalization. The existing PostgreSQL Supplier gate continues to prove verified-identity binding, membership isolation, viewer denial, seeded-catalogue enforcement, deterministic completeness and immutable profile-update audits.
+
+A final read-only CI run is still required after the documentation-only completion commits.
 
 ## Known issues and blockers
 
@@ -86,15 +90,17 @@ The seed gate proves the exact active catalogue, bilingual labels, deterministic
 - Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
 - Initial Super Admin bootstrap remains a controlled provisioning action rather than a public or self-service workflow.
 - Evidence content inspection/scanning, quarantine and retention cleanup policy remain open.
-- Supplier onboarding screens, company-document review and activation remain future work in #6–#8.
-- Cloudflare Images account configuration remains an external dashboard task.
+- Company-document private upload/review and Supplier activation are not implemented yet; S01–S04 do not make the marketplace production-ready.
+- Country codes currently enforce a shared uppercase two-letter format, not authoritative ISO membership; issue #34 tracks the explicit semantic decision.
+- Routes still rely on the current single-company assumption; issue #35 tracks explicit Supplier company/workspace selection before multi-company membership is exposed.
+- Cloudflare Images account configuration remains an external dashboard task for company and product media.
 
-These are remote-integration or later-feature blockers. They do not invalidate the current local authorization, migration, seed, CI or PostgreSQL evidence, but they prevent claiming user-facing Supplier onboarding or production readiness.
+These are remote-integration or later-feature blockers. They do not invalidate the current local authorization, route, migration, seed, CI or PostgreSQL evidence, but they prevent claiming remote production readiness or commercial Supplier activation.
 
 ## Next tasks
 
-1. Squash merge PR #33 after its final documentation commit passes permanent read-only CI.
-2. Close or split the resolved seed finding in audit issue #32; keep explicit follow-ups for country-code semantics and future multi-company selection.
-3. Continue issue #6 with S01–S04 as a separate Supplier onboarding route/UI slice using the merged domain and catalogue services.
-4. Continue company-document and activation work separately through #7–#8.
+1. Complete PR #36 documentation, obtain a final green read-only CI run and move the draft to review.
+2. Continue issue #7 with private company-document upload, requirement resolution, authorized retrieval and reviewer decisions.
+3. Continue issue #8 with the central Supplier activation evaluator and audited state transitions.
+4. Resolve country-code semantics in #34 and explicit multi-company selection in #35 before exposing those assumptions more broadly.
 5. Keep remote Neon/Hyperdrive/R2, email delivery, Google OAuth and abuse-control evidence explicitly unverified until real resources exist.
