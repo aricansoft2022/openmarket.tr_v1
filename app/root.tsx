@@ -14,6 +14,7 @@ import "./styles/auth.css";
 import "./styles/account-security.css";
 import "./styles/onboarding.css";
 import "./styles/staff-review.css";
+import "./styles/supplier.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
