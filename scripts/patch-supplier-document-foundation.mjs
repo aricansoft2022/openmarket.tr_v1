@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 function patch(path, edits) {
   let source = readFileSync(path, "utf8");
@@ -104,7 +105,8 @@ patch("app/lib/supplier/documents/policy.ts", [
 
 patch("app/lib/supplier/documents/policy.test.ts", [
   [
-    `      "company_document.company_address",\n      "company_document.company_profile",`,
+    `      "company_document.company_address",
+      "company_document.company_profile",`,
     `      "company_document.company_address",`,
   ],
   [
@@ -182,17 +184,4 @@ patch("app/lib/supplier/documents/policy.test.ts", [
   ],
 ]);
 
-patch("app/lib/db/schema/supplier-documents.ts", [
-  [`    reason: text("reason").notNull(),`, `    reason: text("reason"),`],
-  [
-    `    check(
-      "supplier_document_review_events_reason_check",
-      sql\`char_length(trim(\${table.reason})) between 3 and 2000\`,
-    ),`,
-    `    check(
-      "supplier_document_review_events_reason_check",
-      sql\`(\${table.decision} = 'approved' and (\${table.reason} is null or char_length(trim(\${table.reason})) between 3 and 2000))
-        or (\${table.decision} in ('rejected', 'replacement_required') and char_length(trim(\${table.reason})) between 3 and 2000)\`,
-    ),`,
-  ],
-]);
+unlinkSync(fileURLToPath(import.meta.url));
