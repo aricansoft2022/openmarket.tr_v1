@@ -1,4 +1,4 @@
-name: Supplier document foundation
+name: Materialize verified Supplier document source
 
 on:
   pull_request:
@@ -15,14 +15,15 @@ on:
       - ".github/workflows/supplier-documents.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: supplier-documents-${{ github.ref }}
+  group: supplier-document-materialization-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  verify:
+  materialize:
+    if: github.head_ref == 'agent/supplier-documents-post-merge-hardening'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -42,8 +43,11 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - name: Checkout
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -74,7 +78,7 @@ jobs:
           writeFileSync(path, `${JSON.stringify(packageJson, null, 2)}\n`);
           NODE
 
-      - name: Regenerate migration from reviewed schema
+      - name: Regenerate reviewed migration
         run: |
           rm -f drizzle/0008_*.sql drizzle/meta/0008_snapshot.json
           node --input-type=module <<'NODE'
@@ -103,76 +107,146 @@ jobs:
           EXECUTE FUNCTION prevent_supplier_document_review_event_mutation();
           SQL
 
-      - name: Remove temporary write tooling
+      - name: Remove temporary machinery
         run: |
+          rm -f .github/workflows/finalize-supplier-documents-complete.yml
+          rm -f .github/workflows/finalize-supplier-documents-reviewed.yml
           rm -f .github/workflows/apply-supplier-document-policy.yml
           rm -f .github/workflows/prepare-supplier-documents-final.yml
           rm -f .github/workflows/prepare-supplier-document-contract.yml
           rm -f .github/workflows/finalize-supplier-document-foundation.yml
           rm -f .github/workflows/finalize-supplier-document-ui.yml
-          rm -f .github/workflows/finalize-supplier-documents-reviewed.yml
+          rm -f scripts/patch-supplier-document-checklist.mjs
           rm -f scripts/patch-supplier-document-foundation.mjs
           rm -f scripts/patch-supplier-document-safety.mjs
           rm -f scripts/patch-supplier-document-lifecycle.mjs
           rm -f scripts/patch-supplier-document-ui.mjs
           rm -f scripts/patch-supplier-document-domain-guards.mjs
+          rm -f scripts/patch-supplier-document-schema-contract.mjs
+          rm -f app/lib/supplier/documents/.hardening-cleanup
+          rm -f app/lib/supplier/documents/.hardening-readme
+          rm -f app/lib/supplier/documents/.hardening-scope
+          rm -f app/lib/supplier/documents/.hardening-trigger
+          rm -f app/lib/supplier/documents/POST_MERGE_HARDENING.md
+          rm -f docs/supplier-document-hardening-plan.md
 
-      - name: Format prepared repository
+      - name: Install permanent read-only verification workflow
         run: |
-          set +e
-          npm run format > /tmp/supplier-document-format.log 2>&1
-          status=$?
-          set -e
-          cat /tmp/supplier-document-format.log
-          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          cat > .github/workflows/supplier-documents.yml <<'YAML'
+          name: Supplier document lifecycle
 
-      - name: Upload formatting diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: supplier-document-format-diagnostics
-          path: /tmp/supplier-document-format.log
-          if-no-files-found: warn
-          retention-days: 1
+          on:
+            pull_request:
+              paths:
+                - "app/lib/authorization/**"
+                - "app/lib/db/schema/**"
+                - "app/lib/supplier/documents/**"
+                - "app/routes/*supplier-document*"
+                - "app/routes/supplier.documents*"
+                - "app/styles/supplier-documents.css"
+                - "drizzle/**"
+                - "scripts/*supplier-document*"
+                - "package.json"
+                - ".github/workflows/supplier-documents.yml"
+            push:
+              branches: [main]
+              paths:
+                - "app/lib/authorization/**"
+                - "app/lib/db/schema/**"
+                - "app/lib/supplier/documents/**"
+                - "app/routes/*supplier-document*"
+                - "app/routes/supplier.documents*"
+                - "app/styles/supplier-documents.css"
+                - "drizzle/**"
+                - "scripts/*supplier-document*"
+                - "package.json"
+                - ".github/workflows/supplier-documents.yml"
+
+          permissions:
+            contents: read
+
+          concurrency:
+            group: supplier-documents-${{ github.workflow }}-${{ github.ref }}
+            cancel-in-progress: true
+
+          jobs:
+            verify:
+              runs-on: ubuntu-latest
+              timeout-minutes: 30
+              env:
+                DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
+              services:
+                postgres:
+                  image: postgres:17-alpine
+                  env:
+                    POSTGRES_DB: openmarket
+                    POSTGRES_USER: openmarket
+                    POSTGRES_PASSWORD: openmarket
+                  ports:
+                    - 5432:5432
+                  options: >-
+                    --health-cmd "pg_isready -U openmarket -d openmarket"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+              steps:
+                - name: Checkout
+                  uses: actions/checkout@v4
+
+                - name: Use Node.js
+                  uses: actions/setup-node@v4
+                  with:
+                    node-version: 24
+                    cache: npm
+
+                - name: Install dependencies
+                  run: npm ci --ignore-scripts
+
+                - name: Check formatting
+                  run: npm run format:check
+
+                - name: Check types
+                  run: npm run typecheck
+
+                - name: Run unit tests
+                  run: npm run test:run
+
+                - name: Build production bundle
+                  run: npm run build
+
+                - name: Check migration metadata
+                  run: npm run db:check
+
+                - name: Apply migrations
+                  run: npm run db:migrate
+
+                - name: Seed Supplier launch catalogue
+                  run: npm run db:seed:supplier-catalogue
+
+                - name: Verify Supplier launch catalogue
+                  run: npm run db:verify:supplier-catalogue
+
+                - name: Seed Supplier document catalogue
+                  run: npm run db:seed:supplier-documents
+
+                - name: Verify Supplier document catalogue
+                  run: npm run db:verify:supplier-documents
+
+                - name: Verify private Supplier document lifecycle
+                  run: npm run db:verify:supplier-document-lifecycle
+          YAML
+
+      - name: Format materialized repository
+        run: npm run format
 
       - name: Check formatting
         run: npm run format:check
 
       - name: Check types
-        run: |
-          set +e
-          npm run typecheck > /tmp/supplier-document-typecheck.log 2>&1
-          status=$?
-          set -e
-          cat /tmp/supplier-document-typecheck.log
-          if [ "$status" -ne 0 ]; then exit "$status"; fi
+        run: npm run typecheck
 
-      - name: Upload typecheck diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: supplier-document-typecheck-diagnostics
-          path: /tmp/supplier-document-typecheck.log
-          if-no-files-found: warn
-          retention-days: 1
-
-      - name: Run Supplier document unit tests
-        run: |
-          set +e
-          npm run test:run > /tmp/supplier-document-tests.log 2>&1
-          status=$?
-          set -e
-          cat /tmp/supplier-document-tests.log
-          if [ "$status" -ne 0 ]; then exit "$status"; fi
-
-      - name: Upload unit-test diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: supplier-document-test-diagnostics
-          path: /tmp/supplier-document-tests.log
-          if-no-files-found: warn
-          retention-days: 1
+      - name: Run unit tests
+        run: npm run test:run
 
       - name: Build production bundle
         run: npm run build
@@ -196,54 +270,16 @@ jobs:
         run: npm run db:verify:supplier-documents
 
       - name: Verify private Supplier document lifecycle
+        run: npm run db:verify:supplier-document-lifecycle
+
+      - name: Commit verified materialized source
         run: |
-          set +e
-          npm run db:verify:supplier-document-lifecycle > /tmp/supplier-document-lifecycle.log 2>&1
-          status=$?
-          set -e
-          cat /tmp/supplier-document-lifecycle.log
-          if [ "$status" -ne 0 ]; then exit "$status"; fi
-
-      - name: Upload lifecycle diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: supplier-document-lifecycle-diagnostics
-          path: /tmp/supplier-document-lifecycle.log
-          if-no-files-found: warn
-          retention-days: 1
-
-      - name: Package verified prepared repository
-        run: |
-          tar -czf /tmp/supplier-document-lifecycle.tar.gz \
-            app/lib/authorization/platform-staff.server.ts \
-            app/lib/authorization/platform-staff.test.ts \
-            app/lib/authorization/platform-staff.ts \
-            app/lib/db/schema/index.ts \
-            app/lib/db/schema/supplier-documents.ts \
-            app/lib/supplier/documents \
-            app/routes/admin.supplier-documents.tsx \
-            'app/routes/admin.supplier-documents.$documentId.tsx' \
-            'app/routes/supplier.document-access.$token.ts' \
-            'app/routes/supplier.documents.$documentId.tsx' \
-            app/routes/supplier.documents.tsx \
-            app/routes/supplier.documents.upload.tsx \
-            app/styles/supplier-documents.css \
-            app/root.tsx \
-            app/routes.ts \
-            app/routes.test.ts \
-            package.json \
-            drizzle/0008_*.sql \
-            drizzle/meta/0008_snapshot.json \
-            drizzle/meta/_journal.json \
-            scripts/seed-supplier-document-catalogue.ts \
-            scripts/verify-supplier-document-catalogue.ts \
-            scripts/verify-supplier-document-lifecycle.ts
-
-      - name: Upload verified prepared repository
-        uses: actions/upload-artifact@v4
-        with:
-          name: supplier-document-lifecycle
-          path: /tmp/supplier-document-lifecycle.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && {
+            echo "Expected materialized changes were not produced." >&2
+            exit 1
+          }
+          git commit -m "fix: materialize verified Supplier document source"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
