@@ -1,0 +1,7 @@
+
+> openmarket-tr@0.0.0 db:generate
+> drizzle-kit generate
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/home/runner/work/openmarket.tr_v1/openmarket.tr_v1/drizzle.config.ts'
+DATABASE_URL is required for Drizzle migrations.
