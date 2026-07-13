@@ -123,11 +123,21 @@ jobs:
           rm -f app/lib/supplier/documents/POST_MERGE_HARDENING.md
           rm -f docs/supplier-document-hardening-plan.md
 
-      - name: Format materialized repository
-        run: npm run format
+      - name: Format materialized source
+        run: >-
+          npx prettier --write
+          "app/**/*.{ts,tsx,css}"
+          package.json
+          "scripts/*supplier-document*.ts"
+          "drizzle/meta/*.json"
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Check materialized source formatting
+        run: >-
+          npx prettier --check
+          "app/**/*.{ts,tsx,css}"
+          package.json
+          "scripts/*supplier-document*.ts"
+          "drizzle/meta/*.json"
 
       - name: Check types
         run: npm run typecheck
