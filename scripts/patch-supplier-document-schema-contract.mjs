@@ -89,6 +89,7 @@ replace(
 );
 source = source.replaceAll("result.actor.id", "session.user.id");
 source = source.replaceAll("result.actor.role", "actorRole");
+source = source.replaceAll("result.actorRole", "actorRole");
 
 source = source.replaceAll(
   "reviewedBy: supplierDocumentReviewEvents.reviewedBy,",
