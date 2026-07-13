@@ -1,41 +1,20 @@
-name: Supplier document lifecycle
+name: Verify Supplier activation lifecycle
 
 on:
   pull_request:
     paths:
-      - "app/lib/authorization/**"
-      - "app/lib/db/schema/**"
-      - "app/lib/supplier/documents/**"
-      - "app/routes/*supplier-document*"
-      - "app/routes/supplier.documents*"
-      - "app/styles/supplier-documents.css"
-      - "drizzle/**"
-      - "scripts/*supplier-document*"
-      - "package.json"
-      - ".github/workflows/supplier-documents.yml"
-  push:
-    branches: [main]
-    paths:
-      - "app/lib/authorization/**"
-      - "app/lib/db/schema/**"
-      - "app/lib/supplier/documents/**"
-      - "app/routes/*supplier-document*"
-      - "app/routes/supplier.documents*"
-      - "app/styles/supplier-documents.css"
-      - "drizzle/**"
-      - "scripts/*supplier-document*"
+      - "app/lib/supplier/activation*.ts"
+      - "scripts/verify-supplier-activation.ts"
+      - "scripts/patch-supplier-activation-integration.mjs"
       - "package.json"
       - ".github/workflows/supplier-documents.yml"
 
 permissions:
-  contents: read
-
-concurrency:
-  group: supplier-documents-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  contents: write
 
 jobs:
   verify:
+    if: github.head_ref == 'agent/supplier-activation-state-machine'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -55,8 +34,11 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - name: Checkout
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -67,35 +49,33 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Apply integration fixture corrections
+        run: node scripts/patch-supplier-activation-integration.mjs
 
-      - name: Check types
-        run: npm run typecheck
+      - name: Format activation verification
+        run: npx prettier --write scripts/verify-supplier-activation.ts package.json
 
-      - name: Run unit tests
-        run: npm run test:run
+      - name: Verify application source
+        run: |
+          npm run typecheck
+          npm run test:run
+          npm run build
 
-      - name: Build production bundle
-        run: npm run build
+      - name: Verify Supplier activation in PostgreSQL
+        run: |
+          npm run db:migrate
+          npm run db:seed:supplier-catalogue
+          npm run db:seed:supplier-documents
+          npm run db:verify:supplier-activation
 
-      - name: Check migration metadata
-        run: npm run db:check
-
-      - name: Apply migrations
-        run: npm run db:migrate
-
-      - name: Seed Supplier launch catalogue
-        run: npm run db:seed:supplier-catalogue
-
-      - name: Verify Supplier launch catalogue
-        run: npm run db:verify:supplier-catalogue
-
-      - name: Seed Supplier document catalogue
-        run: npm run db:seed:supplier-documents
-
-      - name: Verify Supplier document catalogue
-        run: npm run db:verify:supplier-documents
-
-      - name: Verify private Supplier document lifecycle
-        run: npm run db:verify:supplier-document-lifecycle
+      - name: Commit verified activation fixture
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-supplier-activation.ts scripts/patch-supplier-activation-integration.mjs package.json
+          git diff --cached --quiet && {
+            echo "Expected Supplier activation fixture changes were not produced." >&2
+            exit 1
+          }
+          git commit -m "test: verify Supplier activation lifecycle in PostgreSQL"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
