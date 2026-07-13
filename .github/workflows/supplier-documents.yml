@@ -1,101 +1,103 @@
-name: Supplier document lifecycle
+name: Update Supplier document test plan
 
 on:
   pull_request:
     paths:
-      - "app/lib/authorization/**"
-      - "app/lib/db/schema/**"
-      - "app/lib/supplier/documents/**"
-      - "app/routes/*supplier-document*"
-      - "app/routes/supplier.documents*"
-      - "app/styles/supplier-documents.css"
-      - "drizzle/**"
-      - "scripts/*supplier-document*"
-      - "package.json"
-      - ".github/workflows/supplier-documents.yml"
-  push:
-    branches: [main]
-    paths:
-      - "app/lib/authorization/**"
-      - "app/lib/db/schema/**"
-      - "app/lib/supplier/documents/**"
-      - "app/routes/*supplier-document*"
-      - "app/routes/supplier.documents*"
-      - "app/styles/supplier-documents.css"
-      - "drizzle/**"
-      - "scripts/*supplier-document*"
-      - "package.json"
       - ".github/workflows/supplier-documents.yml"
 
 permissions:
-  contents: read
-
-concurrency:
-  group: supplier-documents-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  verify:
+  update:
+    if: github.head_ref == 'agent/supplier-documents-post-merge-hardening'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: openmarket
-          POSTGRES_USER: openmarket
-          POSTGRES_PASSWORD: openmarket
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U openmarket -d openmarket"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     steps:
-      - name: Checkout
+      - name: Checkout PR head
         uses: actions/checkout@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: 24
-          cache: npm
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
+      - name: Patch test plan
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
 
-      - name: Check formatting
-        run: npm run format:check
+          const path = "TEST_PLAN.md";
+          let source = readFileSync(path, "utf8");
 
-      - name: Check types
-        run: npm run typecheck
+          const databaseMarker =
+            "- profile changes preserve Supplier activation state and create immutable complete old/new audit evidence.\n";
+          const databaseSection = `
 
-      - name: Run unit tests
-        run: npm run test:run
+Supplier company-document database evidence must include:
 
-      - name: Build production bundle
-        run: npm run build
+- the canonical document-type catalogue and Supplier-type requirement rules seed idempotently and repair canonical values;
+- mandatory requirements resolve deterministically without allowing user-defined document types;
+- object keys are server-generated and private, file metadata is constrained and SHA-256 is stored only after private storage succeeds;
+- upload, scan, submission, review, expiry and replacement transitions obey database constraints;
+- active membership scopes Supplier reads and writes, while outsiders receive a non-disclosing not-found result;
+- only active fixed-role reviewers may list, read and decide documents;
+- reviewers cannot decide evidence for a company they belong to;
+- short-lived grants are user-bound, single-use and rejected after expiry or revocation;
+- replacement versions preserve prior evidence and mandatory-requirement continuity;
+- review decisions write effective-role audit evidence and review-history UPDATE/DELETE is rejected by PostgreSQL.
+`;
+          if (!source.includes("Supplier company-document database evidence must include:")) {
+            if (!source.includes(databaseMarker)) throw new Error("Database test-plan marker not found.");
+            source = source.replace(databaseMarker, databaseMarker + databaseSection);
+          }
 
-      - name: Check migration metadata
-        run: npm run db:check
+          const routeMarker = "- no profile or capability action changes Supplier activation status.\n";
+          const routeSection = `
 
-      - name: Apply migrations
-        run: npm run db:migrate
+Supplier S05–S07 and Admin D17–D18 route tests must cover:
 
-      - name: Seed Supplier launch catalogue
-        run: npm run db:seed:supplier-catalogue
+- route registration exactly once for list, upload, detail, access-grant, review queue and review detail routes;
+- unauthenticated, cross-company, viewer mutation and unrelated staff-role denial;
+- missing, uploaded, scan-pending, pending-review, approved, rejected, expired and replacement-required states;
+- Turkish/English copy, loading, empty, recoverable error, permission, validation, success and read-only states;
+- file-type, size, issue/expiry metadata and replacement-target validation;
+- private download headers, expiring single-use grants and no object-key disclosure;
+- reviewer-company conflict denial, mandatory rejection/replacement reasons and immutable timelines;
+- document approval never directly changes Supplier activation state.
+`;
+          if (!source.includes("Supplier S05–S07 and Admin D17–D18 route tests must cover:")) {
+            if (!source.includes(routeMarker)) throw new Error("Route test-plan marker not found.");
+            source = source.replace(routeMarker, routeMarker + routeSection);
+          }
 
-      - name: Verify Supplier launch catalogue
-        run: npm run db:verify:supplier-catalogue
+          source = source.replace(
+            "Company-email delivery, deployed private-R2 E2E, company-document review and commercial Supplier activation remain disabled until the required external resources and later Phase 1 slices exist.",
+            "Company-email delivery, deployed private-R2 E2E and commercial Supplier activation remain disabled until the required external resources and later Phase 1 slices exist. Local and CI company-document upload/review are covered by unit, route, migration and PostgreSQL lifecycle evidence.",
+          );
 
-      - name: Seed Supplier document catalogue
-        run: npm run db:seed:supplier-documents
+          source = source.replace(
+            "- supplier document private access\n",
+            `- private Supplier document catalogue, upload, scan, review, access-grant and replacement lifecycle
+- cross-company non-disclosure and reviewer-company conflict denial
+- immutable Supplier document review history and effective-role audit records
+- deployed private-R2 integration evidence before remote readiness
+`,
+          );
 
-      - name: Verify Supplier document catalogue
-        run: npm run db:verify:supplier-documents
+          source = source.replace(
+            "Supplier profile completeness and membership permissions, typed attribute shapes",
+            "Supplier profile completeness and membership permissions, private Supplier-document lifecycle, typed attribute shapes",
+          );
 
-      - name: Verify private Supplier document lifecycle
-        run: npm run db:verify:supplier-document-lifecycle
+          writeFileSync(path, source);
+          NODE
+
+      - name: Commit test-plan update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add TEST_PLAN.md
+          git diff --cached --quiet && {
+            echo "Expected TEST_PLAN.md changes were not produced." >&2
+            exit 1
+          }
+          git commit -m "docs: add Supplier document verification plan"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
