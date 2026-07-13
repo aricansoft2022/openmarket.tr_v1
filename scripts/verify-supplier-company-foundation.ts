@@ -110,6 +110,21 @@ const completeProfile = {
 } as const;
 
 try {
+  await assert.rejects(
+    client.query(
+      `insert into supplier_types (key, label_tr, label_en) values ($1, 'Hatalı', 'Invalid')`,
+      [`supplier_typeXfixture_${suffix.replaceAll("-", "_")}`],
+    ),
+    /supplier_types_key_check/,
+  );
+  await assert.rejects(
+    client.query(
+      `insert into production_capabilities (key, label_tr, label_en) values ($1, 'Hatalı', 'Invalid')`,
+      [`production_capabilityXfixture_${suffix.replaceAll("-", "_")}`],
+    ),
+    /production_capabilities_key_check/,
+  );
+
   await database.insert(schema.supplierTypes).values({
     key: fixtureSupplierTypeKey,
     labelTr: "Doğrulama tedarikçi tipi",
@@ -169,10 +184,19 @@ try {
     (error: unknown) =>
       error instanceof SupplierProfileActionError && error.code === "BUSINESS_IDENTITY_REQUIRED",
   );
+  await assert.rejects(
+    createSupplierCompany(environment, ownerRequest, {
+      ...completeProfile,
+      legalName: "Unrelated Supplier Identity A.Ş.",
+    }),
+    (error: unknown) =>
+      error instanceof SupplierProfileActionError && error.code === "BUSINESS_IDENTITY_MISMATCH",
+  );
 
   const created = await createSupplierCompany(environment, ownerRequest, completeProfile);
   createdCompanyIds.push(created.company.id);
   assert.equal(created.company.status, "supplier_draft");
+  assert.equal(created.company.businessIdentityReviewId, identity.reviewId);
   assert.equal(created.membershipRole, "owner");
   assert.deepEqual(created.completeness, { complete: true, missing: [] });
   assert.deepEqual(created.exportMarketCountryCodes, ["DE", "GB"]);
@@ -185,6 +209,7 @@ try {
 
   const loaded = await loadSupplierCompanyState(environment, ownerRequest, created.company.id);
   assert.equal(loaded?.company.id, created.company.id);
+  assert.equal(loaded?.company.businessIdentityReviewId, identity.reviewId);
   assert.equal(loaded?.company.status, "supplier_draft");
 
   const outsider = await loadSupplierCompanyState(
@@ -217,6 +242,16 @@ try {
       completeProfile,
     ),
     (error: unknown) => error instanceof SupplierProfileActionError && error.code === "FORBIDDEN",
+  );
+  await assert.rejects(
+    updateSupplierCompanyProfile(
+      environment,
+      request("/supplier/onboarding/company", editor.cookie),
+      created.company.id,
+      { ...completeProfile, legalName: "Identity Drift Textiles A.Ş." },
+    ),
+    (error: unknown) =>
+      error instanceof SupplierProfileActionError && error.code === "BUSINESS_IDENTITY_MISMATCH",
   );
 
   const incomplete = await updateSupplierCompanyProfile(
@@ -263,6 +298,7 @@ try {
     `
       select
         c.status,
+        c.business_identity_review_id,
         m.role,
         count(distinct ct.supplier_type_key)::int as supplier_types,
         count(distinct ac.context_key)::int as contexts,
@@ -275,12 +311,13 @@ try {
       left join supplier_production_capabilities pc on pc.company_id = c.id
       left join supplier_export_markets em on em.company_id = c.id
       where c.id = $1
-      group by c.status, m.role
+      group by c.status, c.business_identity_review_id, m.role
     `,
     [created.company.id, owner.id],
   );
   assert.deepEqual(evidence.rows[0], {
     status: "supplier_draft",
+    business_identity_review_id: identity.reviewId,
     role: "owner",
     supplier_types: 1,
     contexts: 2,
@@ -290,7 +327,7 @@ try {
 
   const auditEvidence = await client.query(
     `
-      select action, actor_id, effective_role, request_id
+      select action, actor_id, effective_role, request_id, old_value, new_value
       from audit_logs
       where resource_type = 'supplier_company'
         and resource_id = $1
@@ -298,19 +335,27 @@ try {
     `,
     [created.company.id],
   );
-  assert(auditEvidence.rows.some((row) => row.action === "supplier.company.created"));
-  assert(
-    auditEvidence.rows.some(
-      (row) =>
-        row.action === "supplier.company.profile_updated" &&
-        row.actor_id === editor.id &&
-        row.effective_role === "supplier_editor" &&
-        row.request_id === "supplier-company-editor-update",
-    ),
+  const createAudit = auditEvidence.rows.find(
+    (row) => row.action === "supplier.company.created",
   );
+  assert.equal(createAudit?.new_value.businessIdentityReviewId, identity.reviewId);
+
+  const editorAudit = auditEvidence.rows.find(
+    (row) =>
+      row.action === "supplier.company.profile_updated" &&
+      row.actor_id === editor.id &&
+      row.effective_role === "supplier_editor" &&
+      row.request_id === "supplier-company-editor-update",
+  );
+  assert(editorAudit, "Editor profile update audit must exist.");
+  assert.equal(editorAudit.old_value.description, completeProfile.description);
+  assert.deepEqual(editorAudit.old_value.supplierTypeKeys, [fixtureSupplierTypeKey]);
+  assert.equal(editorAudit.new_value.description, null);
+  assert.deepEqual(editorAudit.new_value.supplierTypeKeys, []);
+  assert.equal(editorAudit.new_value.businessIdentityReviewId, identity.reviewId);
 
   console.log(
-    "Supplier company foundation verified: supplier intent and verified-identity gates, owner creation, membership isolation, viewer denial, editor update, seeded taxonomy enforcement, deterministic completeness, draft-state preservation and immutable audit evidence passed.",
+    "Supplier company foundation verified: literal taxonomy constraints, supplier intent and identity-bound evidence gates, owner creation, membership isolation, viewer denial, legal-name drift denial, editor update, seeded taxonomy enforcement, deterministic completeness, draft-state preservation and reconstructable immutable audit evidence passed.",
   );
 } finally {
   if (createdCompanyIds.length > 0) {
