@@ -11,11 +11,12 @@ import {
   supplierChecklistProgress,
 } from "~/lib/supplier/onboarding";
 import { loadSupplierOnboardingRouteContext } from "~/lib/supplier/onboarding.server";
+import { supplierScreenCopy } from "~/lib/supplier/screen-copy";
 
 import type { Route } from "./+types/supplier";
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Tedarikçi genel bakış — OpenMarket.tr" }];
+  return [{ title: "Supplier overview / Tedarikçi genel bakış — OpenMarket.tr" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -34,12 +35,14 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 }
 
 export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
+  const copy = supplierScreenCopy(loaderData.preferredLanguage).overview;
   const checklist = buildSupplierOnboardingChecklist({
     language: loaderData.preferredLanguage,
     businessIdentityVerified: loaderData.businessIdentityVerified,
     company: loaderData.company,
   });
   const progress = supplierChecklistProgress(checklist);
+  const progressLabel = `${progress.complete} / ${progress.total} ${copy.progressSuffix}`;
 
   return (
     <SupplierShell
@@ -52,67 +55,58 @@ export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
       <section className="supplier-page">
         <div className="supplier-page__heading supplier-page__heading--split">
           <div>
-            <p className="eyebrow">S01 · Tedarikçi genel bakış</p>
-            <h1>Şirketinizi ticari aktivasyona hazırlayın</h1>
-            <p>
-              Profil, katalog ve belge adımları birbirinden ayrı doğrulanır. Taslak durumdayken
-              ticari etkileşim kapalı kalır.
-            </p>
+            <p className="eyebrow">S01 · Supplier overview</p>
+            <h1>{copy.title}</h1>
+            <p>{copy.description}</p>
           </div>
           <Link className="button button--primary" to="/supplier/onboarding">
-            Onboarding adımlarını aç
+            {copy.onboardingAction}
           </Link>
         </div>
 
         {!loaderData.hasSupplierIntent ? (
           <div className="supplier-state supplier-state--warning">
-            <p className="eyebrow">Çalışma alanı gerekli</p>
-            <h2>Tedarikçi çalışma alanı seçilmedi</h2>
-            <p>
-              Buyer hesabınızı koruyarak çalışma alanı tercihini “Her ikisi” olarak
-              genişletebilirsiniz. Bu seçim tek başına ticari yetki vermez.
-            </p>
+            <p className="eyebrow">{copy.workspaceRequired}</p>
+            <h2>{copy.workspaceMissingTitle}</h2>
+            <p>{copy.workspaceMissingDescription}</p>
             <Link className="button button--primary" to="/onboarding/workspaces">
-              Çalışma alanını güncelle
+              {copy.workspaceAction}
             </Link>
           </div>
         ) : !loaderData.businessIdentityVerified ? (
           <div className="supplier-state supplier-state--warning">
-            <p className="eyebrow">Aktivasyon engeli</p>
-            <h2>İş kimliği doğrulaması tamamlanmadı</h2>
-            <p>
-              Supplier şirketi, yalnızca doğrulanmış iş kimliği kanıtına bağlanarak oluşturulabilir.
-            </p>
+            <p className="eyebrow">{copy.identityBlocker}</p>
+            <h2>{copy.identityTitle}</h2>
+            <p>{copy.identityDescription}</p>
             <Link className="button button--primary" to="/onboarding/business-identity/status">
-              İş kimliği durumunu görüntüle
+              {copy.identityAction}
             </Link>
           </div>
         ) : !loaderData.company ? (
           <div className="supplier-state supplier-state--empty">
-            <p className="eyebrow">Boş durum</p>
-            <h2>Henüz Supplier şirketi oluşturulmadı</h2>
+            <p className="eyebrow">{copy.emptyEyebrow}</p>
+            <h2>{copy.emptyTitle}</h2>
             <p>
-              Doğrulanmış <strong>{loaderData.verifiedCompanyName}</strong> kimliğiyle minimum
-              şirket profilini oluşturarak başlayın.
+              {copy.emptyDescription} <strong>{loaderData.verifiedCompanyName}</strong>
             </p>
             <Link className="button button--primary" to="/supplier/company">
-              Şirket profilini oluştur
+              {copy.createCompany}
             </Link>
           </div>
         ) : null}
 
-        <section className="supplier-activation-banner" aria-label="Aktivasyon durumu">
+        <section className="supplier-activation-banner" aria-label={copy.activationEyebrow}>
           <div>
-            <p className="eyebrow">Activation banner</p>
+            <p className="eyebrow">{copy.activationEyebrow}</p>
             <h2>
               {loaderData.company?.company.status === "active_supplier"
-                ? "Tedarikçi aktif"
-                : "Ticari etkileşim henüz kapalı"}
+                ? copy.activeTitle
+                : copy.inactiveTitle}
             </h2>
             <p>
               {loaderData.company?.company.status === "active_supplier"
-                ? "Aktif Supplier yetkileri bu hesaba ve şirkete göre uygulanır."
-                : "Ürün taslakları hazırlanabilir; yayınlama, RFQ yanıtlama ve doğrudan talep alma belge onayından sonra açılır."}
+                ? copy.activeDescription
+                : copy.inactiveDescription}
             </p>
           </div>
           <span className="supplier-status-pill">
@@ -123,16 +117,14 @@ export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
         <section className="supplier-progress-panel">
           <div className="supplier-progress-panel__header">
             <div>
-              <p className="eyebrow">Onboarding progress</p>
-              <h2>
-                {progress.complete} / {progress.total} adım tamamlandı
-              </h2>
+              <p className="eyebrow">{copy.progressEyebrow}</p>
+              <h2>{progressLabel}</h2>
             </div>
             <strong>%{progress.percent}</strong>
           </div>
           <div
             className="supplier-progress-track"
-            aria-label={`Onboarding ilerlemesi yüzde ${progress.percent}`}
+            aria-label={`${copy.progressEyebrow}: ${progress.percent}%`}
           >
             <i style={{ width: `${progress.percent}%` }} />
           </div>
@@ -151,29 +143,27 @@ export default function SupplierOverview({ loaderData }: Route.ComponentProps) {
 
         <div className="supplier-dashboard-grid">
           <section className="supplier-dashboard-card">
-            <p className="eyebrow">Product summary</p>
-            <h2>0 ürün taslağı</h2>
-            <p>Ürün oluşturma issue #6 kapsamı dışında ayrı bir ürün sihirbazı dilimidir.</p>
+            <p className="eyebrow">{copy.productEyebrow}</p>
+            <h2>{copy.productTitle}</h2>
+            <p>{copy.productDescription}</p>
             <button className="button button--secondary" type="button" disabled>
-              Ürün oluşturma kilitli
+              {copy.productLocked}
             </button>
           </section>
           <section className="supplier-dashboard-card">
-            <p className="eyebrow">Matched RFQ feed</p>
-            <h2>Eşleşen RFQ yok</h2>
-            <p>RFQ eşleştirme ve yanıtlama yalnızca aktif Supplier şirketlerine açılır.</p>
+            <p className="eyebrow">{copy.rfqEyebrow}</p>
+            <h2>{copy.rfqTitle}</h2>
+            <p>{copy.rfqDescription}</p>
           </section>
           <section className="supplier-dashboard-card">
-            <p className="eyebrow">Enquiry feed</p>
-            <h2>Doğrudan talep kapalı</h2>
-            <p>İletişim bilgileri ve ticari talepler aktivasyon tamamlanmadan görünmez.</p>
+            <p className="eyebrow">{copy.enquiryEyebrow}</p>
+            <h2>{copy.enquiryTitle}</h2>
+            <p>{copy.enquiryDescription}</p>
           </section>
           <section className="supplier-dashboard-card">
-            <p className="eyebrow">Document expiry panel</p>
-            <h2>Belge takibi henüz başlamadı</h2>
-            <p>
-              Şirket belgesi yükleme, inceleme ve son-kullanma tarihi takibi issue #7’de açılacak.
-            </p>
+            <p className="eyebrow">{copy.documentsEyebrow}</p>
+            <h2>{copy.documentsTitle}</h2>
+            <p>{copy.documentsDescription}</p>
           </section>
         </div>
       </section>
