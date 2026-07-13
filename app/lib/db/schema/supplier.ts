@@ -13,6 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
+import { businessIdentityReviews } from "./business-identity";
 
 export const supplierWorkspaceStatuses = [
   "supplier_draft",
@@ -36,6 +37,9 @@ export const supplierCompanies = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     status: text("status").$type<SupplierWorkspaceStatus>().default("supplier_draft").notNull(),
+    businessIdentityReviewId: uuid("business_identity_review_id")
+      .notNull()
+      .references(() => businessIdentityReviews.id, { onDelete: "restrict" }),
     legalName: text("legal_name").notNull(),
     tradingName: text("trading_name"),
     countryCode: text("country_code").notNull(),
@@ -50,6 +54,9 @@ export const supplierCompanies = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
+    uniqueIndex("supplier_companies_business_identity_review_idx").on(
+      table.businessIdentityReviewId,
+    ),
     index("supplier_companies_status_idx").on(table.status, table.updatedAt),
     index("supplier_companies_created_by_idx").on(table.createdBy, table.createdAt),
     check(
@@ -127,7 +134,7 @@ export const supplierTypes = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    check("supplier_types_key_check", sql`${table.key} ~ '^supplier_type\.[a-z0-9_]+$'`),
+    check("supplier_types_key_check", sql`${table.key} ~ '^supplier_type[.][a-z0-9_]+$'`),
     check(
       "supplier_types_label_tr_check",
       sql`char_length(trim(${table.labelTr})) between 2 and 120`,
@@ -189,7 +196,7 @@ export const productionCapabilities = pgTable(
   (table) => [
     check(
       "production_capabilities_key_check",
-      sql`${table.key} ~ '^production_capability\.[a-z0-9_]+$'`,
+      sql`${table.key} ~ '^production_capability[.][a-z0-9_]+$'`,
     ),
     check(
       "production_capabilities_label_tr_check",
