@@ -10,11 +10,12 @@ import { supplierFormErrors, type SupplierFormErrors } from "~/lib/supplier/form
 import { formStringList } from "~/lib/supplier/onboarding";
 import { loadSupplierOnboardingRouteContext } from "~/lib/supplier/onboarding.server";
 import { updateSupplierCompanyProfile } from "~/lib/supplier/profile.server";
+import { supplierScreenCopy } from "~/lib/supplier/screen-copy";
 
 import type { Route } from "./+types/supplier.capabilities";
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Tedarikçi türleri ve kabiliyetler — OpenMarket.tr" }];
+  return [{ title: "Supplier types and capabilities — OpenMarket.tr" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -42,16 +43,17 @@ export async function action({ request }: Route.ActionArgs) {
   const context = await loadSupplierOnboardingRouteContext(env, request);
   if (!context) throw redirect("/auth/login");
 
+  const copy = supplierScreenCopy(context.preferredLanguage).capabilities;
   const formData = await request.formData();
   const values = capabilityFormValues(formData);
   const reject = (errors: SupplierFormErrors, status: number) =>
     data({ errors, values }, { status });
 
   if (!context.company) {
-    return reject({ form: "Önce Supplier şirket profilini oluşturun." }, 409);
+    return reject({ form: copy.missingCompany }, 409);
   }
   if (!context.canEditCompany) {
-    return reject({ form: "Bu üyelik tedarikçi türlerini ve kabiliyetleri düzenleyemez." }, 403);
+    return reject({ form: copy.readOnlyFailure }, 403);
   }
 
   const input = {
@@ -74,10 +76,7 @@ export async function action({ request }: Route.ActionArgs) {
   } catch (error) {
     const errors = supplierFormErrors(error, context.preferredLanguage);
     if (errors) return reject(errors, 400);
-    return reject(
-      { form: "Tür ve kabiliyet seçimleri kaydedilemedi. Lütfen yeniden deneyin." },
-      503,
-    );
+    return reject({ form: copy.saveFailure }, 503);
   }
 }
 
@@ -90,6 +89,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 }
 
 export default function SupplierCapabilities({ loaderData, actionData }: Route.ComponentProps) {
+  const screenCopy = supplierScreenCopy(loaderData.preferredLanguage);
+  const copy = screenCopy.capabilities;
+  const common = screenCopy.common;
   const navigation = useNavigation();
   const submitting = navigation.state === "submitting";
   const company = loaderData.company;
@@ -100,6 +102,8 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
     productionCapabilityKeys: company?.productionCapabilityKeys ?? [],
   };
   const errors = actionData?.errors;
+  const primaryLabel = loaderData.preferredLanguage === "en" ? "labelEn" : "labelTr";
+  const secondaryLabel = loaderData.preferredLanguage === "en" ? "labelTr" : "labelEn";
 
   return (
     <SupplierShell
@@ -113,29 +117,26 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
         <div className="supplier-page__heading supplier-page__heading--split">
           <div>
             <p className="eyebrow">S04 · Supplier types and capabilities</p>
-            <h1>Şirketinizin tedarik rolünü tanımlayın</h1>
-            <p>
-              Birden fazla tedarikçi türü seçilebilir. Üretim kabiliyetleri yalnızca gerçekten
-              yürüttüğünüz süreçler için işaretlenmelidir.
-            </p>
+            <h1>{copy.title}</h1>
+            <p>{copy.description}</p>
           </div>
           {company ? <span className="supplier-status-pill">{company.company.status}</span> : null}
         </div>
 
         {!company ? (
           <div className="supplier-state supplier-state--empty">
-            <p className="eyebrow">Ön koşul</p>
-            <h2>Önce şirket profilini oluşturun</h2>
-            <p>Tür ve kabiliyet seçimleri identity-bound Supplier şirketine bağlanır.</p>
+            <p className="eyebrow">{copy.prerequisiteEyebrow}</p>
+            <h2>{copy.prerequisiteTitle}</h2>
+            <p>{copy.prerequisiteDescription}</p>
             <Link className="button button--primary" to="/supplier/company">
-              Şirket profiline git
+              {copy.prerequisiteAction}
             </Link>
           </div>
         ) : (
           <>
             {loaderData.saved ? (
               <div className="form-success" role="status">
-                Tedarikçi türleri ve kabiliyetler kaydedildi. Supplier taslak durumu korunuyor.
+                {copy.saved}
               </div>
             ) : null}
             {errors?.form ? (
@@ -145,8 +146,8 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
             ) : null}
             {readOnly ? (
               <div className="supplier-readonly-notice">
-                <strong>Salt okunur üyelik</strong>
-                <p>Görüntüleyici rolü seçimleri görebilir ancak değiştiremez.</p>
+                <strong>{common.readOnly}</strong>
+                <p>{common.readOnlyDescription}</p>
               </div>
             ) : null}
 
@@ -155,10 +156,10 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                 <section className="supplier-form-section">
                   <div className="supplier-form-section__heading">
                     <div>
-                      <p className="eyebrow">Supplier type cards</p>
-                      <h2>Tedarikçi türleri</h2>
+                      <p className="eyebrow">{copy.typesEyebrow}</p>
+                      <h2>{copy.typesTitle}</h2>
                     </div>
-                    <span>Çoklu seçim</span>
+                    <span>{copy.multiple}</span>
                   </div>
                   <div className="supplier-choice-grid supplier-choice-grid--types">
                     {loaderData.supplierTypes.map((entry) => (
@@ -171,8 +172,8 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                         />
                         <span aria-hidden="true" />
                         <div>
-                          <strong>{entry.labelTr}</strong>
-                          <small>{entry.labelEn}</small>
+                          <strong>{entry[primaryLabel]}</strong>
+                          <small>{entry[secondaryLabel]}</small>
                         </div>
                       </label>
                     ))}
@@ -187,10 +188,10 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                 <section className="supplier-form-section">
                   <div className="supplier-form-section__heading">
                     <div>
-                      <p className="eyebrow">Application context selector</p>
-                      <h2>Hizmet verdiğiniz kullanım bağlamları</h2>
+                      <p className="eyebrow">{copy.contextsEyebrow}</p>
+                      <h2>{copy.contextsTitle}</h2>
                     </div>
-                    <span>En az bir seçim</span>
+                    <span>{copy.minimumOne}</span>
                   </div>
                   <div className="supplier-choice-grid">
                     {loaderData.applicationContexts.map((entry) => (
@@ -203,8 +204,8 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                         />
                         <span aria-hidden="true" />
                         <div>
-                          <strong>{entry.labelTr}</strong>
-                          <small>{entry.labelEn}</small>
+                          <strong>{entry[primaryLabel]}</strong>
+                          <small>{entry[secondaryLabel]}</small>
                         </div>
                       </label>
                     ))}
@@ -219,15 +220,12 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                 <section className="supplier-form-section">
                   <div className="supplier-form-section__heading">
                     <div>
-                      <p className="eyebrow">Production capability form</p>
-                      <h2>Üretim ve özelleştirme kabiliyetleri</h2>
+                      <p className="eyebrow">{copy.productionEyebrow}</p>
+                      <h2>{copy.productionTitle}</h2>
                     </div>
-                    <span>İsteğe bağlı</span>
+                    <span>{copy.optional}</span>
                   </div>
-                  <p className="supplier-form-section__intro">
-                    İhracatçı, dış ticaret şirketi veya distribütörseniz üretim kabiliyeti seçmeden
-                    profilinizi tamamlayabilirsiniz.
-                  </p>
+                  <p className="supplier-form-section__intro">{copy.productionDescription}</p>
                   <div className="supplier-capability-list">
                     {loaderData.productionCapabilities.map((entry) => (
                       <label key={entry.key}>
@@ -238,8 +236,8 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
                           defaultChecked={values.productionCapabilityKeys.includes(entry.key)}
                         />
                         <span>
-                          <strong>{entry.labelTr}</strong>
-                          <small>{entry.labelEn}</small>
+                          <strong>{entry[primaryLabel]}</strong>
+                          <small>{entry[secondaryLabel]}</small>
                         </span>
                       </label>
                     ))}
@@ -253,11 +251,11 @@ export default function SupplierCapabilities({ loaderData, actionData }: Route.C
 
                 <div className="supplier-save-bar">
                   <div>
-                    <strong>{readOnly ? "Salt okunur" : "Katalog kontrollü seçim"}</strong>
-                    <p>Özel veya serbest metin tedarikçi türü eklenemez.</p>
+                    <strong>{readOnly ? common.readOnly : copy.catalogueControlled}</strong>
+                    <p>{copy.customDisabled}</p>
                   </div>
                   <button className="button button--primary" type="submit">
-                    {submitting ? "Kaydediliyor…" : "Seçimleri kaydet"}
+                    {submitting ? copy.saving : copy.save}
                   </button>
                 </div>
               </fieldset>
