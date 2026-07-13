@@ -17,7 +17,8 @@ await client.connect();
 
 try {
   const database = drizzle(client, { schema });
-  // Requirement rules reference the code-owned Supplier type catalogue.
+  // Seed the referenced Supplier types first so requirement-rule foreign keys
+  // remain deterministic on a fresh database as well as an existing one.
   await seedSupplierLaunchCatalogue(database);
   const result = await seedSupplierDocumentCatalogue(database);
   console.log(
