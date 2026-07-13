@@ -1,3 +1,5 @@
+import type { PreferredLanguage } from "../db/schema";
+import { supplierCopy } from "./copy";
 import { SupplierProfileValidationError } from "./profile";
 import { SupplierProfileActionError } from "./profile.server";
 
@@ -16,58 +18,59 @@ export type SupplierFormErrors = {
   form?: string;
 };
 
-export function supplierFormErrors(error: unknown): SupplierFormErrors | null {
+export function supplierFormErrors(
+  error: unknown,
+  language: PreferredLanguage = "tr",
+): SupplierFormErrors | null {
+  const copy = supplierCopy(language).formErrors;
+
   if (error instanceof SupplierProfileValidationError) {
     switch (error.code) {
       case "INVALID_LEGAL_NAME":
-        return { legalName: "Yasal şirket adı 2–200 karakter arasında olmalıdır." };
+        return { legalName: copy.legalName };
       case "INVALID_TRADING_NAME":
-        return { tradingName: "Ticari ad boş bırakılmalı veya 2–200 karakter olmalıdır." };
+        return { tradingName: copy.tradingName };
       case "INVALID_COUNTRY":
-        return { countryCode: "Ülke kodu iki harfli biçimde girilmelidir." };
+        return { countryCode: copy.country };
       case "INVALID_CITY":
-        return { city: "Şehir 2–120 karakter arasında olmalıdır." };
+        return { city: copy.city };
       case "INVALID_WEBSITE":
-        return { website: "Web sitesi http:// veya https:// ile başlayan geçerli bir adres olmalıdır." };
+        return { website: copy.website };
       case "INVALID_DESCRIPTION":
-        return { description: "Şirket açıklaması 20–4000 karakter arasında olmalıdır." };
+        return { description: copy.description };
       case "INVALID_FOUNDED_YEAR":
-        return { foundedYear: "Kuruluş yılı 1800–2100 arasında olmalıdır." };
+        return { foundedYear: copy.foundedYear };
       case "INVALID_SUPPLIER_TYPE":
-        return { supplierTypeKeys: "Tedarikçi türleri yalnızca aktif katalogdan seçilebilir." };
+        return { supplierTypeKeys: copy.supplierType };
       case "INVALID_APPLICATION_CONTEXT":
-        return { applicationContextKeys: "Kullanım bağlamı sabit launch listesinden seçilmelidir." };
+        return { applicationContextKeys: copy.context };
       case "INVALID_PRODUCTION_CAPABILITY":
-        return {
-          productionCapabilityKeys: "Üretim kabiliyetleri yalnızca aktif katalogdan seçilebilir.",
-        };
+        return { productionCapabilityKeys: copy.capability };
       case "INVALID_EXPORT_MARKET":
-        return { exportMarkets: "İhracat pazarları iki harfli ülke kodlarıyla girilmelidir." };
+        return { exportMarkets: copy.markets };
     }
   }
 
   if (error instanceof SupplierProfileActionError) {
     switch (error.code) {
       case "UNAUTHENTICATED":
-        return { form: "Oturumunuz sona erdi. Yeniden giriş yapın." };
+        return { form: copy.unauthenticated };
       case "SUPPLIER_INTENT_REQUIRED":
-        return { form: "Önce Tedarikçi veya Her ikisi çalışma alanını seçin." };
+        return { form: copy.intent };
       case "BUSINESS_IDENTITY_REQUIRED":
-        return { form: "Şirket profili için doğrulanmış iş kimliği gereklidir." };
+        return { form: copy.identity };
       case "BUSINESS_IDENTITY_MISMATCH":
-        return { legalName: "Yasal ad doğrulanmış iş kimliğindeki şirket adıyla eşleşmelidir." };
+        return { legalName: copy.mismatch };
       case "SUPPLIER_COMPANY_EXISTS":
-        return { form: "Bu hesap zaten aktif bir Supplier şirketinin sahibidir." };
+        return { form: copy.exists };
       case "SUPPLIER_COMPANY_NOT_FOUND":
-        return { form: "Supplier şirketi bulunamadı veya bu hesap için erişilebilir değil." };
+        return { form: copy.notFound };
       case "FORBIDDEN":
-        return { form: "Bu üyelik Supplier profilini düzenleyemez." };
+        return { form: copy.forbidden };
       case "UNKNOWN_SUPPLIER_TYPE":
-        return { supplierTypeKeys: "Seçilen tedarikçi türlerinden biri aktif katalogda değil." };
+        return { supplierTypeKeys: copy.unknownType };
       case "UNKNOWN_PRODUCTION_CAPABILITY":
-        return {
-          productionCapabilityKeys: "Seçilen üretim kabiliyetlerinden biri aktif katalogda değil.",
-        };
+        return { productionCapabilityKeys: copy.unknownCapability };
     }
   }
 
