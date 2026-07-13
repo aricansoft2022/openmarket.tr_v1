@@ -26,36 +26,33 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, A04–A07 verification/password recovery, guarded Google OAuth/A03 states, route-level auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding, private owner-only manual-exception evidence storage and fixed Reviewer/Admin business-identity authorization are merged to `main` through PR #27.
+`main` currently ends at `b85bcdd87c71c6c744ff11bc46d7405cefecb504`, the squash merge of PR #30. Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, verification/password recovery, guarded Google OAuth, auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding, private manual-exception evidence, Reviewer/Admin business-identity authorization and audited platform staff assignment management are merged.
 
-The current PR #30 branch `agent/platform-staff-assignment-management-final` adds audited platform staff assignment management:
+Draft PR #31 on `agent/supplier-company-foundation` contains the only Supplier company foundation implementation currently present in GitHub. It adds:
 
-- code-owned staff assignment list/grant/revoke permissions;
-- active Platform Admin and Super Admin manager resolution on every request;
-- Platform Admin management of operational roles only;
-- Super Admin management of administrator and operational roles;
-- existing-account lookup by normalized exact email;
-- server-side self-grant and self-revoke denial;
-- one unique user/role row with revoked-row reactivation;
-- `/admin/staff` with X04 denial, grant, active/revoked and reasoned revoke states;
-- immutable grant/revoke audit evidence with effective role and old/new values;
-- PostgreSQL verification of hierarchy, immediate permission changes and audit behavior.
+- identity-bound Supplier company records linked to a verified `business_identity_reviews` row;
+- legal-name drift denial unless verified identity evidence matches;
+- `supplier_draft` creation without Supplier activation;
+- owner/admin/editor/viewer memberships and cross-company isolation;
+- Supplier type, application-context, production-capability and export-market relations;
+- active seeded-key enforcement for Supplier types and production capabilities;
+- deterministic profile completeness;
+- reconstructable immutable create/update audits with normalized old/new values;
+- PostgreSQL checks that require literal taxonomy namespace separators;
+- a permanent `db:verify:supplier-company` CI gate.
 
-Reviewer, Moderator, Buyer and Supplier states never imply staff-management authority. No custom role editor, arbitrary permission JSON or delegation model is included. Initial Super Admin bootstrap remains a controlled provisioning action; it is intentionally not exposed as a public or self-service workflow.
+Retrospective findings and disposition are tracked in issue #32. Earlier descriptions of merged Supplier onboarding, documents, review or activation work are not supported by the repository commit graph and must not be repeated.
 
 ## Exact next tasks
 
-1. Merge PR #30 only after exact prepared-commit validation and restored permanent read-only CI pass.
-2. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
-3. Keep issue #4 open for external delivery and remote auth evidence.
-4. Continue issue #5 in separate reviewed slices:
-   - company-email verification delivery and token lifecycle;
-   - evidence scanning/quarantine and retention cleanup;
-   - deployed R2 plus Neon/Hyperdrive preview evidence.
-5. Do not infer business identity from account verification alone.
-6. Public email domains never grant automatic business identity.
-7. Do not add supplier activation or supplier documents to issue #5.
-8. Continue supplier work in dependency order through #6–#8, then finish remaining fixed permissions in #9 and the integration gate in #10.
+1. Add the authoritative launch Supplier type and production-capability seed inventory with stable keys and Turkish/English labels.
+2. Verify exact production seed contents independently from fixture-only integration data.
+3. Keep PR #31 draft until the seed blocker is resolved and permanent read-only CI passes on its final head.
+4. After merge, implement S01–S04 as a separate route/UI slice using the existing domain service.
+5. Keep company-document upload/review in #7 and Supplier activation in #8; do not fold them into the foundation PR.
+6. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
+7. Keep issue #4 open for external delivery and remote auth evidence.
+8. Do not infer business identity from account verification alone; public email domains never grant automatic business identity.
 
 ## Verification commands
 
@@ -87,13 +84,26 @@ npm run db:verify:business-identity-onboarding
 npm run db:verify:business-identity-evidence
 npm run db:verify:business-identity-review
 npm run db:verify:platform-staff-management
+npm run db:verify:supplier-company
 npm run db:local:down
 ```
 
-`db:verify:platform-staff-management` must prove administrator-only access, Platform Admin/Super Admin hierarchy, self-management denial, exact-account grant, duplicate-active rejection, revoke/reactivate reuse, next-request permission changes and immutable effective-role audit evidence.
+`db:verify:supplier-company` must prove:
+
+- Supplier/Both intent and matching verified identity evidence are required;
+- the company persists the bound review ID;
+- legal-name drift is rejected;
+- malformed `supplier_typeX...` and `production_capabilityX...` keys fail database constraints;
+- owner creation, membership isolation and viewer denial work;
+- unseeded custom selections are rejected;
+- profile completeness is deterministic and never activates Supplier;
+- immutable update audits contain complete old/new profile values.
+
+GitHub Actions run `29237714237` passed the application and complete PostgreSQL chain on audited PR #31 head `5e62a7873f10f13c551fadd14e9286651b328de1`. Documentation commits made afterward require one final permanent read-only CI run before the evidence is considered current.
 
 ## Known blockers
 
+- Authoritative launch Supplier type and production-capability seed rows are not committed; current integration rows are fixtures only.
 - No Neon development database or deployed Hyperdrive configuration has been provisioned.
 - Hyperdrive pooling, query caching and Cloudflare-network connectivity remain unverified.
 - Outbox records are produced, but Cloudflare Email Sending authorization and the dispatcher are not configured.
@@ -103,4 +113,4 @@ npm run db:local:down
 - Evidence malware/content inspection, quarantine and retention cleanup are not implemented.
 - Cloudflare Images remains an account-level dependency for later media work.
 
-These blockers do not prevent local onboarding, permission enforcement, staff assignment management, CI, local PostgreSQL tests or production builds. They do prevent claiming remote auth, live company-email verification or production-ready document review operations.
+These blockers do not invalidate local migration, authorization, audit or PostgreSQL verification. They do prevent claiming production seed readiness, user-facing Supplier onboarding, remote auth readiness or production-ready document review operations.
