@@ -10,6 +10,10 @@ function replaceOnce(search, replacement) {
 }
 
 replaceOnce(
+  'import { and, eq, inArray } from "drizzle-orm";\n',
+  'import { and, eq } from "drizzle-orm";\n',
+);
+replaceOnce(
   'import { Client } from "pg";\n',
   'import { Client } from "pg";\n\nimport type { Database } from "../app/lib/db/client.server";\n',
 );
@@ -17,6 +21,12 @@ replaceOnce(
   '          body: new Blob([stored.bytes]).stream(),',
   '          body: new Blob([stored.bytes.slice().buffer]).stream(),',
 );
+replaceOnce(
+  'const createdUserIds: string[] = [];\nconst createdCompanyIds: string[] = [];\n',
+  "",
+);
+replaceOnce('  createdUserIds.push(id);\n', "");
+replaceOnce('  createdCompanyIds.push(company.company.id);\n', "");
 replaceOnce(
   '    await recordSupplierDocumentScanResult(transaction as unknown as typeof database, {',
   '    await recordSupplierDocumentScanResult(transaction as unknown as Database, {',
@@ -57,29 +67,20 @@ replaceOnce(
     await database
       .delete(schema.supplierCompanies)
       .where(inArray(schema.supplierCompanies.id, createdCompanyIds));
-  }`,
-  `} finally {
-  if (createdCompanyIds.length > 0) {
-    const documentIds = await database
-      .select({ id: schema.supplierCompanyDocuments.id })
-      .from(schema.supplierCompanyDocuments)
-      .where(inArray(schema.supplierCompanyDocuments.companyId, createdCompanyIds));
-    const ids = documentIds.map((row) => row.id);
-    if (ids.length > 0) {
-      await database
-        .delete(schema.supplierDocumentAccessGrants)
-        .where(inArray(schema.supplierDocumentAccessGrants.documentId, ids));
-      await database
-        .delete(schema.supplierDocumentReviewEvents)
-        .where(inArray(schema.supplierDocumentReviewEvents.documentId, ids));
-      await database
-        .delete(schema.supplierCompanyDocuments)
-        .where(inArray(schema.supplierCompanyDocuments.id, ids));
-    }
+  }
+  if (createdUserIds.length > 0) {
     await database
-      .delete(schema.supplierCompanies)
-      .where(inArray(schema.supplierCompanies.id, createdCompanyIds));
-  }`,
+      .delete(schema.platformStaffAssignments)
+      .where(inArray(schema.platformStaffAssignments.userId, createdUserIds));
+    await client.query('delete from "user" where id = any($1::uuid[])', [createdUserIds]);
+  }
+  await client.end();
+}`,
+  `} finally {
+  // The PostgreSQL service is isolated per CI run. Review events are deliberately
+  // immutable, so verification fixtures remain until the ephemeral database exits.
+  await client.end();
+}`,
 );
 
 writeFileSync(path, source);
