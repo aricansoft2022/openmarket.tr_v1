@@ -181,4 +181,5 @@ patch("scripts/verify-supplier-document-lifecycle.ts", [
   ],
 ]);
 
+await import("./patch-supplier-document-schema-contract.mjs");
 unlinkSync(fileURLToPath(import.meta.url));
