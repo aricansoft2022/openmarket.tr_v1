@@ -1,3 +1,5 @@
+import type { PreferredLanguage } from "../db/schema";
+import { supplierCopy } from "./copy";
 import type { SupplierCompanyState } from "./profile.server";
 
 export const supplierApplicationContextOptions = [
@@ -33,9 +35,11 @@ export type SupplierChecklistItem = {
 };
 
 export function buildSupplierOnboardingChecklist(input: {
+  language?: PreferredLanguage;
   businessIdentityVerified: boolean;
   company: SupplierCompanyState | null;
 }): SupplierChecklistItem[] {
+  const copy = supplierCopy(input.language ?? "tr").checklist;
   const hasCompany = Boolean(input.company);
   const hasSelections = Boolean(
     input.company &&
@@ -46,39 +50,40 @@ export function buildSupplierOnboardingChecklist(input: {
   return [
     {
       id: "identity",
-      label: "İş kimliğini doğrula",
+      label: copy.identity.label,
       description: input.businessIdentityVerified
-        ? "Doğrulanmış şirket kimliği Supplier kaydına bağlanabilir."
-        : "Şirket profili oluşturmadan önce iş kimliği doğrulaması tamamlanmalıdır.",
+        ? copy.identity.complete
+        : copy.identity.incomplete,
       complete: input.businessIdentityVerified,
       blocked: false,
-      href: input.businessIdentityVerified ? "/onboarding/business-identity/status" : "/onboarding/business-identity",
+      href: input.businessIdentityVerified
+        ? "/onboarding/business-identity/status"
+        : "/onboarding/business-identity",
     },
     {
       id: "profile",
-      label: "Minimum şirket profilini tamamla",
+      label: copy.profile.label,
       description: input.company?.completeness.complete
-        ? "Zorunlu şirket profili alanları tamamlandı."
-        : "Yasal ad, ülke, şehir, açıklama ve gerekli profil alanlarını kaydedin.",
+        ? copy.profile.complete
+        : copy.profile.incomplete,
       complete: Boolean(input.company?.completeness.complete),
       blocked: !input.businessIdentityVerified,
       href: input.businessIdentityVerified ? "/supplier/company" : null,
     },
     {
       id: "capabilities",
-      label: "Tedarikçi türlerini ve kullanım bağlamlarını seç",
+      label: copy.capabilities.label,
       description: hasSelections
-        ? "Tedarikçi türleri ve en az bir kullanım bağlamı kaydedildi."
-        : "Bir veya daha fazla tedarikçi türü ve en az bir kullanım bağlamı seçin. Üretim kabiliyeti üretici olmayan şirketler için isteğe bağlıdır.",
+        ? copy.capabilities.complete
+        : copy.capabilities.incomplete,
       complete: hasSelections,
       blocked: !hasCompany,
       href: hasCompany ? "/supplier/capabilities" : null,
     },
     {
       id: "documents",
-      label: "Şirket belgelerini yükle",
-      description:
-        "Şirket belgesi modülü ayrı bir güvenli yükleme ve inceleme diliminde etkinleştirilecek.",
+      label: copy.documents.label,
+      description: copy.documents.description,
       complete: false,
       blocked: true,
       href: null,
@@ -96,7 +101,9 @@ export function supplierChecklistProgress(items: readonly SupplierChecklistItem[
   return { complete, total, percent: Math.round((complete / total) * 100) };
 }
 
-export function firstSupplierChecklistAction(items: readonly SupplierChecklistItem[]): SupplierChecklistItem | null {
+export function firstSupplierChecklistAction(
+  items: readonly SupplierChecklistItem[],
+): SupplierChecklistItem | null {
   return items.find((item) => !item.complete && !item.blocked && item.href) ?? null;
 }
 
