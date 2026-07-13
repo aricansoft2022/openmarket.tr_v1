@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
+    env:
+      DATABASE_URL: postgresql://openmarket:openmarket@127.0.0.1:5432/openmarket
     outputs:
       prepared_sha: ${{ steps.prepared.outputs.sha }}
     steps:
@@ -37,34 +39,21 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Generate migration and capture diagnostics
-        run: |
-          mkdir -p .debug
-          set +e
-          npm run db:generate > .debug/supplier-migration.log 2>&1
-          status=$?
-          echo "$status" > .debug/supplier-migration.status
-          cat .debug/supplier-migration.log
-          exit 0
+      - name: Generate migration
+        run: npm run db:generate
 
-      - name: Format repository when generation succeeded
-        run: |
-          if [ "$(cat .debug/supplier-migration.status)" = "0" ]; then
-            npm run format
-          fi
+      - name: Format repository
+        run: npm run format
 
-      - name: Commit prepared files and diagnostics
+      - name: Commit prepared files
         id: prepared
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || git commit -m "debug(supplier): capture audited migration generation"
+          git diff --cached --quiet || git commit -m "fix(supplier): prepare audited migration and formatting"
           git push origin HEAD:${{ github.head_ref }}
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Require successful migration generation
-        run: test "$(cat .debug/supplier-migration.status)" = "0"
 
   verify:
     needs: prepare
