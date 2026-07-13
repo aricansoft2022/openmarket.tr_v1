@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  supplierCompanyDocumentTypes,
-  supplierDocumentRequirementRules,
-} from "./catalogue";
+import { supplierCompanyDocumentTypes, supplierDocumentRequirementRules } from "./catalogue";
 
 function duplicateValues(values: readonly string[]): string[] {
   return values.filter((value, index) => values.indexOf(value) !== index);
@@ -16,12 +13,8 @@ describe("Supplier company-document catalogue", () => {
 
     expect(duplicateValues(documentKeys)).toEqual([]);
     expect(duplicateValues(ruleKeys)).toEqual([]);
-    expect(documentKeys.every((key) => /^company_document\.[a-z0-9_]+$/.test(key))).toBe(
-      true,
-    );
-    expect(
-      ruleKeys.every((key) => /^company_document_rule\.[a-z0-9_.]+$/.test(key)),
-    ).toBe(true);
+    expect(documentKeys.every((key) => /^company_document\.[a-z0-9_]+$/.test(key))).toBe(true);
+    expect(ruleKeys.every((key) => /^company_document_rule\.[a-z0-9_.]+$/.test(key))).toBe(true);
   });
 
   it("provides complete bilingual labels and descriptions", () => {
@@ -56,10 +49,7 @@ describe("Supplier company-document catalogue", () => {
       "supplier_type.manufacturer_exporter",
     ] as const) {
       const mandatoryKeys = supplierDocumentRequirementRules
-        .filter(
-          (rule) =>
-            rule.supplierTypeKey === supplierTypeKey && rule.level === "mandatory",
-        )
+        .filter((rule) => rule.supplierTypeKey === supplierTypeKey && rule.level === "mandatory")
         .map((rule) => rule.documentTypeKey);
       expect(mandatoryKeys).toEqual([
         "company_document.facility_information",

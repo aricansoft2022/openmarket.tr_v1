@@ -10,74 +10,58 @@ Phase 1 — Identity and supplier activation foundation.
 
 ## Completed on `main`
 
-- Merged Phase 0 foundation through PR #1 using a squash merge.
-- Added the React Router v8 + Cloudflare Workers TypeScript scaffold.
-- Added reproducible `package-lock.json` installation and read-only GitHub Actions CI.
-- Added design tokens, source-of-truth preservation, architecture, data model, seed, test, workflow and handoff documentation.
-- Created dependency-ordered Phase 1 issues #2–#10.
-- Merged the runtime configuration contract and local R2/Queue emulation through PR #12.
-- Merged optional local PostgreSQL and CI migration/audit-invariant verification through PR #13.
-- Merged Better Auth persistence and the request-scoped `/api/auth/*` handler through PR #14.
-- Merged transactional registration preferences and A01/A02 entry forms through PR #17.
-- Merged A04–A07 email verification and password recovery through PR #19.
-- Merged guarded Google OAuth and A03 result states through PR #20.
-- Merged route-level rate limiting and Turnstile policy through PR #21.
-- Merged explicit authenticated Google link/unlink safeguards through PR #22.
-- Merged the business-identity domain policy, review and Buyer activation state machine through PR #23.
-- Merged A08–A10 workspace, submission, status and resubmission routes through PR #24.
-- Merged private manual-exception evidence metadata, R2 lifecycle and owner-only handlers through PR #25.
-- Merged route registration, A10 evidence entry and permanent evidence CI repair through PR #26.
-- Merged fixed Reviewer/Admin business-identity authorization, self-review denial and private staff evidence access through PR #27.
-- Merged audited platform staff assignment management through PR #30.
-- Merged the audited Supplier company/profile foundation through PR #31.
-- Merged the Supplier launch catalogue, idempotent production seeds and exact PostgreSQL seed verification through PR #33 as `6ca28b706b4eabe1b03d90835366a46f863c6e04`.
-- Kept fake Cloudflare resource IDs, public object URLs and credentials out of source control.
+- Merged the Phase 0 scaffold, documentation contract and read-only CI through PR #1.
+- Merged runtime configuration and local Cloudflare binding emulation through PR #12.
+- Merged PostgreSQL migration and audit-invariant verification through PR #13.
+- Merged Better Auth persistence, registration, verification, recovery, guarded Google OAuth, abuse controls and explicit provider link/unlink safeguards through PRs #14, #17 and #19–#22.
+- Merged the business-identity domain, Buyer activation state machine, A08–A10 onboarding, private exception evidence, reviewer authorization and audited platform staff management through PRs #23–#27 and #30.
+- Merged the audited Supplier company/profile foundation and launch catalogue through PRs #31 and #33.
+- Merged Supplier onboarding screens S01–S04, bilingual copy and server-side membership permissions through PR #36.
+- Merged the private Supplier company-document implementation through PR #37: catalogue and deterministic requirement resolution, S05–S07, D17–D18, private R2 keying, upload metadata validation, scan gates, review/replacement states, short-lived access grants, immutable review history and effective-role audit evidence.
+- Kept fake Cloudflare resource IDs, public private-document URLs and credentials out of source control.
 
 ## In progress
 
-Draft PR #36 on `agent/supplier-onboarding-screens` implements the specification-defined Supplier onboarding screens S01–S04 using the merged Supplier domain and launch catalogue:
+Draft PR #38 on `agent/supplier-documents-post-merge-hardening` converts the PR #37 preparation mechanism into normal committed source and restores a trustworthy green baseline:
 
-- `/supplier` overview with activation boundary, deterministic onboarding progress and intentionally disabled product/RFQ/enquiry/document placeholders;
-- `/supplier/onboarding` stepper, checklist cards, blocking issues and the first available continuation action;
-- `/supplier/company` creation and update for the verified-identity-bound Supplier company, including company details and export-market code capture;
-- `/supplier/capabilities` for seeded Supplier types, fixed application contexts and reviewed production capabilities;
-- server-side owner/admin/editor edit permissions and viewer read-only behaviour;
-- complete Turkish/English shell, page, form, checklist, catalogue-order and error copy selected from the persisted account language preference;
-- loading, empty, blocked, error, validation, success and read-only states;
-- explicit preservation of Supplier draft/activation state: profile completion never grants commercial access;
-- route-registration regression coverage, deterministic onboarding/form-normalization tests and bilingual-copy contract tests.
+- materializes the reviewed Supplier-document source and generated migration;
+- removes temporary patch scripts, marker files and branch-specific write/finalizer workflows;
+- preserves the database trigger preventing UPDATE or DELETE of review-history rows;
+- maps unauthorized private-document lookup to a non-disclosing not-found result;
+- installs a permanent read-only Supplier-document workflow;
+- verifies format, types, unit tests, production build, migration metadata, catalogue seeds and the private PostgreSQL/R2 lifecycle from the committed source.
 
-Company-document upload/review and Supplier activation remain separate work in issues #7 and #8. Product creation, RFQ response and team invitations are not part of PR #36.
+Supplier activation is deliberately unchanged. Commercial Supplier access remains blocked until issue #8 implements the central evaluator and audited state transitions.
 
 ## Verification
 
-Permanent read-only GitHub Actions run `29245409518` passed on fully localized PR #36 head `8142b81c5a081024b963e421a673b934a3b32696`:
+Permanent read-only GitHub Actions on clean PR #38 head `d4b602c45cdd920d89d65ebe89f50ef974999e5d` passed:
 
 ```text
-npm run format:check                              PASS
-npm run docs:check                                PASS
-npm run config:check                              PASS
-npm run typecheck                                 PASS
-npm run test:run                                  PASS
-npm run build                                     PASS
-npm run db:check                                  PASS
-npm run db:verify                                 PASS
-npm run db:verify:auth                            PASS
-npm run db:verify:registration                    PASS
-npm run db:verify:recovery                        PASS
-npm run db:verify:google                          PASS
-npm run db:verify:google-linking                  PASS
-npm run db:verify:business-identity               PASS
-npm run db:verify:business-identity-onboarding    PASS
-npm run db:verify:business-identity-evidence      PASS
-npm run db:verify:business-identity-review        PASS
-npm run db:verify:platform-staff-management       PASS
-npm run db:seed:supplier-catalogue                PASS
-npm run db:verify:supplier-catalogue              PASS
-npm run db:verify:supplier-company                PASS
+Supplier document lifecycle run 29255026975
+  npm run format:check                              PASS
+  npm run typecheck                                 PASS
+  npm run test:run                                  PASS
+  npm run build                                     PASS
+  npm run db:check                                  PASS
+  npm run db:migrate                                PASS
+  npm run db:seed:supplier-catalogue                PASS
+  npm run db:verify:supplier-catalogue              PASS
+  npm run db:seed:supplier-documents                PASS
+  npm run db:verify:supplier-documents              PASS
+  npm run db:verify:supplier-document-lifecycle     PASS
+
+Main CI run 29255027068
+  npm run format:check                              PASS
+  npm run docs:check                                PASS
+  npm run config:check                              PASS
+  npm run typecheck                                 PASS
+  npm run test:run                                  PASS
+  npm run build                                     PASS
+  complete existing PostgreSQL verification chain  PASS
 ```
 
-The Supplier onboarding unit evidence covers dependency blocking, incomplete document activation, localized checklist copy, repeated checkbox normalization, optional-field normalization, founded-year parsing and export-market normalization. The bilingual-copy tests require non-empty Turkish and English screen contracts and preserve activation/document boundaries in both languages. The existing PostgreSQL Supplier gate continues to prove verified-identity binding, membership isolation, viewer denial, seeded-catalogue enforcement, deterministic completeness and immutable profile-update audits.
+The Supplier-document lifecycle evidence covers private server-generated object keys, file metadata constraints, stored-object SHA-256, scan transitions, submission and review transitions, reviewer-company conflict denial, cross-company non-disclosure, short-lived single-use access grants, replacement versioning, mandatory-requirement continuity and immutable review events.
 
 ## Known issues and blockers
 
@@ -87,18 +71,19 @@ The Supplier onboarding unit evidence covers dependency blocking, incomplete doc
 - Real Google OAuth credentials and authorized redirect URIs are not configured, so live callback completion remains unverified.
 - Cloudflare Rate Limiting and Turnstile resources are not provisioned, so remote enforcement cannot yet be exercised.
 - Initial Super Admin bootstrap remains a controlled provisioning action rather than a public or self-service workflow.
-- Evidence content inspection/scanning, quarantine and retention cleanup policy remain open.
-- Company-document private upload/review and Supplier activation are not implemented yet; S01–S04 do not make the marketplace production-ready.
+- The application exposes scan-result hooks and quarantine-safe state transitions, but a real malware/content scanner and retention cleanup worker are not connected.
+- Supplier activation state transitions are not implemented; approved documents alone do not grant marketplace capabilities.
 - Country codes currently enforce a shared uppercase two-letter format, not authoritative ISO membership; issue #34 tracks the explicit semantic decision.
 - Routes still rely on the current single-company assumption; issue #35 tracks explicit Supplier company/workspace selection before multi-company membership is exposed.
 - Cloudflare Images account configuration remains an external dashboard task for company and product media.
 
-These are remote-integration or later-feature blockers. They do not invalidate the current local authorization, route, migration, seed, CI or PostgreSQL evidence, but they prevent claiming remote production readiness or commercial Supplier activation.
+These are remote-integration or later-feature blockers. They do not invalidate the current local authorization, route, migration, seed, CI or PostgreSQL evidence, but they prevent claiming remote production readiness or commercially active Supplier operations.
 
 ## Next tasks
 
-1. Move PR #36 to review and squash merge after the final documentation commit passes read-only CI.
-2. Continue issue #7 with private company-document upload, requirement resolution, authorized retrieval and reviewer decisions.
-3. Continue issue #8 with the central Supplier activation evaluator and audited state transitions.
-4. Resolve country-code semantics in #34 and explicit multi-company selection in #35 before exposing those assumptions more broadly.
-5. Keep remote Neon/Hyperdrive/R2, email delivery, Google OAuth and abuse-control evidence explicitly unverified until real resources exist.
+1. Merge PR #38 after the documentation-only head passes read-only CI and close issue #7.
+2. Implement issue #8 with one central Supplier activation evaluator over verified identity, minimum profile, Supplier types and approved mandatory documents.
+3. Add audited transitions for pending, active, reactivation-required and suspended Supplier states without allowing UI routes to duplicate activation rules.
+4. Continue issue #9 permission-matrix and route-guard completion after the activation capabilities exist.
+5. Resolve country-code semantics in #34 and explicit multi-company selection in #35 before exposing those assumptions more broadly.
+6. Keep remote Neon/Hyperdrive/R2, email delivery, Google OAuth and abuse-control evidence explicitly unverified until real resources exist.

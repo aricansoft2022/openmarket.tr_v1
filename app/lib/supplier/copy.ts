@@ -8,6 +8,7 @@ const copy = {
       onboarding: "Onboarding",
       company: "Şirket profili",
       capabilities: "Türler ve kabiliyetler",
+      documents: "Şirket belgeleri",
       activationBoundary: "Aktivasyon sınırı",
       activationNotice:
         "Profil hazırlığı ticari yetki vermez. Belge onayı tamamlanmadan ürün yayınlama ve RFQ yanıtlama kapalıdır.",
@@ -89,6 +90,7 @@ const copy = {
       onboarding: "Onboarding",
       company: "Company profile",
       capabilities: "Types and capabilities",
+      documents: "Company documents",
       activationBoundary: "Activation boundary",
       activationNotice:
         "Profile preparation does not grant commercial access. Product publishing and RFQ responses remain disabled until company documents are approved.",

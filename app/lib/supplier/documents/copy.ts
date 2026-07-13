@@ -127,8 +127,7 @@ const copy = {
     },
     upload: {
       title: "Upload company document",
-      description:
-        "PDF, JPEG and PNG files are stored privately. The maximum file size is 10 MiB.",
+      description: "PDF, JPEG and PNG files are stored privately. The maximum file size is 10 MiB.",
       type: "Document type",
       file: "File",
       issueDate: "Issue date",

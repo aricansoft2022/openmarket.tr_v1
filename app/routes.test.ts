@@ -30,5 +30,17 @@ describe("route configuration", () => {
     expect(configuredRoutes).toContain('"file":"routes/supplier.company.tsx"');
     expect(configuredRoutes).toContain('"path":"supplier/capabilities"');
     expect(configuredRoutes).toContain('"file":"routes/supplier.capabilities.tsx"');
+    expect(configuredRoutes).toContain('"path":"supplier/documents"');
+    expect(configuredRoutes).toContain('"file":"routes/supplier.documents.tsx"');
+    expect(configuredRoutes).toContain('"path":"supplier/documents/upload"');
+    expect(configuredRoutes).toContain('"file":"routes/supplier.documents.upload.tsx"');
+    expect(configuredRoutes).toContain('"path":"supplier/documents/:documentId"');
+    expect(configuredRoutes).toContain('"file":"routes/supplier.documents.$documentId.tsx"');
+    expect(configuredRoutes).toContain('"path":"supplier/document-access/:token"');
+    expect(configuredRoutes).toContain('"file":"routes/supplier.document-access.$token.ts"');
+    expect(configuredRoutes).toContain('"path":"admin/supplier-documents"');
+    expect(configuredRoutes).toContain('"file":"routes/admin.supplier-documents.tsx"');
+    expect(configuredRoutes).toContain('"path":"admin/supplier-documents/:documentId"');
+    expect(configuredRoutes).toContain('"file":"routes/admin.supplier-documents.$documentId.tsx"');
   });
 });

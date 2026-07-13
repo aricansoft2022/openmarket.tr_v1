@@ -160,13 +160,16 @@ export type SupplierDocumentRequirementRule = {
   sortOrder: number;
 };
 
+// The specification enumerates document types but does not label every seeded
+// value as mandatory. This reviewed launch decision keeps only core legal and
+// representation evidence mandatory for every Supplier. A company-profile PDF
+// remains optional because the structured S03 profile is already required.
 const baseMandatoryDocumentKeys = [
   "company_document.chamber_activity",
   "company_document.trade_registry",
   "company_document.tax_company_registration",
   "company_document.authorized_representative",
   "company_document.company_address",
-  "company_document.company_profile",
 ] as const satisfies readonly SupplierCompanyDocumentTypeKey[];
 
 const manufacturerSupplierTypes = [
@@ -188,18 +191,18 @@ export const supplierDocumentRequirementRules: readonly SupplierDocumentRequirem
     key: "company_document_rule.exporter.manufacturer_exporter",
     documentTypeKey: "company_document.exporter_information",
     supplierTypeKey: "supplier_type.manufacturer_exporter",
-    level: "mandatory",
-    noteTr: "Üretici-ihracatçı türü için ihracatçı bilgisini destekler.",
-    noteEn: "Supports exporter information for the Manufacturer-exporter type.",
+    level: "conditional",
+    noteTr: "İhracatçı bilgisi mevcut veya uygulanabilir olduğu durumda istenir.",
+    noteEn: "Requested when exporter information exists or is applicable.",
     sortOrder: 30,
   },
   {
     key: "company_document_rule.exporter.trading_company",
     documentTypeKey: "company_document.exporter_information",
     supplierTypeKey: "supplier_type.exporter_trading_company",
-    level: "mandatory",
-    noteTr: "İhracatçı veya dış ticaret şirketi türü için zorunludur.",
-    noteEn: "Mandatory for the Exporter or trading company type.",
+    level: "conditional",
+    noteTr: "İhracatçı bilgisi mevcut veya uygulanabilir olduğu durumda istenir.",
+    noteEn: "Requested when exporter information exists or is applicable.",
     sortOrder: 31,
   },
   ...manufacturerSupplierTypes.flatMap((supplierTypeKey, supplierIndex) =>
@@ -236,6 +239,15 @@ export const supplierDocumentRequirementRules: readonly SupplierDocumentRequirem
       sortOrder: 70 + supplierIndex * 10 + documentIndex,
     })),
   ),
+  {
+    key: "company_document_rule.optional.company_profile",
+    documentTypeKey: "company_document.company_profile",
+    supplierTypeKey: null,
+    level: "optional",
+    noteTr: "Yapılandırılmış şirket profiline ek tanıtım dosyası olarak yüklenebilir.",
+    noteEn: "May be uploaded as supporting material for the structured company profile.",
+    sortOrder: 99,
+  },
   {
     key: "company_document_rule.optional.quality_management",
     documentTypeKey: "company_document.quality_management_certificate",

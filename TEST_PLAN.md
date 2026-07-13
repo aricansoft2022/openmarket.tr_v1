@@ -20,7 +20,7 @@ Supplier onboarding unit evidence must include:
 
 ### Database integration
 
-Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, verification/reset outbox atomicity, token expiry/replay, Google authorization-contract generation, explicit account-linking safeguards, business-identity and buyer-activation transitions, fixed staff assignments, effective-role authorization, audited assignment management, Supplier launch catalogue seeding, identity-bound Supplier company persistence, Supplier profile completeness and membership permissions, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
+Committed migrations and Drizzle repositories run against isolated PostgreSQL. Pull requests use a fresh GitHub Actions service container; developers may use the optional Docker Compose database. Cover migration metadata, required indexes, constraints, transactions, immutable audit behaviour, Better Auth signup/signin persistence, hashed credential storage, sessions, transactional registration preferences, verification/reset outbox atomicity, token expiry/replay, Google authorization-contract generation, explicit account-linking safeguards, business-identity and buyer-activation transitions, fixed staff assignments, effective-role authorization, audited assignment management, Supplier launch catalogue seeding, identity-bound Supplier company persistence, Supplier profile completeness and membership permissions, private Supplier-document lifecycle, typed attribute shapes, composition totals, unique slugs, outbox/audit atomicity and full-text indexes. Repeat the same critical checks against an isolated Neon branch before remote deployment.
 
 Auth integration fixtures must verify core writes through Better Auth APIs rather than inserting fixture rows directly, except when a provider-linked fixture is explicitly needed to test post-callback management without claiming a live provider callback. Required evidence includes:
 
@@ -98,6 +98,19 @@ Supplier catalogue and company database evidence must include:
 - Supplier type and application context are required for completeness while production capability remains optional for non-manufacturing roles;
 - profile changes preserve Supplier activation state and create immutable complete old/new audit evidence.
 
+Supplier company-document database evidence must include:
+
+- the canonical document-type catalogue and Supplier-type requirement rules seed idempotently and repair canonical values;
+- mandatory requirements resolve deterministically without allowing user-defined document types;
+- object keys are server-generated and private, file metadata is constrained and SHA-256 is stored only after private storage succeeds;
+- upload, scan, submission, review, expiry and replacement transitions obey database constraints;
+- active membership scopes Supplier reads and writes, while outsiders receive a non-disclosing not-found result;
+- only active fixed-role reviewers may list, read and decide documents;
+- reviewers cannot decide evidence for a company they belong to;
+- short-lived grants are user-bound, single-use and rejected after expiry or revocation;
+- replacement versions preserve prior evidence and mandatory-requirement continuity;
+- review decisions write effective-role audit evidence and review-history UPDATE/DELETE is rejected by PostgreSQL.
+
 ### Worker integration
 
 Cloudflare Vitest pool for bindings, request context, auth handler routing, session-cookie behaviour, OAuth state/callback handling, explicit link-social and unlink-account forwarding, R2 authorization, Queue retry behaviour, Turnstile Siteverify wrappers, expected-action rejection, Rate Limiting binding decisions and Worker error handling.
@@ -138,9 +151,20 @@ Supplier S01–S04 route tests must cover:
 - loading fallback, route error, empty, permission, validation, success and read-only UI states;
 - no profile or capability action changes Supplier activation status.
 
+Supplier S05–S07 and Admin D17–D18 route tests must cover:
+
+- route registration exactly once for list, upload, detail, access-grant, review queue and review detail routes;
+- unauthenticated, cross-company, viewer mutation and unrelated staff-role denial;
+- missing, uploaded, scan-pending, pending-review, approved, rejected, expired and replacement-required states;
+- Turkish/English copy, loading, empty, recoverable error, permission, validation, success and read-only states;
+- file-type, size, issue/expiry metadata and replacement-target validation;
+- private download headers, expiring single-use grants and no object-key disclosure;
+- reviewer-company conflict denial, mandatory rejection/replacement reasons and immutable timelines;
+- document approval never directly changes Supplier activation state.
+
 ### End to end
 
-Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use stable seed fixtures and inspect observable audit/notification outcomes. Live Google, link-callback and remote Turnstile/rate-limit E2E remain disabled until development credentials, authorized redirect URIs and Cloudflare bindings exist. Fixture-based post-callback tests must be labeled as such and never reported as live OAuth evidence. Company-email delivery, deployed private-R2 E2E, company-document review and commercial Supplier activation remain disabled until the required external resources and later Phase 1 slices exist.
+Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use stable seed fixtures and inspect observable audit/notification outcomes. Live Google, link-callback and remote Turnstile/rate-limit E2E remain disabled until development credentials, authorized redirect URIs and Cloudflare bindings exist. Fixture-based post-callback tests must be labeled as such and never reported as live OAuth evidence. Company-email delivery, deployed private-R2 E2E and commercial Supplier activation remain disabled until the required external resources and later Phase 1 slices exist. Local and CI company-document upload/review are covered by unit, route, migration and PostgreSQL lifecycle evidence.
 
 ### Non-functional
 
@@ -209,7 +233,10 @@ Browser flows for visitor, buyer, supplier, reviewer, moderator and admin. Use s
 - Supplier onboarding route, normalization and read-only-state tests
 - explicit company/workspace selection before multi-company UI exposure
 - authoritative or explicitly format-only country-code semantics
-- supplier document private access
+- private Supplier document catalogue, upload, scan, review, access-grant and replacement lifecycle
+- cross-company non-disclosure and reviewer-company conflict denial
+- immutable Supplier document review history and effective-role audit records
+- deployed private-R2 integration evidence before remote readiness
 - role/action matrix tests from `spec.md` section 29
 - activation gating and audit records
 

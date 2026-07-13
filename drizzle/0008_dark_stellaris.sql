@@ -100,12 +100,13 @@ CREATE TABLE "supplier_document_review_events" (
 	"reviewer_id" uuid NOT NULL,
 	"effective_role" text NOT NULL,
 	"decision" text NOT NULL,
-	"reason" text NOT NULL,
+	"reason" text,
 	"review_note" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "supplier_document_review_events_role_check" CHECK ("supplier_document_review_events"."effective_role" in ($1, $2, $3, $4, $5, $6)),
+	CONSTRAINT "supplier_document_review_events_role_check" CHECK ("supplier_document_review_events"."effective_role" in ('super_admin', 'platform_admin', 'catalogue_content_editor', 'compliance_reviewer', 'product_rfq_moderator', 'privacy_support_manager')),
 	CONSTRAINT "supplier_document_review_events_decision_check" CHECK ("supplier_document_review_events"."decision" in ('approved', 'rejected', 'replacement_required')),
-	CONSTRAINT "supplier_document_review_events_reason_check" CHECK (char_length(trim("supplier_document_review_events"."reason")) between 3 and 2000),
+	CONSTRAINT "supplier_document_review_events_reason_check" CHECK (("supplier_document_review_events"."decision" = 'approved' and ("supplier_document_review_events"."reason" is null or char_length(trim("supplier_document_review_events"."reason")) between 3 and 2000))
+        or ("supplier_document_review_events"."decision" in ('rejected', 'replacement_required') and char_length(trim("supplier_document_review_events"."reason")) between 3 and 2000)),
 	CONSTRAINT "supplier_document_review_events_note_check" CHECK ("supplier_document_review_events"."review_note" is null or char_length(trim("supplier_document_review_events"."review_note")) between 3 and 4000)
 );
 --> statement-breakpoint
@@ -121,6 +122,7 @@ ALTER TABLE "supplier_document_review_events" ADD CONSTRAINT "supplier_document_
 ALTER TABLE "supplier_document_review_events" ADD CONSTRAINT "supplier_document_review_events_reviewer_id_user_id_fk" FOREIGN KEY ("reviewer_id") REFERENCES "public"."user"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "supplier_company_document_types_active_order_idx" ON "supplier_company_document_types" USING btree ("active","sort_order","key");--> statement-breakpoint
 CREATE UNIQUE INDEX "supplier_company_documents_object_key_idx" ON "supplier_company_documents" USING btree ("object_key");--> statement-breakpoint
+CREATE UNIQUE INDEX "supplier_company_documents_replaces_once_idx" ON "supplier_company_documents" USING btree ("replaces_document_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "supplier_company_documents_company_type_version_idx" ON "supplier_company_documents" USING btree ("company_id","document_type_key","version");--> statement-breakpoint
 CREATE INDEX "supplier_company_documents_company_status_idx" ON "supplier_company_documents" USING btree ("company_id","document_type_key","evidence_status","created_at");--> statement-breakpoint
 CREATE INDEX "supplier_company_documents_review_queue_idx" ON "supplier_company_documents" USING btree ("evidence_status","scan_status","submitted_at");--> statement-breakpoint
@@ -129,4 +131,17 @@ CREATE UNIQUE INDEX "supplier_document_access_grants_token_hash_idx" ON "supplie
 CREATE INDEX "supplier_document_access_grants_document_user_idx" ON "supplier_document_access_grants" USING btree ("document_id","issued_to","expires_at");--> statement-breakpoint
 CREATE INDEX "supplier_document_requirement_rules_resolution_idx" ON "supplier_document_requirement_rules" USING btree ("active","supplier_type_key","level","sort_order");--> statement-breakpoint
 CREATE INDEX "supplier_document_review_events_document_idx" ON "supplier_document_review_events" USING btree ("document_id","created_at");--> statement-breakpoint
-CREATE INDEX "supplier_document_review_events_reviewer_idx" ON "supplier_document_review_events" USING btree ("reviewer_id","created_at");
+CREATE INDEX "supplier_document_review_events_reviewer_idx" ON "supplier_document_review_events" USING btree ("reviewer_id","created_at");--> statement-breakpoint
+CREATE OR REPLACE FUNCTION prevent_supplier_document_review_event_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'supplier_document_review_events rows are immutable';
+END;
+$$;
+--> statement-breakpoint
+CREATE TRIGGER supplier_document_review_events_immutable
+BEFORE UPDATE OR DELETE ON "supplier_document_review_events"
+FOR EACH ROW
+EXECUTE FUNCTION prevent_supplier_document_review_event_mutation();

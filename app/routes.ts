@@ -27,6 +27,12 @@ const routes = [
   route("supplier/onboarding", "routes/supplier.onboarding.tsx"),
   route("supplier/company", "routes/supplier.company.tsx"),
   route("supplier/capabilities", "routes/supplier.capabilities.tsx"),
+  route("supplier/documents", "routes/supplier.documents.tsx"),
+  route("supplier/documents/upload", "routes/supplier.documents.upload.tsx"),
+  route("supplier/documents/:documentId", "routes/supplier.documents.$documentId.tsx"),
+  route("supplier/document-access/:token", "routes/supplier.document-access.$token.ts"),
+  route("admin/supplier-documents", "routes/admin.supplier-documents.tsx"),
+  route("admin/supplier-documents/:documentId", "routes/admin.supplier-documents.$documentId.tsx"),
   route("admin/business-identity/reviews", "routes/admin.business-identity-reviews.tsx"),
   route(
     "admin/business-identity/reviews/:reviewId",

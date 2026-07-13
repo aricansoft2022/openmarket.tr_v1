@@ -7,10 +7,7 @@ import {
   SupplierShell,
 } from "~/components/supplier-shell";
 import { loadSupplierOnboardingRouteContext } from "~/lib/supplier/onboarding.server";
-import {
-  supplierDocumentCopy,
-  supplierDocumentStateLabel,
-} from "~/lib/supplier/documents/copy";
+import { supplierDocumentCopy, supplierDocumentStateLabel } from "~/lib/supplier/documents/copy";
 import { loadSupplierDocumentWorkspace } from "~/lib/supplier/documents/service.server";
 
 import type { Route } from "./+types/supplier.documents";
@@ -64,7 +61,9 @@ export default function SupplierDocuments({ loaderData }: Route.ComponentProps) 
     );
   }
 
-  const mandatory = workspace.requirements.filter((requirement) => requirement.level === "mandatory");
+  const mandatory = workspace.requirements.filter(
+    (requirement) => requirement.level === "mandatory",
+  );
   const approved = mandatory.filter((requirement) => requirement.satisfied).length;
   const blockers = mandatory.length - approved;
   const primaryLabel = context.preferredLanguage === "en" ? "labelEn" : "labelTr";
@@ -76,7 +75,7 @@ export default function SupplierDocuments({ loaderData }: Route.ComponentProps) 
       current="S05"
       language={context.preferredLanguage}
       companyName={workspace.company.legalName}
-      status={workspace.company.status as never}
+      status={workspace.company.status}
       membershipRole={workspace.membershipRole}
     >
       <section className="supplier-page">
@@ -95,7 +94,9 @@ export default function SupplierDocuments({ loaderData }: Route.ComponentProps) 
 
         <section className="supplier-document-summary" aria-label={copy.documents.title}>
           <div>
-            <strong>{approved} / {mandatory.length}</strong>
+            <strong>
+              {approved} / {mandatory.length}
+            </strong>
             <span>{copy.documents.complete}</span>
           </div>
           <div>
@@ -114,7 +115,10 @@ export default function SupplierDocuments({ loaderData }: Route.ComponentProps) 
             {workspace.requirements.map((requirement) => {
               const current = requirement.documents[0] ?? null;
               return (
-                <article className="supplier-document-requirement" key={requirement.documentTypeKey}>
+                <article
+                  className="supplier-document-requirement"
+                  key={requirement.documentTypeKey}
+                >
                   <header>
                     <div>
                       <span className={`supplier-document-level is-${requirement.level}`}>

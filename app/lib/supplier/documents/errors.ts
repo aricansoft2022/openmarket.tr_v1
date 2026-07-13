@@ -43,8 +43,7 @@ const messages = {
     SCAN_PENDING: "The document cannot be submitted before the security scan finishes.",
     SCAN_FAILED: "The scan failed or was unsafe; the document cannot be submitted.",
     INVALID_TRANSITION: "The document cannot move from its current state to the requested action.",
-    PUBLIC_VISIBILITY_FORBIDDEN:
-      "Only approved, publicly eligible documents can be published.",
+    PUBLIC_VISIBILITY_FORBIDDEN: "Only approved, publicly eligible documents can be published.",
     ACCESS_GRANT_INVALID: "The private access link is invalid or expired.",
     SELF_REVIEW: "You cannot decide a document for a company you belong to.",
   },

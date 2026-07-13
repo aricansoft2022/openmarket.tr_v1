@@ -26,7 +26,6 @@ export class SupplierDocumentValidationError extends Error {
       | "FILE_EMPTY"
       | "FILE_TOO_LARGE"
       | "DOCUMENT_TYPE_UNKNOWN"
-      | "EXPIRY_REQUIRED"
       | "EXPIRY_INVALID"
       | "REASON_REQUIRED",
     message: string,
@@ -133,12 +132,6 @@ export function validateSupplierDocumentMetadata(input: {
   }
   const issueDate = input.issueDate ?? null;
   const expiresAt = input.expiresAt ?? null;
-  if (type.expiryExpected && !expiresAt) {
-    throw new SupplierDocumentValidationError(
-      "EXPIRY_REQUIRED",
-      "Bu belge türü için son geçerlilik tarihi gereklidir.",
-    );
-  }
   if (issueDate && expiresAt && expiresAt <= issueDate) {
     throw new SupplierDocumentValidationError(
       "EXPIRY_INVALID",
@@ -189,10 +182,13 @@ export function deriveSupplierDocumentState(input: {
   ) {
     return "missing";
   }
-  if (input.expiresAt && input.expiresAt <= (input.now ?? new Date())) return "expired";
-  if (input.scanStatus === "rejected" || input.scanStatus === "failed")
-    return "replacement_required";
-  return input.evidenceStatus ?? "uploaded";
+  if (input.scanStatus === "rejected") return "replacement_required";
+
+  const state = input.evidenceStatus ?? "uploaded";
+  if (state === "approved" && input.expiresAt && input.expiresAt <= (input.now ?? new Date())) {
+    return "expired";
+  }
+  return state;
 }
 
 export function requirementIsSatisfied(

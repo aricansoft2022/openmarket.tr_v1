@@ -1,9 +1,13 @@
 import { and, asc, desc, eq, inArray, max, ne, or, sql } from "drizzle-orm";
 
 import { createAuth, type AuthEnvironment } from "../../auth/create-auth.server";
-import { StaffAuthorizationError, requireStaffPermission } from "../../authorization/platform-staff.server";
+import {
+  StaffAuthorizationError,
+  requireStaffPermission,
+} from "../../authorization/platform-staff.server";
+import { launchSupplierTypeKeys, type LaunchSupplierTypeKey } from "../catalogue";
 import { membershipCanEditSupplierProfile } from "../profile";
-import { validateSupplierDocumentFile } from "../../business-identity/evidence";
+import { validateEvidenceFile } from "../../business-identity/evidence";
 import type { Database } from "../../db/client.server";
 import { withDatabase } from "../../db/client.server";
 import {
@@ -15,13 +19,14 @@ import {
   supplierDocumentRequirementRules,
   supplierDocumentReviewEvents,
   supplierMemberships,
-  supplierTypeSelections,
+  supplierCompanyTypes,
   type PlatformStaffRole,
   type SupplierDocumentEvidenceStatus,
   type SupplierDocumentReviewDecision,
   type SupplierDocumentScanStatus,
   type SupplierDocumentStorageStatus,
   type SupplierMembershipRole,
+  type SupplierWorkspaceStatus,
 } from "../../db/schema";
 import {
   deriveSupplierDocumentState,
@@ -44,7 +49,7 @@ export type SupplierDocumentSummary = {
   originalFilename: string;
   mimeType: string;
   sizeBytes: number;
-  sha256: string;
+  sha256: string | null;
   storageStatus: SupplierDocumentStorageStatus;
   evidenceStatus: SupplierDocumentEvidenceStatus;
   scanStatus: SupplierDocumentScanStatus;
@@ -76,7 +81,7 @@ export type SupplierDocumentRequirementSummary = {
 };
 
 export type SupplierDocumentWorkspace = {
-  company: { id: string; legalName: string; status: string };
+  company: { id: string; legalName: string; status: SupplierWorkspaceStatus };
   membershipRole: SupplierMembershipRole;
   canEdit: boolean;
   supplierTypeKeys: string[];
@@ -169,13 +174,20 @@ async function requireSupplierMembership(
   return { session, membership };
 }
 
-async function companySupplierTypeKeys(database: Database, companyId: string): Promise<string[]> {
+async function companySupplierTypeKeys(
+  database: Database,
+  companyId: string,
+): Promise<LaunchSupplierTypeKey[]> {
   const rows = await database
-    .select({ key: supplierTypeSelections.supplierTypeKey })
-    .from(supplierTypeSelections)
-    .where(eq(supplierTypeSelections.companyId, companyId))
-    .orderBy(asc(supplierTypeSelections.supplierTypeKey));
-  return rows.map((row) => row.key);
+    .select({ key: supplierCompanyTypes.supplierTypeKey })
+    .from(supplierCompanyTypes)
+    .where(eq(supplierCompanyTypes.companyId, companyId))
+    .orderBy(asc(supplierCompanyTypes.supplierTypeKey));
+  return rows
+    .map((row) => row.key)
+    .filter((key): key is LaunchSupplierTypeKey =>
+      launchSupplierTypeKeys.includes(key as LaunchSupplierTypeKey),
+    );
 }
 
 function documentProjection(row: {
@@ -187,7 +199,7 @@ function documentProjection(row: {
   originalFilename: string;
   mimeType: string;
   sizeBytes: number;
-  sha256: string;
+  sha256: string | null;
   storageStatus: SupplierDocumentStorageStatus;
   evidenceStatus: SupplierDocumentEvidenceStatus;
   scanStatus: SupplierDocumentScanStatus;
@@ -285,6 +297,9 @@ export async function loadSupplierDocumentWorkspace(
           (document) => document.documentTypeKey === requirement.documentTypeKey,
         );
         const currentState = matching[0]?.derivedState ?? "missing";
+        const approvedEvidenceRemains = matching.some(
+          (document) => document.derivedState === "approved",
+        );
         return {
           documentTypeKey: requirement.documentTypeKey,
           labelTr: type.labelTr,
@@ -298,7 +313,7 @@ export async function loadSupplierDocumentWorkspace(
           noteEn: requirement.noteEn,
           documents: matching,
           currentState,
-          satisfied: requirement.level !== "mandatory" || currentState === "approved",
+          satisfied: requirement.level !== "mandatory" || approvedEvidenceRemains,
         };
       })
       .filter(
@@ -332,8 +347,21 @@ export async function uploadSupplierCompanyDocument(
     replacesDocumentId?: string | null;
   },
 ): Promise<SupplierDocumentSummary> {
-  const validatedFile = validateSupplierDocumentFile(input.file);
+  const validatedFile = validateEvidenceFile({
+    name: input.file.name,
+    type: input.file.type,
+    size: input.file.size,
+  });
   const validatedMetadata = validateSupplierDocumentMetadata(input);
+  await withDatabase(env, async (database) => {
+    const { membership } = await requireSupplierMembership(database, env, request, input.companyId);
+    if (!membershipCanEditSupplierProfile(membership.role)) {
+      throw new SupplierDocumentActionError(
+        "FORBIDDEN",
+        "The current membership cannot upload Supplier company documents.",
+      );
+    }
+  });
   const bytes = await input.file.arrayBuffer();
   const sha256 = await sha256Hex(bytes);
   const documentId = crypto.randomUUID();
@@ -373,12 +401,13 @@ export async function uploadSupplierCompanyDocument(
         );
       }
 
-      let replaces: { id: string; documentTypeKey: string } | null = null;
+      let replaces: { id: string; documentTypeKey: string; version: number } | null = null;
       if (input.replacesDocumentId) {
         const [row] = await scoped
           .select({
             id: supplierCompanyDocuments.id,
             documentTypeKey: supplierCompanyDocuments.documentTypeKey,
+            version: supplierCompanyDocuments.version,
           })
           .from(supplierCompanyDocuments)
           .where(
@@ -407,7 +436,14 @@ export async function uploadSupplierCompanyDocument(
             eq(supplierCompanyDocuments.documentTypeKey, validatedMetadata.documentTypeKey),
           ),
         );
-      const version = (versionRow?.value ?? 0) + 1;
+      const latestVersion = versionRow?.value ?? 0;
+      if (replaces && replaces.version !== latestVersion) {
+        throw new SupplierDocumentActionError(
+          "REPLACEMENT_INVALID",
+          "Replacement must reference the latest document version.",
+        );
+      }
+      const version = latestVersion + 1;
       const typeSegment = validatedMetadata.documentTypeKey.replace(/^company_document\./, "");
       const objectKey = `supplier-company/${input.companyId}/${typeSegment}/${documentId}/v${version}.${extension}`;
 
@@ -419,12 +455,12 @@ export async function uploadSupplierCompanyDocument(
           documentTypeKey: validatedMetadata.documentTypeKey,
           replacesDocumentId: replaces?.id ?? null,
           version,
-          originalFilename: validatedFile.originalFilename,
+          originalFilename: validatedFile.filename,
           mimeType: validatedFile.mimeType,
           sizeBytes: validatedFile.sizeBytes,
-          sha256,
+          sha256: null,
           objectKey,
-          storageStatus: "reserved",
+          storageStatus: "uploading",
           evidenceStatus: "uploaded",
           scanStatus: "pending",
           issueDate: validatedMetadata.issueDate,
@@ -448,7 +484,13 @@ export async function uploadSupplierCompanyDocument(
       } catch (error) {
         await scoped
           .update(supplierCompanyDocuments)
-          .set({ storageStatus: "failed", scanStatus: "failed", updatedAt: new Date() })
+          .set({
+            storageStatus: "failed",
+            scanStatus: "failed",
+            scanNote: "Private object storage failed",
+            failureReason: "Private object storage failed",
+            updatedAt: new Date(),
+          })
           .where(eq(supplierCompanyDocuments.id, documentId));
         throw error;
       }
@@ -456,7 +498,7 @@ export async function uploadSupplierCompanyDocument(
       const storedAt = new Date();
       const [stored] = await scoped
         .update(supplierCompanyDocuments)
-        .set({ storageStatus: "stored_private", storedAt, updatedAt: storedAt })
+        .set({ storageStatus: "stored_private", sha256, storedAt, updatedAt: storedAt })
         .where(eq(supplierCompanyDocuments.id, documentId))
         .returning();
       await scoped.insert(auditLogs).values({
@@ -472,7 +514,9 @@ export async function uploadSupplierCompanyDocument(
           sha256,
           storageStatus: "stored_private",
         },
-        reason: replaces ? "Supplier member uploaded a replacement document version" : "Supplier member uploaded a private company document",
+        reason: replaces
+          ? "Supplier member uploaded a replacement document version"
+          : "Supplier member uploaded a private company document",
         requestId: requestId(request),
       });
       return documentProjection(stored!);
@@ -497,35 +541,54 @@ export async function recordSupplierDocumentScanResult(
       "Rejected or failed scan results require a reason.",
     );
   }
-  const [current] = await database
-    .select({ scanStatus: supplierCompanyDocuments.scanStatus })
-    .from(supplierCompanyDocuments)
-    .where(eq(supplierCompanyDocuments.id, input.documentId))
-    .limit(1)
-    .for("update");
-  if (!current) {
-    throw new SupplierDocumentActionError("DOCUMENT_NOT_FOUND", "Document was not found.");
-  }
-  await database
-    .update(supplierCompanyDocuments)
-    .set({
-      scanStatus: input.result,
-      scanNote: input.result === "clean" ? null : note,
-      evidenceStatus: input.result === "clean" ? "uploaded" : ("replacement_required" as const),
-      submittedAt: input.result === "clean" ? null : now,
-      publicVisible: false,
-      updatedAt: now,
-    })
-    .where(eq(supplierCompanyDocuments.id, input.documentId));
-  await database.insert(auditLogs).values({
-    actorId: null,
-    effectiveRole: "document_scanner",
-    resourceType: "supplier_company_document",
-    resourceId: input.documentId,
-    action: `supplier.document.scan_${input.result}`,
-    oldValue: { scanStatus: current.scanStatus },
-    newValue: { scanStatus: input.result },
-    reason: note ?? "Automated document scan completed",
+
+  return database.transaction(async (transaction) => {
+    const scoped = transaction as unknown as Database;
+    const [current] = await scoped
+      .select({
+        storageStatus: supplierCompanyDocuments.storageStatus,
+        evidenceStatus: supplierCompanyDocuments.evidenceStatus,
+        scanStatus: supplierCompanyDocuments.scanStatus,
+      })
+      .from(supplierCompanyDocuments)
+      .where(eq(supplierCompanyDocuments.id, input.documentId))
+      .limit(1)
+      .for("update");
+    if (!current) {
+      throw new SupplierDocumentActionError("DOCUMENT_NOT_FOUND", "Document was not found.");
+    }
+    if (current.storageStatus !== "stored_private" || current.evidenceStatus !== "uploaded") {
+      throw new SupplierDocumentActionError(
+        "INVALID_TRANSITION",
+        "Only newly stored document versions may receive a scan result.",
+      );
+    }
+
+    const evidenceStatus = input.result === "rejected" ? "replacement_required" : "uploaded";
+    await scoped
+      .update(supplierCompanyDocuments)
+      .set({
+        scanStatus: input.result,
+        scanNote: input.result === "clean" ? null : note,
+        evidenceStatus,
+        submittedAt: input.result === "rejected" ? now : null,
+        publicVisible: false,
+        updatedAt: now,
+      })
+      .where(eq(supplierCompanyDocuments.id, input.documentId));
+    await scoped.insert(auditLogs).values({
+      actorId: null,
+      effectiveRole: "document_scanner",
+      resourceType: "supplier_company_document",
+      resourceId: input.documentId,
+      action: `supplier.document.scan_${input.result}`,
+      oldValue: {
+        scanStatus: current.scanStatus,
+        evidenceStatus: current.evidenceStatus,
+      },
+      newValue: { scanStatus: input.result, evidenceStatus },
+      reason: note ?? "Automated document scan completed",
+    });
   });
 }
 
@@ -565,17 +628,16 @@ export async function submitSupplierCompanyDocumentForReview(
           "Only privately stored documents may enter review.",
         );
       }
-      if (document.scanStatus === "pending" || document.scanStatus === "not_started") {
+      if (document.scanStatus === "pending") {
         throw new SupplierDocumentActionError("SCAN_PENDING", "Document scanning is not complete.");
       }
       if (document.scanStatus !== "clean") {
-        throw new SupplierDocumentActionError("SCAN_FAILED", "Document did not pass content scanning.");
+        throw new SupplierDocumentActionError(
+          "SCAN_FAILED",
+          "Document did not pass content scanning.",
+        );
       }
-      if (
-        !(["uploaded", "rejected", "replacement_required"] as const).includes(
-          document.evidenceStatus as "uploaded" | "rejected" | "replacement_required",
-        )
-      ) {
+      if (document.evidenceStatus !== "uploaded") {
         throw new SupplierDocumentActionError(
           "INVALID_TRANSITION",
           "Document is not in a submittable state.",
@@ -612,23 +674,32 @@ export async function decideSupplierCompanyDocument(
   input: {
     documentId: string;
     decision: SupplierDocumentReviewDecision;
-    reason: string;
+    reason?: string;
     reviewNote?: string | null;
   },
 ): Promise<void> {
-  const reason = validatedSupplierDocumentReason(input.reason);
+  const reason =
+    input.decision === "approved"
+      ? input.reason?.trim()
+        ? validatedSupplierDocumentReason(input.reason)
+        : null
+      : validatedSupplierDocumentReason(input.reason ?? "");
   const reviewNote = input.reviewNote?.trim() || null;
   return withDatabase(env, (database) =>
     database.transaction(async (transaction) => {
       const scoped = transaction as unknown as Database;
-      const { session, actor } = await requireStaffPermission(
+      const session = await currentSession(scoped, env, request);
+      if (!session) {
+        throw new StaffAuthorizationError("UNAUTHENTICATED", "Authentication is required.");
+      }
+      const actorRole = await requireStaffPermission(
         scoped,
-        env,
-        request,
+        session.user.id,
         "supplier_document.review.decide",
       );
       const [document] = await scoped
         .select({
+          companyId: supplierCompanyDocuments.companyId,
           uploadedBy: supplierCompanyDocuments.uploadedBy,
           evidenceStatus: supplierCompanyDocuments.evidenceStatus,
           documentTypeKey: supplierCompanyDocuments.documentTypeKey,
@@ -641,10 +712,15 @@ export async function decideSupplierCompanyDocument(
       if (!document) {
         throw new SupplierDocumentActionError("DOCUMENT_NOT_FOUND", "Document was not found.");
       }
-      if (document.uploadedBy === session.user.id) {
+      const reviewerMembership = await activeMembership(
+        scoped,
+        session.user.id,
+        document.companyId,
+      );
+      if (document.uploadedBy === session.user.id || reviewerMembership) {
         throw new StaffAuthorizationError(
           "SELF_REVIEW",
-          "Staff cannot decide a company document they uploaded.",
+          "Staff cannot decide a company document for a company they belong to.",
         );
       }
       if (document.evidenceStatus !== "pending_review") {
@@ -659,7 +735,10 @@ export async function decideSupplierCompanyDocument(
         .where(eq(supplierCompanyDocumentTypes.key, document.documentTypeKey))
         .limit(1);
       const now = new Date();
-      const statusByDecision: Record<SupplierDocumentReviewDecision, SupplierDocumentEvidenceStatus> = {
+      const statusByDecision: Record<
+        SupplierDocumentReviewDecision,
+        SupplierDocumentEvidenceStatus
+      > = {
         approved: "approved",
         rejected: "rejected",
         replacement_required: "replacement_required",
@@ -670,11 +749,7 @@ export async function decideSupplierCompanyDocument(
         .set({
           evidenceStatus: nextStatus,
           publicVisible:
-            input.decision === "approved" && type?.publicEligible
-              ? document.publicVisible
-              : false,
-          reviewedAt: now,
-          reviewedBy: session.user.id,
+            input.decision === "approved" && type?.publicEligible ? document.publicVisible : false,
           updatedAt: now,
         })
         .where(eq(supplierCompanyDocuments.id, input.documentId));
@@ -683,14 +758,13 @@ export async function decideSupplierCompanyDocument(
         decision: input.decision,
         reason,
         reviewNote,
-        reviewedBy: session.user.id,
-        effectiveRole: actor.role as PlatformStaffRole,
-        requestId: requestId(request),
+        reviewerId: session.user.id,
+        effectiveRole: actorRole as PlatformStaffRole,
         createdAt: now,
       });
       await scoped.insert(auditLogs).values({
         actorId: session.user.id,
-        effectiveRole: actor.role,
+        effectiveRole: actorRole,
         resourceType: "supplier_company_document",
         resourceId: input.documentId,
         action: `supplier.document.${input.decision}`,
@@ -756,7 +830,9 @@ export async function setSupplierDocumentPublicVisibility(
         action: "supplier.document.public_visibility_changed",
         oldValue: { publicVisible: document.publicVisible },
         newValue: { publicVisible: input.visible },
-        reason: input.visible ? "Supplier exposed approved public-eligible evidence" : "Supplier hid public evidence",
+        reason: input.visible
+          ? "Supplier exposed approved public-eligible evidence"
+          : "Supplier hid public evidence",
         requestId: requestId(request),
       });
     }),
@@ -791,8 +867,19 @@ async function readableDocument(
   }
   const membership = await activeMembership(database, session.user.id, document.companyId);
   if (membership) return { session, document, effectiveRole: `supplier_${membership.role}` };
-  const staff = await requireStaffPermission(database, env, request, "supplier_document.file.read");
-  return { session, document, effectiveRole: staff.actor.role };
+  try {
+    const staffRole = await requireStaffPermission(
+      database,
+      session.user.id,
+      "supplier_document.file.read",
+    );
+    return { session, document, effectiveRole: staffRole };
+  } catch (error) {
+    if (error instanceof StaffAuthorizationError && error.code === "FORBIDDEN") {
+      throw new SupplierDocumentActionError("DOCUMENT_NOT_FOUND", "Document was not found.");
+    }
+    throw error;
+  }
 }
 
 export async function createSupplierDocumentAccessGrant(
@@ -816,7 +903,7 @@ export async function createSupplierDocumentAccessGrant(
       );
       await scoped.insert(supplierDocumentAccessGrants).values({
         documentId,
-        grantedTo: session.user.id,
+        issuedTo: session.user.id,
         tokenHash,
         expiresAt,
       });
@@ -850,8 +937,9 @@ export async function downloadSupplierDocumentWithGrant(
       .select({
         documentId: supplierDocumentAccessGrants.documentId,
         expiresAt: supplierDocumentAccessGrants.expiresAt,
-        grantedTo: supplierDocumentAccessGrants.grantedTo,
-        usedAt: supplierDocumentAccessGrants.usedAt,
+        issuedTo: supplierDocumentAccessGrants.issuedTo,
+        revokedAt: supplierDocumentAccessGrants.revokedAt,
+        lastAccessedAt: supplierDocumentAccessGrants.lastAccessedAt,
       })
       .from(supplierDocumentAccessGrants)
       .where(eq(supplierDocumentAccessGrants.tokenHash, tokenHash))
@@ -859,11 +947,14 @@ export async function downloadSupplierDocumentWithGrant(
       .for("update");
     if (
       !grant ||
-      grant.grantedTo !== session.user.id ||
-      grant.usedAt ||
+      grant.issuedTo !== session.user.id ||
+      grant.revokedAt ||
       grant.expiresAt <= new Date()
     ) {
-      throw new SupplierDocumentActionError("ACCESS_GRANT_INVALID", "Document access grant is invalid.");
+      throw new SupplierDocumentActionError(
+        "ACCESS_GRANT_INVALID",
+        "Document access grant is invalid.",
+      );
     }
     const { document } = await readableDocument(database, env, request, grant.documentId);
     const object = await env.PRIVATE_DOCUMENTS.get(document.objectKey);
@@ -873,7 +964,7 @@ export async function downloadSupplierDocumentWithGrant(
     const usedAt = new Date();
     await database
       .update(supplierDocumentAccessGrants)
-      .set({ usedAt })
+      .set({ revokedAt: usedAt, lastAccessedAt: usedAt })
       .where(eq(supplierDocumentAccessGrants.tokenHash, tokenHash));
     await database.insert(auditLogs).values({
       actorId: session.user.id,
@@ -909,7 +1000,13 @@ export async function loadSupplierDocumentReviewQueue(
   >;
 } | null> {
   return withDatabase(env, async (database) => {
-    const result = await requireStaffPermission(database, env, request, "supplier_document.review.list");
+    const session = await currentSession(database, env, request);
+    if (!session) return null;
+    const actorRole = await requireStaffPermission(
+      database,
+      session.user.id,
+      "supplier_document.review.list",
+    );
     const rows = await database
       .select({
         id: supplierCompanyDocuments.id,
@@ -940,7 +1037,7 @@ export async function loadSupplierDocumentReviewQueue(
       .where(eq(supplierCompanyDocuments.evidenceStatus, "pending_review"))
       .orderBy(asc(supplierCompanyDocuments.submittedAt), asc(supplierCompanyDocuments.id));
     return {
-      actor: { id: result.actor.id, role: result.actor.role as PlatformStaffRole },
+      actor: { id: session.user.id, role: actorRole as PlatformStaffRole },
       documents: rows.map((row) => ({
         ...documentProjection(row),
         companyName: row.companyName,
@@ -960,16 +1057,21 @@ export async function loadSupplierDocumentReviewDetail(
   timeline: Array<{
     id: string;
     decision: SupplierDocumentReviewDecision;
-    reason: string;
+    reason: string | null;
     reviewNote: string | null;
-    reviewedBy: string;
+    reviewerId: string;
     effectiveRole: PlatformStaffRole;
-    requestId: string | null;
     createdAt: Date;
   }>;
 } | null> {
   return withDatabase(env, async (database) => {
-    const result = await requireStaffPermission(database, env, request, "supplier_document.review.read");
+    const session = await currentSession(database, env, request);
+    if (!session) return null;
+    const actorRole = await requireStaffPermission(
+      database,
+      session.user.id,
+      "supplier_document.review.read",
+    );
     const [row] = await database
       .select({
         id: supplierCompanyDocuments.id,
@@ -1006,16 +1108,15 @@ export async function loadSupplierDocumentReviewDetail(
         decision: supplierDocumentReviewEvents.decision,
         reason: supplierDocumentReviewEvents.reason,
         reviewNote: supplierDocumentReviewEvents.reviewNote,
-        reviewedBy: supplierDocumentReviewEvents.reviewedBy,
+        reviewerId: supplierDocumentReviewEvents.reviewerId,
         effectiveRole: supplierDocumentReviewEvents.effectiveRole,
-        requestId: supplierDocumentReviewEvents.requestId,
         createdAt: supplierDocumentReviewEvents.createdAt,
       })
       .from(supplierDocumentReviewEvents)
       .where(eq(supplierDocumentReviewEvents.documentId, documentId))
       .orderBy(asc(supplierDocumentReviewEvents.createdAt), asc(supplierDocumentReviewEvents.id));
     return {
-      actor: { id: result.actor.id, role: result.actor.role as PlatformStaffRole },
+      actor: { id: session.user.id, role: actorRole as PlatformStaffRole },
       document: {
         ...documentProjection(row),
         companyName: row.companyName,
@@ -1035,7 +1136,7 @@ export async function purgeExpiredSupplierDocumentAccessGrants(
     .where(
       or(
         sql`${supplierDocumentAccessGrants.expiresAt} <= ${now}`,
-        sql`${supplierDocumentAccessGrants.usedAt} is not null`,
+        sql`${supplierDocumentAccessGrants.revokedAt} is not null`,
       ),
     )
     .returning({ id: supplierDocumentAccessGrants.id });
