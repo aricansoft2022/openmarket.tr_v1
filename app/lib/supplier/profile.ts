@@ -28,8 +28,7 @@ export type SupplierProfileMissingReason =
   | "city"
   | "description"
   | "supplier_type"
-  | "application_context"
-  | "production_capability";
+  | "application_context";
 
 export type SupplierProfileCompleteness = {
   complete: boolean;
@@ -203,7 +202,6 @@ export function evaluateSupplierProfileCompleteness(
   if ((input.description?.trim().length ?? 0) < 20) missing.push("description");
   if (input.supplierTypeKeys.length === 0) missing.push("supplier_type");
   if (input.applicationContextKeys.length === 0) missing.push("application_context");
-  if (input.productionCapabilityKeys.length === 0) missing.push("production_capability");
 
   return { complete: missing.length === 0, missing };
 }
