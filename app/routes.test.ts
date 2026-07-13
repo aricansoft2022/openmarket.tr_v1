@@ -22,5 +22,13 @@ describe("route configuration", () => {
     );
     expect(configuredRoutes).toContain('"path":"admin/staff"');
     expect(configuredRoutes).toContain('"file":"routes/admin.staff.tsx"');
+    expect(configuredRoutes).toContain('"path":"supplier"');
+    expect(configuredRoutes).toContain('"file":"routes/supplier.tsx"');
+    expect(configuredRoutes).toContain('"path":"supplier/onboarding"');
+    expect(configuredRoutes).toContain('"file":"routes/supplier.onboarding.tsx"');
+    expect(configuredRoutes).toContain('"path":"supplier/company"');
+    expect(configuredRoutes).toContain('"file":"routes/supplier.company.tsx"');
+    expect(configuredRoutes).toContain('"path":"supplier/capabilities"');
+    expect(configuredRoutes).toContain('"file":"routes/supplier.capabilities.tsx"');
   });
 });

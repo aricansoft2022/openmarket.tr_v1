@@ -23,6 +23,10 @@ const routes = [
     "onboarding/business-identity/evidence/:evidenceId/download",
     "routes/onboarding.business-identity-evidence-download.ts",
   ),
+  route("supplier", "routes/supplier.tsx"),
+  route("supplier/onboarding", "routes/supplier.onboarding.tsx"),
+  route("supplier/company", "routes/supplier.company.tsx"),
+  route("supplier/capabilities", "routes/supplier.capabilities.tsx"),
   route("admin/business-identity/reviews", "routes/admin.business-identity-reviews.tsx"),
   route(
     "admin/business-identity/reviews/:reviewId",

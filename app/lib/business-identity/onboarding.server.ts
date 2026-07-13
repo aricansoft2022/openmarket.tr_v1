@@ -14,6 +14,7 @@ import {
   type BuyerProfileStatus,
   type CompanyEmailStatus,
   type IntendedUse,
+  type PreferredLanguage,
 } from "../db/schema";
 import {
   selectWorkspaceIntent,
@@ -47,6 +48,7 @@ export type OnboardingState = {
     emailVerified: boolean;
   };
   intendedUse: IntendedUse;
+  preferredLanguage: PreferredLanguage;
   buyerStatus: BuyerProfileStatus | null;
   latestReview: OnboardingReview | null;
   canSubmitIdentity: boolean;
@@ -82,7 +84,10 @@ async function stateForUser(
   },
 ): Promise<OnboardingState> {
   const [preferences] = await database
-    .select({ intendedUse: userPreferences.intendedUse })
+    .select({
+      intendedUse: userPreferences.intendedUse,
+      preferredLanguage: userPreferences.preferredLanguage,
+    })
     .from(userPreferences)
     .where(eq(userPreferences.userId, input.id))
     .limit(1);
@@ -142,6 +147,7 @@ async function stateForUser(
   return {
     user: input,
     intendedUse: preferences?.intendedUse ?? "both",
+    preferredLanguage: preferences?.preferredLanguage ?? "tr",
     buyerStatus: buyer?.status ?? null,
     latestReview,
     canSubmitIdentity: input.emailVerified && !latestReview,

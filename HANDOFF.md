@@ -26,31 +26,32 @@ Node must satisfy the repository engine requirement. Do not replace `npm ci` wit
 
 ## Current state
 
-`main` currently ends at `2a44a6b81ed3079071987a58620133632347e7f9`, the squash merge of PR #31. Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, verification/password recovery, guarded Google OAuth, auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding, private manual-exception evidence, Reviewer/Admin business-identity authorization, audited platform staff assignment management and the audited Supplier company/profile foundation are merged.
+`main` currently ends at `6ca28b706b4eabe1b03d90835366a46f863c6e04`, the squash merge of PR #33. Phase 0, runtime configuration, local PostgreSQL verification, Better Auth persistence, transactional registration, verification/password recovery, guarded Google OAuth, auth abuse controls, explicit Google link/unlink safeguards, the business-identity/Buyer state machine, A08–A10 onboarding, private manual-exception evidence, Reviewer/Admin business-identity authorization, audited platform staff assignment management, the audited Supplier company/profile foundation and the launch Supplier catalogue/seeds are merged.
 
-Draft PR #33 on `agent/supplier-launch-seeds` adds:
+Draft PR #36 on `agent/supplier-onboarding-screens` adds the user-facing Supplier onboarding slice S01–S04:
 
-- the specification-defined six Supplier types with stable keys and Turkish/English labels;
-- a narrow reviewed production-capability catalogue based only on explicitly named textile launch processes and services;
-- idempotent seeding that restores canonical labels, ordering and active state;
-- archival by deactivation for non-launch values instead of destructive deletion;
-- exact production inventory verification independent of fixtures;
-- Supplier foundation verification against the real launch catalogue;
-- specification-aligned completeness that does not force exporters or distributors to claim production capabilities.
+- S01 `/supplier`: Supplier overview, activation boundary, deterministic progress and disabled future-module summaries;
+- S02 `/supplier/onboarding`: stepper, checklist, blocking issues and continuation actions;
+- S03 `/supplier/company`: verified-identity-bound company create/update and export-market code capture;
+- S04 `/supplier/capabilities`: seeded Supplier types, fixed application contexts and reviewed production capabilities;
+- owner/admin/editor mutation permission, viewer read-only behaviour and cross-membership isolation through the existing Supplier service;
+- complete Turkish/English shell, page, form, checklist, catalogue-order and public form-error copy selected from the persisted account language preference;
+- route, loading, empty, blocked, error, validation, success and read-only states;
+- unit coverage for checklist dependencies, language contracts and form normalization;
+- route-registration coverage and continued PostgreSQL Supplier-foundation verification.
 
-The specification provides a verbatim Supplier type list but not a standalone production-capability enumeration. Do not silently broaden the capability catalogue. New values require a reviewed decision, bilingual labels, stable keys and updated exact-inventory tests.
-
-Supplier onboarding screens, documents, review and activation are not merged. Retrospective findings and disposition remain tracked in issue #32.
+The PR deliberately does not activate Supplier. Company-document upload/review remains #7; the activation evaluator and audited state transitions remain #8. Product creation, RFQ response and invitation UI are later slices.
 
 ## Exact next tasks
 
-1. Squash merge PR #33 after the final documentation commit passes permanent read-only CI.
-2. Update issue #32: close the production-seed finding, and split country-code semantics plus future multi-company selection into explicit follow-ups if they are not fixed in the same slice.
-3. Continue issue #6 with S01–S04 as a separate route/UI PR using the merged Supplier domain and catalogue.
-4. Keep company-document upload/review in #7 and Supplier activation in #8; do not fold them into onboarding UI.
-5. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
-6. Keep issue #4 open for external delivery and remote auth evidence.
-7. Do not infer business identity from account verification alone; public email domains never grant automatic business identity.
+1. Run permanent read-only CI once more after this final handoff commit, then move PR #36 to review and squash merge it.
+2. Implement issue #7 as a separate private company-document lifecycle: requirement resolution, upload metadata, authorized retrieval, review decisions, replacement and expiry handling.
+3. Implement issue #8 as a central activation evaluator over verified identity, complete profile, Supplier types and approved mandatory documents.
+4. Resolve issue #34 by choosing either an authoritative committed country catalogue or explicitly retaining format-only two-letter semantics across validation, database constraints and UI copy.
+5. Resolve issue #35 before exposing multi-company membership: require an explicit validated Supplier company/workspace selection instead of silently taking the earliest active membership.
+6. Keep issues #2 and #3 open for real development Neon and deployed Hyperdrive evidence.
+7. Keep issue #4 open for external email delivery and remote auth evidence.
+8. Do not infer business identity from account verification alone; public email domains never grant automatic business identity.
 
 ## Verification commands
 
@@ -108,7 +109,18 @@ npm run db:local:down
 - production capabilities are optional for non-manufacturing Supplier types;
 - immutable update audits contain complete old/new profile values.
 
-Permanent read-only GitHub Actions run `29243586323` passed formatting, documentation, runtime configuration, typecheck, unit tests, production build and the complete PostgreSQL chain on PR #33 head `9a41586d0c39016300bff599bfc6d15500e1083a`. The final documentation commit requires one last read-only CI run before merge.
+Supplier onboarding unit and route evidence must prove:
+
+- identity verification blocks company creation until complete;
+- capabilities remain blocked until a company exists;
+- company documents remain an explicit incomplete activation dependency;
+- account language selects shell, page, checklist, catalogue ordering and public form-error copy;
+- repeated checkbox values, optional fields, founded year and export-market values normalize deterministically;
+- S01–S04 routes remain registered exactly once and the Supplier stylesheet is loaded exactly once;
+- company and capability mutations preserve fields owned by the other screen and never activate Supplier;
+- viewer memberships render read-only and server-side mutations remain denied.
+
+Permanent read-only GitHub Actions run `29245409518` passed formatting, documentation, runtime configuration, typecheck, unit tests, production build and the complete PostgreSQL chain on fully localized PR #36 head `8142b81c5a081024b963e421a673b934a3b32696`.
 
 ## Known blockers
 
@@ -119,6 +131,8 @@ Permanent read-only GitHub Actions run `29243586323` passed formatting, document
 - Real Turnstile and Cloudflare Rate Limiting resources are not provisioned.
 - Initial Super Admin bootstrap requires controlled provisioning.
 - Evidence malware/content inspection, quarantine and retention cleanup are not implemented.
-- Cloudflare Images remains an account-level dependency for later media work.
+- Company-document review and Supplier activation are not implemented.
+- Country-code membership semantics and explicit multi-company selection remain open in #34 and #35.
+- Cloudflare Images remains an account-level dependency for later company/product media work.
 
-These blockers do not invalidate local migration, authorization, audit, seed or PostgreSQL verification. They do prevent claiming user-facing Supplier onboarding, remote auth readiness or production-ready document review operations.
+These blockers do not invalidate local route, migration, authorization, audit, seed or PostgreSQL verification. They do prevent claiming remote production readiness, live external-provider readiness or commercially active Supplier operations.
