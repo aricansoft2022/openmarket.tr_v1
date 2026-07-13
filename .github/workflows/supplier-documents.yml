@@ -1,4 +1,4 @@
-name: Materialize verified Supplier document source
+name: Supplier document lifecycle
 
 on:
   pull_request:
@@ -13,17 +13,29 @@ on:
       - "scripts/*supplier-document*"
       - "package.json"
       - ".github/workflows/supplier-documents.yml"
+  push:
+    branches: [main]
+    paths:
+      - "app/lib/authorization/**"
+      - "app/lib/db/schema/**"
+      - "app/lib/supplier/documents/**"
+      - "app/routes/*supplier-document*"
+      - "app/routes/supplier.documents*"
+      - "app/styles/supplier-documents.css"
+      - "drizzle/**"
+      - "scripts/*supplier-document*"
+      - "package.json"
+      - ".github/workflows/supplier-documents.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: supplier-document-materialization-${{ github.ref }}
+  group: supplier-documents-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  materialize:
-    if: github.head_ref == 'agent/supplier-documents-post-merge-hardening'
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -43,11 +55,8 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - name: Checkout PR head
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -58,86 +67,8 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Apply reviewed corrections
-        run: |
-          for patch in \
-            scripts/patch-supplier-document-foundation.mjs \
-            scripts/patch-supplier-document-safety.mjs \
-            scripts/patch-supplier-document-lifecycle.mjs \
-            scripts/patch-supplier-document-ui.mjs \
-            scripts/patch-supplier-document-domain-guards.mjs
-          do
-            test ! -f "$patch" || node "$patch"
-          done
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from "node:fs";
-          const path = "package.json";
-          const packageJson = JSON.parse(readFileSync(path, "utf8"));
-          packageJson.scripts["db:verify:supplier-document-lifecycle"] =
-            "tsx scripts/verify-supplier-document-lifecycle.ts";
-          writeFileSync(path, `${JSON.stringify(packageJson, null, 2)}\n`);
-          NODE
-
-      - name: Regenerate reviewed migration
-        run: |
-          rm -f drizzle/0008_*.sql drizzle/meta/0008_snapshot.json
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from "node:fs";
-          const path = "drizzle/meta/_journal.json";
-          const journal = JSON.parse(readFileSync(path, "utf8"));
-          journal.entries = journal.entries.filter((entry) => entry.idx !== 8);
-          writeFileSync(path, `${JSON.stringify(journal, null, 2)}\n`);
-          NODE
-          npm run db:generate
-          migration="$(ls drizzle/0008_*.sql)"
-          cat >> "$migration" <<'SQL'
-          --> statement-breakpoint
-          CREATE OR REPLACE FUNCTION prevent_supplier_document_review_event_mutation()
-          RETURNS trigger
-          LANGUAGE plpgsql
-          AS $$
-          BEGIN
-            RAISE EXCEPTION 'supplier_document_review_events rows are immutable';
-          END;
-          $$;
-          --> statement-breakpoint
-          CREATE TRIGGER supplier_document_review_events_immutable
-          BEFORE UPDATE OR DELETE ON "supplier_document_review_events"
-          FOR EACH ROW
-          EXECUTE FUNCTION prevent_supplier_document_review_event_mutation();
-          SQL
-
-      - name: Remove temporary non-workflow machinery
-        run: |
-          rm -f scripts/patch-supplier-document-checklist.mjs
-          rm -f scripts/patch-supplier-document-foundation.mjs
-          rm -f scripts/patch-supplier-document-safety.mjs
-          rm -f scripts/patch-supplier-document-lifecycle.mjs
-          rm -f scripts/patch-supplier-document-ui.mjs
-          rm -f scripts/patch-supplier-document-domain-guards.mjs
-          rm -f scripts/patch-supplier-document-schema-contract.mjs
-          rm -f app/lib/supplier/documents/.hardening-cleanup
-          rm -f app/lib/supplier/documents/.hardening-readme
-          rm -f app/lib/supplier/documents/.hardening-scope
-          rm -f app/lib/supplier/documents/.hardening-trigger
-          rm -f app/lib/supplier/documents/POST_MERGE_HARDENING.md
-          rm -f docs/supplier-document-hardening-plan.md
-
-      - name: Format materialized source
-        run: >-
-          npx prettier --write
-          "app/**/*.{ts,tsx,css}"
-          package.json
-          "scripts/*supplier-document*.ts"
-          "drizzle/meta/*.json"
-
-      - name: Check materialized source formatting
-        run: >-
-          npx prettier --check
-          "app/**/*.{ts,tsx,css}"
-          package.json
-          "scripts/*supplier-document*.ts"
-          "drizzle/meta/*.json"
+      - name: Check formatting
+        run: npm run format:check
 
       - name: Check types
         run: npm run typecheck
@@ -168,15 +99,3 @@ jobs:
 
       - name: Verify private Supplier document lifecycle
         run: npm run db:verify:supplier-document-lifecycle
-
-      - name: Commit verified materialized source
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- ':!.github/workflows'
-          git diff --cached --quiet && {
-            echo "Expected materialized source changes were not produced." >&2
-            exit 1
-          }
-          git commit -m "fix: materialize verified Supplier document source"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
