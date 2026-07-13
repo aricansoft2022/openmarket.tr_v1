@@ -49,9 +49,15 @@ Supplier onboarding screens, company-document storage/review and Supplier activa
 
 ## Verification
 
-GitHub Actions run `29243192413` proved the database side of PR #33 before final formatting:
+Permanent read-only GitHub Actions run `29243586323` passed on PR #33 head `9a41586d0c39016300bff599bfc6d15500e1083a`:
 
 ```text
+npm run format:check                              PASS
+npm run docs:check                                PASS
+npm run config:check                              PASS
+npm run typecheck                                 PASS
+npm run test:run                                  PASS
+npm run build                                     PASS
 npm run db:check                                  PASS
 npm run db:verify                                 PASS
 npm run db:verify:auth                            PASS
@@ -69,7 +75,7 @@ npm run db:verify:supplier-catalogue              PASS
 npm run db:verify:supplier-company                PASS
 ```
 
-The application job in that run stopped only at `format:check`; permanent read-only application and database CI must pass together on the final PR #33 head before merge.
+The seed gate proves the exact active catalogue, bilingual labels, deterministic ordering, repeated idempotency, canonical-row repair and non-launch archival. The Supplier gate proves that the production catalogue is consumed without forcing non-manufacturing Supplier types to claim production capabilities.
 
 ## Known issues and blockers
 
@@ -87,7 +93,7 @@ These are remote-integration or later-feature blockers. They do not invalidate t
 
 ## Next tasks
 
-1. Format and pass permanent read-only CI on final PR #33, then squash merge it.
+1. Squash merge PR #33 after its final documentation commit passes permanent read-only CI.
 2. Close or split the resolved seed finding in audit issue #32; keep explicit follow-ups for country-code semantics and future multi-company selection.
 3. Continue issue #6 with S01–S04 as a separate Supplier onboarding route/UI slice using the merged domain and catalogue services.
 4. Continue company-document and activation work separately through #7–#8.
