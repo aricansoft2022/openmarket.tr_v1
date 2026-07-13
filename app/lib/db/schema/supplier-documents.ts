@@ -14,7 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
-import { platformStaffRoles, type PlatformStaffRole } from "./platform-staff";
+import type { PlatformStaffRole } from "./platform-staff";
 import { supplierCompanies, supplierTypes } from "./supplier";
 
 export const supplierDocumentRequirementLevels = ["mandatory", "conditional", "optional"] as const;
@@ -185,6 +185,7 @@ export const supplierCompanyDocuments = pgTable(
   },
   (table) => [
     uniqueIndex("supplier_company_documents_object_key_idx").on(table.objectKey),
+    uniqueIndex("supplier_company_documents_replaces_once_idx").on(table.replacesDocumentId),
     uniqueIndex("supplier_company_documents_company_type_version_idx").on(
       table.companyId,
       table.documentTypeKey,
@@ -268,7 +269,7 @@ export const supplierDocumentReviewEvents = pgTable(
       .references(() => user.id, { onDelete: "restrict" }),
     effectiveRole: text("effective_role").$type<PlatformStaffRole>().notNull(),
     decision: text("decision").$type<SupplierDocumentReviewDecision>().notNull(),
-    reason: text("reason").notNull(),
+    reason: text("reason"),
     reviewNote: text("review_note"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -277,10 +278,7 @@ export const supplierDocumentReviewEvents = pgTable(
     index("supplier_document_review_events_reviewer_idx").on(table.reviewerId, table.createdAt),
     check(
       "supplier_document_review_events_role_check",
-      sql`${table.effectiveRole} in (${sql.join(
-        platformStaffRoles.map((role) => sql`${role}`),
-        sql`, `,
-      )})`,
+      sql`${table.effectiveRole} in ('super_admin', 'platform_admin', 'catalogue_content_editor', 'compliance_reviewer', 'product_rfq_moderator', 'privacy_support_manager')`,
     ),
     check(
       "supplier_document_review_events_decision_check",
@@ -288,7 +286,8 @@ export const supplierDocumentReviewEvents = pgTable(
     ),
     check(
       "supplier_document_review_events_reason_check",
-      sql`char_length(trim(${table.reason})) between 3 and 2000`,
+      sql`(${table.decision} = 'approved' and (${table.reason} is null or char_length(trim(${table.reason})) between 3 and 2000))
+        or (${table.decision} in ('rejected', 'replacement_required') and char_length(trim(${table.reason})) between 3 and 2000)`,
     ),
     check(
       "supplier_document_review_events_note_check",

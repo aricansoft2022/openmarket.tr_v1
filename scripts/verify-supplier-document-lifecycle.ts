@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 
 import "dotenv/config";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
+
+import type { Database } from "../app/lib/db/client.server";
 
 import { createAuth, type AuthEnvironment } from "../app/lib/auth/create-auth.server";
 import { authRequest, registerWithPreferences } from "../app/lib/auth/registration.server";
@@ -67,7 +69,10 @@ function memoryR2Bucket() {
       async put(
         key: string,
         value: ArrayBuffer | ArrayBufferView | string | Blob | ReadableStream,
-        options?: { httpMetadata?: { contentType?: string }; customMetadata?: Record<string, string> },
+        options?: {
+          httpMetadata?: { contentType?: string };
+          customMetadata?: Record<string, string>;
+        },
       ) {
         let bytes: Uint8Array;
         if (value instanceof ArrayBuffer) bytes = new Uint8Array(value);
@@ -88,7 +93,7 @@ function memoryR2Bucket() {
         if (!stored) return null;
         return {
           key,
-          body: new Blob([stored.bytes]).stream(),
+          body: new Blob([stored.bytes.slice().buffer]).stream(),
           size: stored.bytes.byteLength,
           httpMetadata: { contentType: stored.contentType },
           customMetadata: stored.customMetadata,
@@ -105,8 +110,6 @@ const client = new Client({ connectionString });
 await client.connect();
 const database = drizzle(client, { schema });
 const suffix = randomUUID();
-const createdUserIds: string[] = [];
-const createdCompanyIds: string[] = [];
 const r2 = memoryR2Bucket();
 
 const environment: SupplierDocumentEnvironment = {
@@ -137,7 +140,6 @@ async function registerFixture(
   const result = await client.query('select id from "user" where email = $1', [email]);
   const id = result.rows[0]?.id as string | undefined;
   assert(id, `${label} must persist a user.`);
-  createdUserIds.push(id);
   await client.query('update "user" set email_verified = true where id = $1', [id]);
 
   const signin = await auth.handler(
@@ -155,6 +157,10 @@ try {
   const viewer = await registerFixture("Document Viewer", "document-viewer");
   const outsider = await registerFixture("Document Outsider", "document-outsider");
   const reviewer = await registerFixture("Document Reviewer", "document-reviewer");
+  const conflictedReviewer = await registerFixture(
+    "Conflicted Document Reviewer",
+    "conflicted-document-reviewer",
+  );
 
   const identity = await submitOnboardingIdentity(
     environment,
@@ -185,7 +191,6 @@ try {
       exportMarketCountryCodes: ["DE", "GB"],
     },
   );
-  createdCompanyIds.push(company.company.id);
 
   await database.insert(schema.supplierMemberships).values({
     companyId: company.company.id,
@@ -193,11 +198,25 @@ try {
     role: "viewer",
     assignedBy: owner.id,
   });
-  await database.insert(schema.platformStaffAssignments).values({
-    userId: reviewer.id,
-    role: "compliance_reviewer",
+  await database.insert(schema.platformStaffAssignments).values([
+    {
+      userId: reviewer.id,
+      role: "compliance_reviewer",
+      assignedBy: owner.id,
+      assignmentReason: "Supplier company-document review verification",
+    },
+    {
+      userId: conflictedReviewer.id,
+      role: "compliance_reviewer",
+      assignedBy: owner.id,
+      assignmentReason: "Supplier company-document conflict verification",
+    },
+  ]);
+  await database.insert(schema.supplierMemberships).values({
+    companyId: company.company.id,
+    userId: conflictedReviewer.id,
+    role: "viewer",
     assignedBy: owner.id,
-    assignmentReason: "Supplier company-document review verification",
   });
 
   const workspace = await loadSupplierDocumentWorkspace(
@@ -267,8 +286,7 @@ try {
         }),
       },
     ),
-    (error: unknown) =>
-      error instanceof SupplierDocumentActionError && error.code === "FORBIDDEN",
+    (error: unknown) => error instanceof SupplierDocumentActionError && error.code === "FORBIDDEN",
   );
 
   await assert.rejects(
@@ -282,7 +300,7 @@ try {
   );
 
   await database.transaction(async (transaction) => {
-    await recordSupplierDocumentScanResult(transaction as unknown as typeof database, {
+    await recordSupplierDocumentScanResult(transaction as unknown as Database, {
       documentId: uploaded.id,
       result: "clean",
     });
@@ -327,16 +345,25 @@ try {
   );
 
   await assert.rejects(
+    decideSupplierCompanyDocument(environment, request("/admin/supplier-documents", owner.cookie), {
+      documentId: uploaded.id,
+      decision: "approved",
+      reason: "Owner must not decide their own company document",
+    }),
+    (error: unknown) => error instanceof StaffAuthorizationError,
+  );
+
+  await assert.rejects(
     decideSupplierCompanyDocument(
       environment,
-      request("/admin/supplier-documents", owner.cookie),
+      request("/admin/supplier-documents", conflictedReviewer.cookie),
       {
         documentId: uploaded.id,
         decision: "approved",
-        reason: "Owner must not decide their own company document",
+        reason: "A company member must not review their own Supplier company",
       },
     ),
-    (error: unknown) => error instanceof StaffAuthorizationError,
+    (error: unknown) => error instanceof StaffAuthorizationError && error.code === "SELF_REVIEW",
   );
 
   await decideSupplierCompanyDocument(
@@ -368,8 +395,7 @@ try {
       { documentId: uploaded.id, visible: true },
     ),
     (error: unknown) =>
-      error instanceof SupplierDocumentActionError &&
-      error.code === "PUBLIC_VISIBILITY_FORBIDDEN",
+      error instanceof SupplierDocumentActionError && error.code === "PUBLIC_VISIBILITY_FORBIDDEN",
   );
 
   const profileDocument = await uploadSupplierCompanyDocument(
@@ -384,7 +410,7 @@ try {
     },
   );
   await database.transaction(async (transaction) => {
-    await recordSupplierDocumentScanResult(transaction as unknown as typeof database, {
+    await recordSupplierDocumentScanResult(transaction as unknown as Database, {
       documentId: profileDocument.id,
       result: "clean",
     });
@@ -424,22 +450,36 @@ try {
   );
   assert.equal(replacement.version, 2);
   assert.equal(replacement.replacesDocumentId, uploaded.id);
+  const workspaceWithPendingReplacement = await loadSupplierDocumentWorkspace(
+    environment,
+    request("/supplier/documents", owner.cookie),
+    company.company.id,
+  );
+  assert.equal(
+    workspaceWithPendingReplacement?.requirements.find(
+      (requirement) => requirement.documentTypeKey === "company_document.chamber_activity",
+    )?.satisfied,
+    true,
+  );
 
   const expiringGrant = await createSupplierDocumentAccessGrant(
     environment,
     request("/supplier/documents/access", reviewer.cookie),
     uploaded.id,
   );
-  await database
-    .update(schema.supplierDocumentAccessGrants)
-    .set({ expiresAt: new Date("2026-01-01T00:00:00.000Z") })
-    .where(eq(schema.supplierDocumentAccessGrants.tokenHash, await (async () => {
-      const digest = await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(expiringGrant.token),
-      );
-      return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-    })()));
+  const expiringGrantDigest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(expiringGrant.token),
+  );
+  const expiringGrantHash = Array.from(new Uint8Array(expiringGrantDigest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  await client.query(
+    `update supplier_document_access_grants
+       set expires_at = created_at + interval '1 millisecond'
+       where token_hash = $1`,
+    [expiringGrantHash],
+  );
   await assert.rejects(
     downloadSupplierDocumentWithGrant(
       environment,
@@ -482,16 +522,7 @@ try {
     "Supplier document lifecycle verified: requirement resolution, private server-owned R2 keys, viewer write denial and authorized read, outsider isolation, scan-before-review, reviewer authorization, immutable decisions, public-eligibility boundary, replacement versioning, expiring access grants and audit evidence passed.",
   );
 } finally {
-  if (createdCompanyIds.length > 0) {
-    await database
-      .delete(schema.supplierCompanies)
-      .where(inArray(schema.supplierCompanies.id, createdCompanyIds));
-  }
-  if (createdUserIds.length > 0) {
-    await database
-      .delete(schema.platformStaffAssignments)
-      .where(inArray(schema.platformStaffAssignments.userId, createdUserIds));
-    await client.query('delete from "user" where id = any($1::uuid[])', [createdUserIds]);
-  }
+  // The PostgreSQL service is isolated per CI run. Review events are deliberately
+  // immutable, so verification fixtures remain until the ephemeral database exits.
   await client.end();
 }

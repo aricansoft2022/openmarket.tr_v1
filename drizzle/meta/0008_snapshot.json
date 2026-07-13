@@ -1,5 +1,5 @@
 {
-  "id": "01073f86-a248-4aad-b81c-763c61cebd2b",
+  "id": "bf0a2bdb-46c8-43cf-9966-eaaec98eebec",
   "prevId": "8db1c9d5-a7bd-45e7-93b9-d89793a9ed7a",
   "version": "7",
   "dialect": "postgresql",
@@ -2992,6 +2992,21 @@
           "method": "btree",
           "with": {}
         },
+        "supplier_company_documents_replaces_once_idx": {
+          "name": "supplier_company_documents_replaces_once_idx",
+          "columns": [
+            {
+              "expression": "replaces_document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "supplier_company_documents_company_type_version_idx": {
           "name": "supplier_company_documents_company_type_version_idx",
           "columns": [
@@ -3554,7 +3569,7 @@
           "name": "reason",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "review_note": {
           "name": "review_note",
@@ -3648,7 +3663,7 @@
       "checkConstraints": {
         "supplier_document_review_events_role_check": {
           "name": "supplier_document_review_events_role_check",
-          "value": "\"supplier_document_review_events\".\"effective_role\" in ($1, $2, $3, $4, $5, $6)"
+          "value": "\"supplier_document_review_events\".\"effective_role\" in ('super_admin', 'platform_admin', 'catalogue_content_editor', 'compliance_reviewer', 'product_rfq_moderator', 'privacy_support_manager')"
         },
         "supplier_document_review_events_decision_check": {
           "name": "supplier_document_review_events_decision_check",
@@ -3656,7 +3671,7 @@
         },
         "supplier_document_review_events_reason_check": {
           "name": "supplier_document_review_events_reason_check",
-          "value": "char_length(trim(\"supplier_document_review_events\".\"reason\")) between 3 and 2000"
+          "value": "(\"supplier_document_review_events\".\"decision\" = 'approved' and (\"supplier_document_review_events\".\"reason\" is null or char_length(trim(\"supplier_document_review_events\".\"reason\")) between 3 and 2000))\n        or (\"supplier_document_review_events\".\"decision\" in ('rejected', 'replacement_required') and char_length(trim(\"supplier_document_review_events\".\"reason\")) between 3 and 2000)"
         },
         "supplier_document_review_events_note_check": {
           "name": "supplier_document_review_events_note_check",

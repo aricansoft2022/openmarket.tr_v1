@@ -7,10 +7,7 @@ import {
   SupplierShell,
 } from "~/components/supplier-shell";
 import { loadSupplierOnboardingRouteContext } from "~/lib/supplier/onboarding.server";
-import {
-  supplierDocumentCopy,
-  supplierDocumentStateLabel,
-} from "~/lib/supplier/documents/copy";
+import { supplierDocumentCopy, supplierDocumentStateLabel } from "~/lib/supplier/documents/copy";
 import { supplierDocumentErrorMessage } from "~/lib/supplier/documents/errors";
 import {
   createSupplierDocumentAccessGrant,
@@ -79,7 +76,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     return data({ error: copy.detail.notFound }, { status: 400 });
   } catch (error) {
     return data(
-      { error: supplierDocumentErrorMessage(error, context.preferredLanguage) ?? copy.detail.notFound },
+      {
+        error:
+          supplierDocumentErrorMessage(error, context.preferredLanguage) ?? copy.detail.notFound,
+      },
       { status: 400 },
     );
   }
@@ -122,9 +122,7 @@ export default function SupplierDocumentDetail({ loaderData, actionData }: Route
     workspace.canEdit &&
     document.storageStatus === "stored_private" &&
     document.scanStatus === "clean" &&
-    (["uploaded", "rejected", "replacement_required"] as const).includes(
-      document.evidenceStatus as "uploaded" | "rejected" | "replacement_required",
-    );
+    document.evidenceStatus === "uploaded";
   const canPublish =
     workspace.canEdit && document.publicEligible && document.evidenceStatus === "approved";
 
@@ -133,7 +131,7 @@ export default function SupplierDocumentDetail({ loaderData, actionData }: Route
       current="S07"
       language={context.preferredLanguage}
       companyName={workspace.company.legalName}
-      status={workspace.company.status as never}
+      status={workspace.company.status}
       membershipRole={workspace.membershipRole}
     >
       <section className="supplier-page">

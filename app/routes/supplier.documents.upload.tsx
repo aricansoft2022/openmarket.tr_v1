@@ -65,13 +65,15 @@ export async function action({ request }: Route.ActionArgs) {
       file,
       issueDate: optionalDate(formData.get("issueDate")),
       expiresAt: optionalDate(formData.get("expiresAt")),
-      retentionUntil: optionalDate(formData.get("retentionUntil")),
       replacesDocumentId: String(formData.get("replacesDocumentId") ?? "").trim() || null,
     });
     return redirect(`/supplier/documents/${uploaded.id}?stored=1`);
   } catch (error) {
     return data(
-      { error: supplierDocumentErrorMessage(error, context.preferredLanguage) ?? copy.upload.failure },
+      {
+        error:
+          supplierDocumentErrorMessage(error, context.preferredLanguage) ?? copy.upload.failure,
+      },
       { status: 400 },
     );
   }
@@ -97,7 +99,7 @@ export default function SupplierDocumentUpload({ loaderData, actionData }: Route
       current="S06"
       language={context.preferredLanguage}
       companyName={workspace?.company.legalName ?? context.verifiedCompanyName}
-      status={workspace?.company.status as never}
+      status={workspace?.company.status}
       membershipRole={workspace?.membershipRole}
     >
       <section className="supplier-page">
@@ -130,7 +132,11 @@ export default function SupplierDocumentUpload({ loaderData, actionData }: Route
             </Link>
           </div>
         ) : (
-          <Form className="supplier-form supplier-document-upload-form" method="post" encType="multipart/form-data">
+          <Form
+            className="supplier-form supplier-document-upload-form"
+            method="post"
+            encType="multipart/form-data"
+          >
             <fieldset disabled={submitting}>
               <input
                 type="hidden"
@@ -140,9 +146,15 @@ export default function SupplierDocumentUpload({ loaderData, actionData }: Route
 
               <label className="supplier-field supplier-field--wide">
                 <span>{copy.upload.type}</span>
-                <select name="documentTypeKey" defaultValue={loaderData.selectedType ?? ""} required>
+                <select
+                  name="documentTypeKey"
+                  defaultValue={loaderData.selectedType ?? ""}
+                  required
+                >
                   <option value="" disabled>
-                    {context.preferredLanguage === "tr" ? "Belge türü seçin" : "Select document type"}
+                    {context.preferredLanguage === "tr"
+                      ? "Belge türü seçin"
+                      : "Select document type"}
                   </option>
                   {workspace.requirements.map((requirement) => (
                     <option key={requirement.documentTypeKey} value={requirement.documentTypeKey}>
@@ -154,7 +166,12 @@ export default function SupplierDocumentUpload({ loaderData, actionData }: Route
 
               <label className="supplier-field supplier-field--wide">
                 <span>{copy.upload.file}</span>
-                <input name="file" type="file" accept="application/pdf,image/jpeg,image/png" required />
+                <input
+                  name="file"
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png"
+                  required
+                />
               </label>
 
               <div className="supplier-form-grid">
@@ -167,15 +184,12 @@ export default function SupplierDocumentUpload({ loaderData, actionData }: Route
                   <input name="expiresAt" type="date" />
                   <small>{copy.upload.expiryHint}</small>
                 </label>
-                <label className="supplier-field supplier-field--wide">
-                  <span>{copy.upload.retentionDate}</span>
-                  <input name="retentionUntil" type="date" />
-                  <small>{copy.upload.retentionHint}</small>
-                </label>
               </div>
 
               <div className="supplier-document-private-notice">
-                <strong>{context.preferredLanguage === "tr" ? "Özel depolama" : "Private storage"}</strong>
+                <strong>
+                  {context.preferredLanguage === "tr" ? "Özel depolama" : "Private storage"}
+                </strong>
                 <p>{copy.documents.scannerNotice}</p>
               </div>
 

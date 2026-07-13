@@ -26,7 +26,6 @@ describe("Supplier company-document policy", () => {
       "company_document.tax_company_registration",
       "company_document.authorized_representative",
       "company_document.company_address",
-      "company_document.company_profile",
     ]);
   });
 
@@ -38,6 +37,11 @@ describe("Supplier company-document policy", () => {
     const keys = requirements.map((requirement) => requirement.documentTypeKey);
 
     expect(keys).toContain("company_document.exporter_information");
+    expect(
+      requirements.find(
+        (requirement) => requirement.documentTypeKey === "company_document.exporter_information",
+      )?.level,
+    ).toBe("conditional");
     expect(keys).toContain("company_document.facility_information");
     expect(keys).toContain("company_document.machinery_production_line_summary");
     expect(keys).toContain("company_document.production_photos");
@@ -73,22 +77,24 @@ describe("Supplier company-document policy", () => {
     ).toThrow(SupplierDocumentValidationError);
   });
 
-  it("requires expiry metadata only for expiry-expected document types", () => {
-    expect(() =>
+  it("keeps expiry metadata optional while validating supplied date order", () => {
+    expect(
       validateSupplierDocumentMetadata({
         documentTypeKey: "company_document.chamber_activity",
       }),
-    ).toThrow(SupplierDocumentValidationError);
-
-    expect(
-      validateSupplierDocumentMetadata({
-        documentTypeKey: "company_document.company_profile",
-      }),
     ).toEqual({
-      documentTypeKey: "company_document.company_profile",
+      documentTypeKey: "company_document.chamber_activity",
       issueDate: null,
       expiresAt: null,
     });
+
+    expect(() =>
+      validateSupplierDocumentMetadata({
+        documentTypeKey: "company_document.chamber_activity",
+        issueDate: new Date("2026-07-13T00:00:00.000Z"),
+        expiresAt: new Date("2026-07-12T00:00:00.000Z"),
+      }),
+    ).toThrow(SupplierDocumentValidationError);
   });
 
   it("derives expiry and unsafe-scan states before persisted review status", () => {
@@ -110,6 +116,14 @@ describe("Supplier company-document policy", () => {
         now,
       }),
     ).toBe("replacement_required");
+    expect(
+      deriveSupplierDocumentState({
+        storageStatus: "stored_private",
+        evidenceStatus: "uploaded",
+        scanStatus: "failed",
+        now,
+      }),
+    ).toBe("uploaded");
   });
 
   it("requires approval only for mandatory requirements", () => {

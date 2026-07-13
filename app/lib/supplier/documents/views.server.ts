@@ -7,10 +7,7 @@ import {
   supplierCompanyDocumentTypes,
   supplierDocumentReviewEvents,
 } from "../../db/schema";
-import {
-  loadSupplierDocumentWorkspace,
-  type SupplierDocumentEnvironment,
-} from "./service.server";
+import { loadSupplierDocumentWorkspace, type SupplierDocumentEnvironment } from "./service.server";
 import { deriveSupplierDocumentState } from "./policy";
 
 export async function loadSupplierMemberDocumentDetail(

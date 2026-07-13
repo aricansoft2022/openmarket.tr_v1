@@ -32,6 +32,8 @@
     "db:seed:supplier-catalogue": "tsx scripts/seed-supplier-launch-catalogue.ts",
     "db:verify:supplier-catalogue": "tsx scripts/verify-supplier-launch-catalogue.ts",
     "db:verify:supplier-company": "tsx scripts/verify-supplier-company-foundation.ts",
+    "db:seed:supplier-documents": "tsx scripts/seed-supplier-document-catalogue.ts",
+    "db:verify:supplier-documents": "tsx scripts/verify-supplier-document-catalogue.ts",
     "db:local:up": "docker compose up -d postgres",
     "db:local:down": "docker compose down",
     "db:local:reset": "docker compose down -v",
@@ -42,7 +44,8 @@
     "config:check": "node scripts/check-runtime-contract.mjs",
     "verify": "npm run format:check && npm run docs:check && npm run config:check && npm run typecheck && npm run test:run && npm run build",
     "postinstall": "wrangler types",
-    "spec:materialize": "node scripts/materialize-spec.mjs"
+    "spec:materialize": "node scripts/materialize-spec.mjs",
+    "db:verify:supplier-document-lifecycle": "tsx scripts/verify-supplier-document-lifecycle.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.23",

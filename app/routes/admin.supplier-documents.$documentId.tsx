@@ -36,7 +36,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     loadSupplierDocumentReviewDetail(env, request, params.documentId),
   ]);
   if (!account || !detail) throw redirect("/auth/login");
-  return { account, detail };
+  return {
+    account,
+    detail,
+    decided: new URL(request.url).searchParams.get("decided") === "1",
+  };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -51,11 +55,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       const grant = await createSupplierDocumentAccessGrant(env, request, params.documentId);
       return redirect(`/supplier/document-access/${grant.token}`);
     }
-    if (
-      intent === "approved" ||
-      intent === "rejected" ||
-      intent === "replacement_required"
-    ) {
+    if (intent === "approved" || intent === "rejected" || intent === "replacement_required") {
       await decideSupplierCompanyDocument(env, request, {
         documentId: params.documentId,
         decision: intent,
@@ -81,9 +81,7 @@ export default function SupplierDocumentReview({ loaderData, actionData }: Route
   const copy = supplierDocumentCopy(language);
   const navigation = useNavigation();
   const deciding = navigation.state === "submitting";
-  const decided = new URL(
-    typeof window === "undefined" ? "http://localhost" : window.location.href,
-  ).searchParams.get("decided");
+  const decided = loaderData.decided;
   const { detail } = loaderData;
 
   if (!detail.document) {
@@ -182,13 +180,28 @@ export default function SupplierDocumentReview({ loaderData, actionData }: Route
               <textarea name="reviewNote" rows={4} maxLength={4000} />
             </label>
             <div className="supplier-review-decisions">
-              <button className="button button--primary" name="intent" value="approved" type="submit">
+              <button
+                className="button button--primary"
+                name="intent"
+                value="approved"
+                type="submit"
+              >
                 {copy.review.approve}
               </button>
-              <button className="button button--secondary" name="intent" value="replacement_required" type="submit">
+              <button
+                className="button button--secondary"
+                name="intent"
+                value="replacement_required"
+                type="submit"
+              >
                 {copy.review.replacement}
               </button>
-              <button className="button button--secondary" name="intent" value="rejected" type="submit">
+              <button
+                className="button button--secondary"
+                name="intent"
+                value="rejected"
+                type="submit"
+              >
                 {copy.review.reject}
               </button>
             </div>

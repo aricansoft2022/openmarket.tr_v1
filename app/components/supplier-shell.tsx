@@ -13,6 +13,7 @@ const navigation = [
   { id: "S02", key: "onboarding", href: "/supplier/onboarding" },
   { id: "S03", key: "company", href: "/supplier/company" },
   { id: "S04", key: "capabilities", href: "/supplier/capabilities" },
+  { id: "S05", key: "documents", href: "/supplier/documents" },
 ] as const;
 
 export function SupplierShell({
@@ -23,7 +24,7 @@ export function SupplierShell({
   membershipRole,
   children,
 }: {
-  current: "S01" | "S02" | "S03" | "S04";
+  current: "S01" | "S02" | "S03" | "S04" | "S05" | "S06" | "S07";
   language?: PreferredLanguage;
   companyName?: string | null;
   status?: SupplierWorkspaceStatus | null;
@@ -31,6 +32,7 @@ export function SupplierShell({
   children: ReactNode;
 }) {
   const copy = supplierCopy(language).shell;
+  const activeNavigationId = current === "S06" || current === "S07" ? "S05" : current;
 
   return (
     <main className="supplier-layout" lang={language}>
@@ -66,8 +68,8 @@ export function SupplierShell({
               {navigation.map((item) => (
                 <li key={item.id}>
                   <Link
-                    className={item.id === current ? "is-active" : undefined}
-                    aria-current={item.id === current ? "page" : undefined}
+                    className={item.id === activeNavigationId ? "is-active" : undefined}
+                    aria-current={item.id === activeNavigationId ? "page" : undefined}
                     to={item.href}
                   >
                     <span>{item.id}</span>
@@ -92,7 +94,7 @@ export function SupplierRouteFallback({
   current,
   language = "tr",
 }: {
-  current: "S01" | "S02" | "S03" | "S04";
+  current: "S01" | "S02" | "S03" | "S04" | "S05" | "S06" | "S07";
   language?: PreferredLanguage;
 }) {
   const copy = supplierCopy(language).shell;
@@ -120,7 +122,7 @@ export function SupplierRouteError({
   language = "tr",
   error,
 }: {
-  current: "S01" | "S02" | "S03" | "S04";
+  current: "S01" | "S02" | "S03" | "S04" | "S05" | "S06" | "S07";
   language?: PreferredLanguage;
   error: unknown;
 }) {
